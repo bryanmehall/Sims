@@ -4,6 +4,7 @@ import ContentActions from '../ducks/content/actions'
 import Link from 'redux-first-router-link'
 import ContentBlock from './ContentBlock'
 import { cardStyle, linkStyle, headerStyle } from './styles'
+import AccordianPanel from './AccordianPanel'
 
 import {
 	getContentBlocks,
@@ -21,7 +22,7 @@ import Sim from './Sim'
 class Part extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { width: '0', height: '0' };
+		this.state = { width: '0', height: '0', editMode:false };
 		this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
 	}
 
@@ -100,6 +101,20 @@ class Part extends React.Component {
 				{ isActive ? nextPartLink : null}
 			</div>
 		)
+		const toggleEditMode = () => {
+			this.setState({editMode:!this.state.editMode}) //this.props.setEditMode(true)
+		}
+		const editIcon = (
+			<svg
+				style={{ position:'absolute',  right:0, bottom:0}}
+				cursor="pointer"
+				width="40"
+				height="40"
+				onClick={toggleEditMode}
+				>
+				<circle cx="20" cy="20" r="15" fill="#444"></circle>
+			</svg>
+		)
 		const imageUrl = `/content/courses/${courseId}/${partId}/thumbnail.png`
 		if (!visible) {
 			return null
@@ -127,9 +142,13 @@ class Part extends React.Component {
 								partId={partId}
 								contentBlockId={this.props.activeContentBlock}
 								/>
+
 						</div>
 					)}
+					{isActive && this.state.editMode ? <AccordianPanel></AccordianPanel> : null}
+					{editIcon}
 				</div>
+
 			</div>
 		)
 		}
@@ -156,7 +175,8 @@ function mapStateToProps(state, props) {
 		previousPartTitle: hasPrevPart ? getPartTitle(state, courseId, prevPartId) : null,
 		hasNextPart,
 		nextPartId,
-		nextPartTitle: hasNextPart ? getPartTitle(state, courseId, nextPartId) : null
+		nextPartTitle: hasNextPart ? getPartTitle(state, courseId, nextPartId) : null,
+		//editMode: true
 	}
 }
 
@@ -164,7 +184,10 @@ function mapDispatchToProps(dispatch) {
 	return {
 		activatePart: (courseId, partId) => (
 			dispatch(ContentActions.activatePart(courseId, partId))
-		)
+		),
+		/*setEditMode: (inEditMode) => {
+			dispatch(ContentActions.setEditMode(inEditMode))
+		}*/
 	};
 }
 
