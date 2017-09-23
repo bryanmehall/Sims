@@ -41,7 +41,7 @@ const initializeCourseState = (courseData) => {
 		...initPartsActions,//this order matters because the parts need to be available for rendering
 		{
 			type: 'INITIALIZE_COURSE_STATE',
-			payload: { courseId:courseData.id ,courseData }
+			payload: { courseId: courseData.id, courseData }
 		}
 
 	]
@@ -62,12 +62,10 @@ const initializeContentBlockState = (contentBlockData, courseId, partId, content
 })
 
 //animations
-const fetchAudio = (courseId, partId, contentBlockId) => ({
 
-})
 
-const setPlaying = (courseId, partId, contentBlockId, playing) => {
-	return [
+const setPlaying = (courseId, partId, contentBlockId, playing) => (
+	[
 		SimActions.returnToAnimation(),
 		{
 			type: 'ANIM_CONTENT',
@@ -79,10 +77,10 @@ const setPlaying = (courseId, partId, contentBlockId, playing) => {
 			}
 		}
 	]
-}
+)
 const animContentStep = (courseId, partId, contentBlockId, initTime, initAnimTime) => ({
-	type:"ANIM_CONTENT_STEP",
-	payload:{
+	type: "ANIM_CONTENT_STEP",
+	payload: {
 		courseId,
 		partId,
 		contentBlockId,
@@ -116,6 +114,10 @@ const pauseOthers = (courseId, partId, contentBlockId) => ({
 	payload: { courseId, partId, contentBlockId }
 })
 
+const setEditMode = (inEditMode) => ({
+	type: "SET_EDIT_MODE",
+	value: inEditMode
+})
 
 
 export default {
@@ -129,5 +131,6 @@ export default {
 	pauseOthers,
 	setAnimLength,
 	animContentStep,
-	setAnimTime
+	setAnimTime,
+	setEditMode
 }

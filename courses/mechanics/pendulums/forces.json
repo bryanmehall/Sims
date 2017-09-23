@@ -20,10 +20,10 @@
 							"tailY": "bobY",
 							"x": "fg_x",
 							"y": "fg_y",
-							"opacity": 0
+							"opacity": 0,
+							"label": "mg"
 						},
 						"children": [
-
 						]
 					},
 					"interp": "linear"
@@ -46,7 +46,8 @@
 							"tailY": "bobY",
 							"x": "ft_x",
 							"y": "ft_y",
-							"opacity": 0
+							"opacity": 0,
+							"label":"F_t"
 						},
 						"children": [
 
@@ -88,7 +89,8 @@
 							"tailY": "bobY",
 							"x": "fnet_x",
 							"y": "fnet_y",
-							"opacity": 0
+							"opacity": 0,
+							"label": "F_net"
 						},
 						"children": [
 
@@ -157,7 +159,8 @@
 					"anchorY":"anchorY",
 					"stringHighlight":0,
 					"massHighlight":0,
-					"anchorHighlight":0
+					"anchorHighlight":0,
+					"angleHighlight":0
 				}
 			}
 		},
