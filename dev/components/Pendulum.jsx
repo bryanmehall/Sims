@@ -64,7 +64,8 @@ class Pendulum extends React.Component {
 					d={angleArc}
 					fill="none"
 					stroke="gray"
-					strokeWidth={2}/>
+					strokeWidth={2}
+				/>
 				<line
 					x1={anchorPos.x}
 					y1={anchorPos.y}
@@ -73,12 +74,12 @@ class Pendulum extends React.Component {
 					stroke="gray"
 					strokeWidth={2}
 					strokeDasharray = "5,5"
-					/>
+				/>
 				<Label
 					x={anchorPos.x+50*Math.sin(theta/2)}
 					y={anchorPos.y+50*Math.cos(theta/2)}
 					label="θ"
-					/>
+				/>
 			</g>
 		)
 		return (

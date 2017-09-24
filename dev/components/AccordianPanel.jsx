@@ -5,7 +5,7 @@ import { listProps } from '../ducks/widget/selectors'
 import AttributeTab from './AttributeTab'
 
 const AccordianPanel = ({objectId, attrs}) => {
-		objectId = "pendulum"
+		objectId = "pendulumPlot"
 		const attributeTabs = attrs.map((attr) => (<AttributeTab key={attr} objectId={objectId} attrId={attr}/>))
 		return (
 			<div
@@ -23,7 +23,7 @@ const AccordianPanel = ({objectId, attrs}) => {
 const mapStateToProps = (state, props) => {
 	let attrs
 	try {
-		 attrs = listProps(state, "pendulum")
+		 attrs = listProps(state, "pendulumPlot")
 	} catch (e){
 		attrs = []
 	}

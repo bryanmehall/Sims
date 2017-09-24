@@ -89,7 +89,7 @@
         "indent-legacy": "off",
         "init-declarations": "error",
         "jsx-quotes": "error",
-		"jsx-uses-vars":"error",
+		"react/jsx-uses-vars": "error",
         "key-spacing": "error",
         "keyword-spacing": [
             "error",

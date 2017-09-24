@@ -6,11 +6,10 @@ import {Collapse} from 'react-collapse'
 
 import { getCurrentCourseId } from '../ducks/content/selectors'
 import Course from "./Course"
-import SmdApp from './SmdApp'
-import NavBar from './NavBar'
 
 
-const Courses = ({activeCourse}) => {
+
+const Courses = ({ activeCourse }) => {
 		return  (
 			<div>
 				<Course courseId="about-zibit"/>
