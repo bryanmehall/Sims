@@ -1,7 +1,7 @@
 import types from "./types";
 
-const addWidget = (name, type, props, children) => ({
-	type: "ADD_WIDGET",
+const addObject = (name, type, props, children) => ({
+	type: "ADD_OBJECT",
 	payload: {
 		name, type, props, children
 	}
@@ -39,7 +39,7 @@ const setProp = (name, prop, value) => ({
 
 
 export default {
-	addWidget,
+	addObject,
 	addChild,
 	removeChild,
 	setProp,

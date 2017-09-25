@@ -1,8 +1,8 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getProp } from '../ducks/widget/selectors'
-import WidgetActions from '../ducks/widget/actions'
+import { getProp } from '../ducks/object/selectors'
+import ObjectActions from '../ducks/object/actions'
 
 const AttributeTab = ({ objectId, attrId, definition, setProp }) => {
 	let value = 'unsupported'
@@ -34,7 +34,7 @@ const mapStateToProps = (state, props) => ({
 
 const mapDispatchToProps = (dispatch) => ({
 	setProp: (objectId, attrId, value) => {
-		dispatch(WidgetActions.setProp(objectId, attrId, value))
+		dispatch(ObjectActions.setProp(objectId, attrId, value))
 	}
 })
 

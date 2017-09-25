@@ -32,7 +32,7 @@ import { default as ravenMiddleware } from 'redux-raven-middleware';
 //initial state
 export const initialState = {
 	sim: {
-		widget: {
+		object: {
 			"app": {
 				"type": "SmdApp",
 				"props": { loading: true },

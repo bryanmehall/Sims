@@ -2,8 +2,8 @@ import React from "react"
 import {connect} from "react-redux"
 
 import QuantityActions from '../ducks/quantity/actions'
-import WidgetActions from '../ducks/widget/actions'
-import { getProp } from '../ducks/widget/selectors'
+import ObjectActions from '../ducks/object/actions'
+import { getProp } from '../ducks/object/selectors'
 import {mathTextStyle} from './styles'
 
 
@@ -23,7 +23,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(QuantityActions.setHighlight(name, value))
 		},
 		setActive:(name, value) => {
-			dispatch(WidgetActions.setActive(name, value))
+			dispatch(ObjectActions.setActive(name, value))
 		},
 		setPlay:(name, value) => {
 			dispatch(QuantityActions.setPlay(name, value))

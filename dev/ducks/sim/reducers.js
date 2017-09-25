@@ -1,5 +1,5 @@
 import { default as quantity } from '../quantity'
-import { default as widget } from '../widget'
+import { default as object } from '../object'
 import { combineReducers } from "redux"
 
 /*
@@ -8,13 +8,13 @@ sim: {
 	cache:{
 		cached:true of false
 		quantity:{}
-		widgets:{}
+		objects:{}
 	}
 	keyframes:[
 
 	]
 	loading: "loading", "loaded" or "error"
-	widgets:{}
+	objects:{}
 	quantity:{}
 }
 */
@@ -44,7 +44,7 @@ const keyframes = (state=[], action) => {
 }
 const cache = (state={cached:false}, action) => (state)
 
-const subReducer = combineReducers({ quantity, widget, loadState, keyframes, cache })
+const subReducer = combineReducers({ quantity, object, loadState, keyframes, cache })
 
 const simReducer = (state = {cache:{cached:false}}, action) => {
 	switch (action.type){
@@ -55,7 +55,7 @@ const simReducer = (state = {cache:{cached:false}}, action) => {
 		case "START_USER_INTERACTION": {//eventually this should be put somewhere else. maybe in the content block state?
 			const currentState = {
 				cached:true,
-				widget: state.widget,
+				object: state.object,
 				quantity: state.quantity
 			}
 			return Object.assign({}, state, {cache:currentState})
@@ -64,7 +64,7 @@ const simReducer = (state = {cache:{cached:false}}, action) => {
 			if (state.cache.cached){
 				const cache = state.cache
 				const cachedState = {
-					widget: cache.widget,
+					object: cache.object,
 					quantity: cache.quantity
 				}
 				return Object.assign({}, state, cachedState, {cache:{cached:false}})

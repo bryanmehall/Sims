@@ -3,9 +3,9 @@ import {default as actions} from './actions'
 import { getProp } from './selectors'
 
 /*
-describe('addWidget',() =>{
+describe('addObject',() =>{
 
-	it('should add widget named testWidget to store', ()=>{
+	it('should add object named testObject to store', ()=>{
 		expect()
 	})
 })
@@ -13,7 +13,7 @@ describe('addWidget',() =>{
 
 describe('get/set prop', () => {
 	const store = createMockStore()
-	store.dispatch(actions.addWidget('testObject', "testType"))
+	store.dispatch(actions.addObject('testObject', "testType"))
 	store.dispatch(actions.setProp('testObject', 'testProp', 1))
 	const state = store.getState()
 	it('should set and retrieve property value from the store', () => {

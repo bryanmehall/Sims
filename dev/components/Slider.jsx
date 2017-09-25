@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from "react-redux"
 
 import QuantityActions from '../ducks/quantity/actions';
-import WidgetActions from '../ducks/widget/actions'
+import ObjectActions from '../ducks/object/actions'
 import { getTransformedValue, getValue, getScale, getMin, getMax} from '../ducks/quantity/selectors'
 import {getTransformString, getClosestPointOnLine} from '../utils/point'
 import Draggable from "./Draggable"
@@ -148,7 +148,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(QuantityActions.setValue(name, value))
 		},
 		setActive: (name, value) => {
-			dispatch(WidgetActions.setActive(name, value))
+			dispatch(ObjectActions.setActive(name, value))
 		},
 		setPlay: (name, value) => {
 			dispatch(QuantityActions.setPlay(name, value))

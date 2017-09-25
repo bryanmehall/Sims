@@ -9,7 +9,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "gForceVector",
@@ -35,7 +35,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "tensionVector",
@@ -78,7 +78,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "netForceVector",
@@ -118,7 +118,7 @@
 		}
 	],
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
 				"props": {},

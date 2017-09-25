@@ -4,7 +4,7 @@ import Slider from './Slider'
 import { connect } from "react-redux"
 import { bindActionCreators } from 'redux'
 import QuantityActions from '../ducks/quantity/actions'
-import WidgetActions from '../ducks/widget/actions'
+import ObjectActions from '../ducks/object/actions'
 import {getValue, getQuantityData, getMin, getMax, getAnimatable, getPlaying, getIndependent, getColor} from '../ducks/quantity/selectors'
 import Animation from './Animation'
 import { UpArrow, DownArrow } from './icons'
@@ -227,7 +227,7 @@ function mapDispatchToProps(dispatch) {
 		},
 
 		setActive: (name, value) => {
-			dispatch(WidgetActions.setActive(name, value))
+			dispatch(ObjectActions.setActive(name, value))
 		},
 
 		setPlay: (name, value) => {

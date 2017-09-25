@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { Collapse } from 'react-collapse'
-import { listProps } from '../ducks/widget/selectors'
+import { listProps } from '../ducks/object/selectors'
 import AttributeTab from './AttributeTab'
 
 const AccordianPanel = ({objectId, attrs}) => {

@@ -5,10 +5,10 @@ from "redux";
 import types from "./types";
 
 
-const widgetsReducer = (state = {}, action) => {
-	//here state refers to widgets object of state tree
+const objectsReducer = (state = {}, action) => {
+	//here state refers to objects object of state tree
 	switch (action.type) {
-        case 'ADD_WIDGET': {
+        case 'ADD_OBJECT': {
             const name = action.payload.name
             const type = action.payload.type
             const props = action.payload.props
@@ -19,7 +19,7 @@ const widgetsReducer = (state = {}, action) => {
                 }
             })
         }
-        case 'REMOVE_WIDGET':{
+        case 'REMOVE_OBJECT':{
             const name = action
             break;
         }
@@ -27,25 +27,25 @@ const widgetsReducer = (state = {}, action) => {
             const name = action.payload.name
 
             return Object.assign({}, state, {
-                    [name]: widgetReducer(state[name], action)
+                    [name]: objectReducer(state[name], action)
             })
         }
         case 'ADD_CHILD':{
             const name = action.payload.name
             return Object.assign({}, state, {
-                    [name]: widgetReducer(state[name], action)
+                    [name]: objectReducer(state[name], action)
             })
         }
         case 'REMOVE_CHILD':{
             const name = action.payload.name
             return Object.assign({}, state, {
-                    [name]: widgetReducer(state[name], action)
+                    [name]: objectReducer(state[name], action)
             })
         }
 	}
 	return state
 }
-const widgetReducer = (state ={}, action) => {
+const objectReducer = (state ={}, action) => {
 	switch (action.type) {
 		case "ADD_CHILD": {
 			const childName = action.payload.childName
@@ -84,4 +84,4 @@ const widgetReducer = (state ={}, action) => {
 }
 
 
-export default widgetsReducer;
+export default objectsReducer;

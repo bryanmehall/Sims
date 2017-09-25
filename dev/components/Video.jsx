@@ -70,7 +70,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(QuantityActions.setValue(name, value))
 		},
 		setPlay:(name, isPlaying) => {
-			dispatch(WidgetActions.setProp(name, playing, value))
+			dispatch(ObjectActions.setProp(name, playing, value))
 		},
 	};
 }

@@ -11,7 +11,7 @@
 		"contentBlock": "zeroDamping"
 	},
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
 				"props": {},

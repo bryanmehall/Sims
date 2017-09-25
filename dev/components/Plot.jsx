@@ -3,7 +3,7 @@ import {connect} from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
 import {getValue, getQuantityData, getSymbol} from '../ducks/quantity/selectors'
-import {getChildren} from '../ducks/widget/selectors'
+import {getChildren} from '../ducks/object/selectors'
 import {mathVarStyle} from './styles'
 import {CoordSys, Scale} from '../utils/scale'
 import Axis from './Axis'

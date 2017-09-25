@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import SimActions from '../ducks/sim/actions'
 import { getLoadState } from '../ducks/sim/selectors'
 import { getValue } from '../ducks/quantity/selectors'
-import { getChildren } from '../ducks/widget/selectors'
+import { getChildren } from '../ducks/object/selectors'
 import Video from './Video'
 
 import Plot from './Plot'

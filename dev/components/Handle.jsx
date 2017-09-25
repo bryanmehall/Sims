@@ -2,7 +2,7 @@ import React from "react";
 import { connect } from "react-redux"
 
 import QuantityActions from '../ducks/quantity/actions';
-import WidgetActions from '../ducks/widget/actions'
+import ObjectActions from '../ducks/object/actions'
 import { getTransformedValue, getValue, getScale, getPlaying, getQuantityData } from '../ducks/quantity/selectors'
 import Draggable from "./Draggable"
 
@@ -80,7 +80,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(QuantityActions.setValue(name, value))
 		},
 		setActive: (name, value) => {
-			dispatch(WidgetActions.setActive(name, value))
+			dispatch(ObjectActions.setActive(name, value))
 		},
 		setPlay: (name, value) => {
 			dispatch(QuantityActions.setPlay(name, value))

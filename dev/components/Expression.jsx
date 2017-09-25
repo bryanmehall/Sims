@@ -4,7 +4,7 @@ import ReactDOM from "react-dom"
 import {connect} from "react-redux"
 import { bindActionCreators } from 'redux'
 import QuantityActions from '../ducks/quantity/actions'
-import {getChildren} from '../ducks/widget/selectors'
+import {getChildren} from '../ducks/object/selectors'
 import Value from './Value'
 import EqText from './EqText'
 

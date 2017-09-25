@@ -3,7 +3,7 @@ import { connect } from "react-redux"
 import { bindActionCreators } from 'redux'
 import * as QuantityActions from '../ducks/quantity/actions'
 import { getValue } from '../ducks/quantity/selectors'
-import { getChildren } from '../ducks/widget/selectors'
+import { getChildren } from '../ducks/object/selectors'
 import { getContentBlocks } from '../ducks/content/selectors'
 import { Link } from 'react-router-dom'
 import { Route, Switch, Redirect } from 'react-router'
