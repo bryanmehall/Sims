@@ -51,7 +51,7 @@ export const getQuantityData = function (state, name) { //make this not avaliabl
 		} else if (name === 'zero') { //should this abstraction go here?
 			return {value:0, min:0, max:1, independent:true}
 		} else {
-			const quantityData = state.sim.quantity[name]
+			const quantityData = state.sim.object[name].props
 			if (quantityData === undefined) {
 				throw new Error(`can not find quantity named ${name}`)
 			}
@@ -72,17 +72,16 @@ export const getSymbol = (state, name) => (getQuantityData(state, name).symbol)
 
 export const getIndependent = (state, name) => (getQuantityData(state, name).independent || false)
 
-export const getAnimatable = (state, name) => (getQuantityData(state, name).hasOwnProperty('animation'))
+export const getAnimatable = (state, name) => (getQuantityData(state, name).hasOwnProperty('playing'))
 
 export const getColor = (state, name) => (getQuantityData(state, name).color || '#000000')
 
 export const getHighlighted = (state, name) => (getQuantityData(state, name).highlighted || false)
 
 export const getPlaying = (state, name) => {
-	var animatable = getAnimatable(state, name)
-
+	const animatable = getAnimatable(state, name)
 	if (animatable) {
-		return getQuantityData(state, name).animation.playing
+		return getQuantityData(state, name).playing
 	} else {
 		return false
 	}

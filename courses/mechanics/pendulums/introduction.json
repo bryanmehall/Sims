@@ -202,137 +202,187 @@
 					"massHighlight":0,
 					"anchorHighlight":0
 				}
-			}
+			},
 
-		},
-		"quantity": {
 			"bobX": {
-				"value": 0,
-				"min": -30,
-				"max": 30,
-				"previousValues":[],
-				"independent": false,
-				"symbol": "x",
-				"highlighted": false,
-				"color": "#ffa020"
+				"type":"quantity",
+				"props":{
+					"value": 0,
+					"min": -30,
+					"max": 30,
+					"previousValues":[],
+					"independent": false,
+					"symbol": "x",
+					"highlighted": false,
+					"color": "#ffa020"
+				}
 			},
 			"bobY": {
-				"value": -30,
-				"min": -50,
-				"max": 10,
-				"abstractions": 0,
-				"previousValues":[],
-				"independent": false,
-				"symbol": "y",
-				"highlighted": false
+				"type":"quantity",
+				"props":{
+					"value": -30,
+					"min": -50,
+					"max": 10,
+					"abstractions": 0,
+					"previousValues":[],
+					"independent": false,
+					"symbol": "y",
+					"highlighted": false
+				}
 			},
 			"theta0":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":true,
-				"symbol":"theta_0"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":true,
+					"symbol":"theta_0"
+				}
 			},
 			"theta":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":false,
-				"symbol":"theta"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":false,
+					"symbol":"theta"
+				}
 			},
 			"omega":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":false,
-				"symbol":"w"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":false,
+					"symbol":"w"
+				}
 			},
 			"length":{
-				"value":40,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"l"
+				"type":"quantity",
+				"props":{
+					"value":40,
+					"min":0,
+					"max":50,
+					"independent":true,
+					"symbol":"l"
+				}
 			},
 			"g":{
-				"value":-981,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"g"
+				"type":"quantity",
+				"props":{
+					"value":-981,
+					"min":0,
+					"max":50,
+					"independent":true,
+					"symbol":"g"
+				}
 			},
 			"m":{
-				"value":10,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"m"
+				"type":"quantity",
+				"props":{
+					"value":10,
+					"min":0,
+					"max":50,
+					"independent":true,
+					"symbol":"m"
+				}
 			},
 			"t":{
-				"value": 0,
-				"min": 0,
-				"max": 20,
-				"abstractions": 200,
-				"independent": true,
-				"symbol": "t",
-				"highlighted": false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value": 0,
+					"min": 0,
+					"max": 20,
+					"abstractions": 200,
+					"independent": true,
+					"symbol": "t",
+					"highlighted": false,
+					"color": "#0055ff"
+				}
 			},
 			"anchorX":{
-				"value":0,
-				"independent":true,
-				"min":-30,
-				"max":30
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":true,
+					"min":-30,
+					"max":30
+				}
 			},
 			"anchorY":{
-				"value":0,
-				"independent":true,
-				"min":-50,
-				"max":10
+				"type":"quantity",
+					"props":{
+					"value":0,
+					"independent":true,
+					"min":-50,
+					"max":10
+				}
 			},
 			"fg_x":{
-				"value":0,
-				"independent":true,
-				"min":0,
-				"max":10,
-				"symbol":"F_g",
-				"color": "rgba(255,0,0,0.5)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":true,
+					"min":0,
+					"max":10,
+					"symbol":"F_g",
+					"color": "rgba(255,0,0,0.5)"
+				}
 			},
 			"fg_y":{
-				"value":0,
-				"independent":false,
-				"min":0,
-				"max":10000,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":false,
+					"min":0,
+					"max":10000,
+					"color": "#0055ff"
+				}
 			},
 			"ft_x":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "rgba(255, 232, 0, 0.8)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "rgba(255, 232, 0, 0.8)"
+				}
 			},
 			"ft_y":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "#0055ff"
+				}
 			},
 			"fnet_x":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "rgba(0,0,255,0.5)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "rgba(0,0,255,0.5)"
+				}
 			},
 			"fnet_y":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "#0055ff"
+				}
 			}
-		}
+		},
+		"quantity":{}
 	}
 }

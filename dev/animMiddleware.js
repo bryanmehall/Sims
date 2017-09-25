@@ -75,7 +75,7 @@ export const animMiddleware = store => next => action => {
 		const prevTime = getAnimTime(state, courseId, partId, contentBlockId)
 		const activeTweens = getActiveTweens(prevTime, time, getKeyframes(state))
 		tween(store, activeTweens, time)
-	} else if (action.type === 'ANIM_PLAY') {
+	} else if (action.type === 'SET_PROP' && action.payload.prop === 'playing' && action.payload.value === true) {
 		requestAnimationFrame(animStart);
 	} else if (action.type === 'ANIM_STEP') {
 		requestAnimationFrame(animStep)
