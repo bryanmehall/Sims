@@ -3,7 +3,7 @@ import {connect} from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
 import {getValue, getQuantityData, getSymbol} from '../ducks/quantity/selectors'
-import {getChildren} from '../ducks/object/selectors'
+import {getChildren, getValue as getPropValue} from '../ducks/object/selectors'
 import {mathVarStyle} from './styles'
 import {CoordSys, Scale} from '../utils/scale'
 import Axis from './Axis'
@@ -123,11 +123,18 @@ function mapStateToProps(state, props) {
 		})
 		return quantities
 	}
+	const id = props.id
 	const xActive = props.xVars[0]
 	const yActive = props.yVars[0]
+
+	const posObject = getPropValue(state, id, "pos")
 	return {
 		xActive,
 		yActive,
+		pos:{
+			x: getPropValue(state, posObject, "x"),
+			y: getPropValue(state, posObject, "y")
+		},
 		xLabel: getSymbol(state, xActive),
 		yLabel: getSymbol(state, yActive),
 		xQuantities: getQuantities(props.xVars),

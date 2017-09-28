@@ -15,7 +15,9 @@ const setActive = (name, active) => ({
         value: active
 	}
 })
-
+const setActiveObject = (name) => (
+	setProp("app", "activeObject", name)
+)
 const addChild = (childName, name) => ({
 	type: "ADD_CHILD",
 	payload: {
@@ -43,5 +45,6 @@ export default {
 	addChild,
 	removeChild,
 	setProp,
-	setActive
+	setActive,
+	setActiveObject
 }
