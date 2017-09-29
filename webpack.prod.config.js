@@ -1,4 +1,4 @@
-var webpack    = require("webpack"),
+var webpack    = require("webpack")
 var baseConfig = require("./webpack.base.config.js");
 
 const nodeEnv = new webpack.DefinePlugin({
