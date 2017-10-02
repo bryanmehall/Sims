@@ -165,16 +165,14 @@
 				"props": {
 					"activeObject": ["app"],
 					"childElements": ["pendulumPlot"]
-				},
-				"children": [
-					"pendulumPlot"
-				]
+				}
 			},
-			"pendulumPlot":{
+			"pendulumPlot": {
 				"type": "Plot",
 					"props": {
 						"xVar": ["bobX"],
 						"yVar": ["bobY"],
+						"coordinateSystem":["pendulumCoordSys"],
 						"xVars": [
 							"bobX"
 						],
@@ -185,11 +183,39 @@
 						"height": 400,
 						"pos": ["plotPos"],
 						"visibility": 1,
-						"childElements":["pendulum"]
-					},
-					"children": [
-						"pendulum"
-					]
+						"childElements":["circle"]
+					}
+			},
+			"circle": {
+				"type":"Circle",
+				"props":{
+					"radius":["radiusExpression", "result"],
+					"centerPoint":["circleCenter"]
+				}
+			},
+			"radiusExpression":{
+				"type":"expression",
+				"props":{
+					"left": 50,
+					"right": 100,
+					"function": "add",
+					"result": { "function": "function", "args":[ "left", "right" ] }
+				}
+			},
+			"circleCenter": {
+				"type":"coordinatePoint",
+				"props":{
+					"x": 200,
+					"y": 100
+				}
+
+			},
+			"coordinateTransform":{
+				"type": "coordinateTransform",
+				"props":{
+					"from":"pendulumCoordSys",
+					"to":""
+				}
 			},
 			"plotPos": {
 				"type": "coordinatePoint",
@@ -201,16 +227,46 @@
 			"pendulum": {
 				"type": "Pendulum",
 				"props": {
-					"bobX":"bobX",
-					"bobY":"bobY",
-					"anchorX":"anchorX",
-					"anchorY":"anchorY",
-					"stringHighlight":0,
-					"massHighlight":0,
+					"length": "length",
+					"angle": "theta",
+					"anchorPos": "anchorPos",
+					"graphicalRepresentation":"pendulumDiagram",
+					"stringHighlight": 0,
+					"massHighlight": 0,
 					"anchorHighlight":0
 				}
 			},
-
+			"pendulumDiagram":{
+				"type": "Pendulum",
+				"props": {
+					"bobPos":["bobPos"]
+				}
+			},
+			"bobPos":{
+				"type":"coordinatePoint",
+				"props":{
+					"x": ["bobX"],
+					"y": ["bobY"],
+					"coordinateSystem": ["pendulumCoordSys"]
+				}
+			},
+			"anchorPos": {
+				"type": "coordinatePoint",
+				"props": {
+					"x": ["anchorX"],
+					"y": ["anchorY"],
+					"coordinateSystem": ["pendulumCoordSys"]
+				}
+			},
+			"pendulumCoordSys":{
+				"type":"coordSys",
+				"props":{
+					"xMin":-30,
+					"xMax":30,
+					"yMin": -50,
+					"yMax": 10
+				}
+			},
 			"bobX": {
 				"type":"quantity",
 				"props":{
@@ -268,11 +324,11 @@
 			"length":{
 				"type":"quantity",
 				"props":{
-					"value":40,
-					"min":0,
-					"max":50,
-					"independent":true,
-					"symbol":"l"
+					"value": 40,
+					"min": 0,
+					"max": 50,
+					"independent": true,
+					"symbol": "l"
 				}
 			},
 			"g":{

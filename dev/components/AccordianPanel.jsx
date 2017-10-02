@@ -32,13 +32,22 @@ class AccordianPanel extends React.Component {
 		const { objectId, attrs } = this.props
 		const navActive = (e) => { this.props.setActiveObject(e.target.id) }
 		const attributeTabs = attrs.map((attr) => (<AttributeTab key={attr} objectId={objectId} attrId={attr}/>))
-		const historyTabs = this.state.history.map((id) => (<span onClick={navActive} id={id} key={id}> > {id}</span>))
+		const historyTabs = this.state.history.map((id) => (
+			<span
+				onClick={navActive}
+				id={id}
+				style={{ cursor: 'pointer' }}
+				key={id}
+				> > {id}</span>
+
+		))
 		return (
 			<div
 				style={{
 					width: 800,
 					padding: 5,
-					backgroundColor: '#ddd'
+					backgroundColor: '#ddd',
+					overflow: 'auto'
 				}}
 				>
 				{historyTabs}

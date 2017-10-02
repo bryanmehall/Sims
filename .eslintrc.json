@@ -90,6 +90,7 @@
         "init-declarations": "error",
         "jsx-quotes": "error",
 		"react/jsx-uses-vars": "error",
+		"react/jsx-uses-react": "error",
         "key-spacing": "error",
         "keyword-spacing": [
             "error",

@@ -1,11 +1,11 @@
 import React from "react"
-import {connect} from "react-redux"
+import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
-import {getValue, getQuantityData, getSymbol} from '../ducks/quantity/selectors'
-import {getChildren, getValue as getPropValue} from '../ducks/object/selectors'
-import {mathVarStyle} from './styles'
-import {CoordSys, Scale} from '../utils/scale'
+import { getQuantityData, getSymbol } from '../ducks/quantity/selectors'
+import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
+import { mathVarStyle } from './styles'
+import { CoordSys, Scale } from '../utils/scale'
 import Axis from './Axis'
 import Abstraction from './Abstraction'
 import Mass from './Mass'
@@ -14,6 +14,7 @@ import Anchor from './Anchor'
 import Damper from './Damper'
 import Pendulum from './Pendulum'
 import Vector from './Vector'
+import Circle from './Circle'
 
 
 
@@ -31,16 +32,17 @@ class Plot extends React.Component {
 			yQuantities = this.props.yQuantities,
 			xQuantity = xQuantities[this.props.xActive],
 			yQuantity = yQuantities[this.props.yActive]
+		const { xMin, yMin, xMax, yMax } = this.props
 
 		var xScale = new Scale({//change to functional version
-			min: xQuantity.min,
-			max: xQuantity.max,
+			min: xMin,
+			max: xMax,
 			tMin: axisPadding,
 			tMax: width + axisPadding
 		})
 		var yScale = new Scale({
-			min: yQuantity.min,
-			max: yQuantity.max,
+			min: yMin,
+			max: yMax,
 			tMin: height+borderPadding,
 		  	tMax: borderPadding
 		})
@@ -53,15 +55,16 @@ class Plot extends React.Component {
 			Anchor: Anchor,
 			Damper: Damper,
 			Pendulum: Pendulum,
-			Vector: Vector
+			Vector: Vector,
+			Circle: Circle
 		}
 
 		function createChild(childData){
 			var type = childTypes[childData.type]
 			var props = childData.props
 			props.key = props.id
-			props.coordSys = coordSys
-			props.boundingRect = {xMin:axisPadding, xMax:axisPadding+width, yMin:height+borderPadding, yMax:borderPadding}
+			//props.coordSys = coordSys
+			//props.boundingRect = {xMin:axisPadding, xMax:axisPadding+width, yMin:height+borderPadding, yMax:borderPadding}
 			props.mask = plotId
 			return React.createElement(type, props)
 		}
@@ -128,9 +131,18 @@ function mapStateToProps(state, props) {
 	const yActive = props.yVars[0]
 
 	const posObject = getPropValue(state, id, "pos")
+	const coordSys = props.coordinateSystem
+	const xMin = getPropValue(state, coordSys, 'xMin')
+	const xMax = getPropValue(state, coordSys, 'xMax')
+	const yMin = getPropValue(state, coordSys, 'yMin')
+	const yMax = getPropValue(state, coordSys, 'yMax')
 	return {
 		xActive,
 		yActive,
+		xMin,
+		yMin,
+		xMax,
+		yMax,
 		pos:{
 			x: getPropValue(state, posObject, "x"),
 			y: getPropValue(state, posObject, "y")

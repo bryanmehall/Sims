@@ -35,7 +35,10 @@ export const initialState = {
 		object: {
 			"app": {
 				"type": "SmdApp",
-				"props": { loading: true },
+				"props": {
+					loading: true,
+					childElements: []
+				},
 				"children": [
 				]
 			}
