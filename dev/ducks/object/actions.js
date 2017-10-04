@@ -1,5 +1,3 @@
-import types from "./types";
-
 const addObject = (name, type, props, children) => ({
 	type: "ADD_OBJECT",
 	payload: {

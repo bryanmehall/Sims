@@ -39,7 +39,7 @@ const AttributeTab = ({ objectId, attrId, definition, value, setProp, setActiveO
 			</span>
 		)
 	} else if (definition.hasOwnProperty('function')) {
-		definitionDisp = 'function primitive'
+		definitionDisp = `${definition.function} primitive`
 		valueDisp = JSON.stringify(value)
 	} else if (typeof value === 'number'){ //number primitive
 		const numberChange = (e) => {

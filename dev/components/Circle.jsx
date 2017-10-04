@@ -1,17 +1,16 @@
 import React from "react"
 import PropTypes from 'prop-types'
-import {connect} from "react-redux"
-import {getValue, getColor, getHighlighted, getTransformedValue, getCoordSys, getQuantityData} from '../ducks/quantity/selectors'
-import {getCurrentCourseId, getCurrentPartId, getCurrentContentBlockId} from '../ducks/content/selectors'
-import {getChildren, getValue as getPropValue} from '../ducks/object/selectors'
+import { connect } from "react-redux"
+import { getValue, getColor, getHighlighted, getTransformedValue, getCoordSys, getQuantityData } from '../ducks/quantity/selectors'
+import { getCurrentCourseId, getCurrentPartId, getCurrentContentBlockId } from '../ducks/content/selectors'
+import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
 import Draggable from "./Draggable"
-import {HighlightFilter} from './filters'
+import { HighlightFilter } from './filters'
 
 
 
 
 class Circle extends React.Component {
-
 	render() {
 		const { radius, cx, cy } = this.props
 		return (

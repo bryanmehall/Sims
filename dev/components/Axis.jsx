@@ -1,6 +1,6 @@
 import React from 'react';
 import { dist, angle, rotate } from '../utils/point'
-import {axisLabelStyle} from './styles'
+import { axisLabelStyle } from './styles'
 
 function tickValues(min, max){
 	var spacing = tickSpacing(min, max)
@@ -13,7 +13,7 @@ function tickValues(min, max){
 	}
 	return values
 
-	function tickSpacing(min, max, minTics=5, maxTics=8, niceValues=[ 1,2,5 ]) {
+	function tickSpacing(min, max, minTics=5, maxTics=8, niceValues=[1,2,5]) {
 		var range = max - min
 		var nearestOrderOfMagnitude = Math.floor(Math.log10(range))
 		var niceRange = Math.pow(10.0, nearestOrderOfMagnitude)

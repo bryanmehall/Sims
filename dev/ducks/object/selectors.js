@@ -27,12 +27,16 @@ export const getDef = (state, name, prop) => (
 	getProp(state, name, prop)
 )
 const primitives = { //move to new file?
-	add: (args) => (args[0]+args[1])
-
+	//numbers
+	add: (args) => (args[0]+args[1]),
+	multiply: (args) => (args[0]*args[1]),
+	//strings
+	concat: (args) => (args.join(""))
 }
 
 export const getValue = (state, name, prop) => {
 	const def = getDef(state, name, prop)
+	console.log(name, prop, def)
 	const jsType = typeof def
 	if (jsType === 'number' || jsType === 'string' || jsType === 'boolean'){
 		return def

@@ -24,6 +24,7 @@
     "numeric": "1.2.6",
     "prop-types": "^15.5.10",
     "react": "^15.5.4",
+    "react-autocomplete": "^1.7.1",
     "react-collapse": "^4.0.2",
     "react-cursor-position": "^2.1.0",
     "react-dom": "^15.5.4",
