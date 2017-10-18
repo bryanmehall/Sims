@@ -163,65 +163,211 @@
 			"app": {
 				"type": "SmdApp",
 				"props": {
-					"activeObject": ["app"],
-					"childElements": ["pendulumPlot"]
+					"activeObject": "app",
+					"childElements": "appChildren"
+				}
+			},
+			"appChildren": {
+				"type":"set",
+				"props": {
+					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
 				}
 			},
 			"pendulumPlot": {
 				"type": "Plot",
 					"props": {
-						"xVar": ["bobX"],
-						"yVar": ["bobY"],
-						"coordinateSystem":["pendulumCoordSys"],
-						"xVars": [
-							"bobX"
-						],
-						"yVars": [
-							"bobY"
-						],
-						"width": 400,
-						"height": 400,
-						"pos": ["plotPos"],
-						"visibility": 1,
-						"childElements":["circle"]
+						"xVar": "bobX",
+						"yVar": "bobY",
+						"coordinateSystem":"pendulumCoordSys",
+						"xVars": "bobX",
+						"yVars": "bobY",
+						"width": "plotWidth",
+						"height": "plotHeight",
+						"pos": "plotPos",
+						"visibility": "plotVisibility",
+						"childElements":"plotChildren"
 					}
+			},
+			"plotVisibility":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 1}
+				}
+			},
+			"plotChildren":{
+				"type": "set",
+				"props":{
+					"jsPrimitive": {"type":"set", "elements":["circle", "circle1"]}
+				}
+			},
+			"plotWidth":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 400}
+				}
+			},
+			"plotHeight":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 450}
+				}
+			},
+			"plotPos": {
+				"type": "coordinatePoint",
+				"props": {
+					"x": "plotX",
+					"y": "plotY"
+				}
+			},
+			"plotX":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 50}
+				}
+			},
+			"plotY":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 500}
+				}
+			},
+			"pendulumCoordSys":{
+				"type":"coordSys",
+				"props":{
+					"xMin":"xMin",
+					"xMax":"xMax",
+					"yMin":"yMin",
+					"yMax":"yMax"
+				}
+			},
+			"xMin":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": -30}
+				}
+			},
+			"xMax":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 30}
+				}
+			},
+			"yMin":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": -50}
+				}
+			},
+			"yMax":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 10}
+				}
 			},
 			"circle": {
 				"type":"Circle",
 				"props":{
-					"radius":["radiusExpression", "result"],
-					"centerPoint":["circleCenter"]
+					"radius":"getCircleRadius",
+					"centerPoint":"circleCenter",
+					"jsPrimitive":{ "type": "circle" }
+				}
+			},
+			"getCircleRadius": {
+				"type":"get",
+				"props":{
+					"jsPrimitive": {"type": "get"},
+					"rootObject": "radiusExpression",
+					"attribute": "numericalEquiv"
 				}
 			},
 			"radiusExpression":{
 				"type":"expression",
 				"props":{
-					"left": 50,
-					"right": 100,
-					"function": "add",
-					"result": { "function": "function", "args":[ "left", "right" ] }
+					"left": "radiusLeft",
+					"right": "radiusRight",
+					"function": "additionFunction",
+					"numericalEquiv": "radiusResult",
+					"jsPrimitive": { "type":"apply" }
+				}
+			},
+			"numericalEquiv":{
+				"type":"attribute",
+				"props":{
+
+				}
+			},
+			"additionFunction":{
+				"type": "function",
+				"props": {
+					"jsPrimitive": { "type":"function", "function": "add"}
+				}
+			},
+			"radiusLeft":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 50}
+				}
+			},
+			"radiusResult":{
+				"type":"number",
+				"props":{
+					"numericalEquiv": "radiusExpression",
+					"jsPrimitive": { "type": "number" }
+				}
+			},
+			"radiusRight":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 100}
 				}
 			},
 			"circleCenter": {
 				"type":"coordinatePoint",
 				"props":{
-					"x": 200,
-					"y": 100
+					"x": "radiusX",
+					"y": "radiusY"
 				}
 
+			},
+			"radiusX":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 250}
+				}
+			},
+			"radiusY":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 200}
+				}
+			},
+			"circle1": {
+				"type":"Circle",
+				"props":{
+					"radius":"getCircleRadius",
+					"centerPoint":"circle1Center",
+					"jsPrimitive":{ "type": "circle" }
+				}
+			},
+			"circle1Center": {
+				"type":"coordinatePoint",
+				"props":{
+					"x": "radiusX",
+					"y": "radiusY1"
+				}
+
+			},
+			"radiusY1":{
+				"type":"number",
+				"props":{
+					"jsPrimitive": {"type": "number", "value": 100}
+				}
 			},
 			"coordinateTransform":{
 				"type": "coordinateTransform",
 				"props":{
 					"from":"pendulumCoordSys",
 					"to":""
-				}
-			},
-			"plotPos": {
-				"type": "coordinatePoint",
-				"props": {
-					"x": 50,
-					"y": 450
 				}
 			},
 			"pendulum": {
@@ -239,34 +385,26 @@
 			"pendulumDiagram":{
 				"type": "Pendulum",
 				"props": {
-					"bobPos":["bobPos"]
+					"bobPos":"bobPos"
 				}
 			},
 			"bobPos":{
 				"type":"coordinatePoint",
 				"props":{
-					"x": ["bobX"],
-					"y": ["bobY"],
-					"coordinateSystem": ["pendulumCoordSys"]
+					"x": "bobX",
+					"y": "bobY",
+					"coordinateSystem": "pendulumCoordSys"
 				}
 			},
 			"anchorPos": {
 				"type": "coordinatePoint",
 				"props": {
-					"x": ["anchorX"],
-					"y": ["anchorY"],
-					"coordinateSystem": ["pendulumCoordSys"]
+					"x": "anchorX",
+					"y": "anchorY",
+					"coordinateSystem": "pendulumCoordSys"
 				}
 			},
-			"pendulumCoordSys":{
-				"type":"coordSys",
-				"props":{
-					"xMin":-30,
-					"xMax":30,
-					"yMin": -50,
-					"yMax": 10
-				}
-			},
+
 			"bobX": {
 				"type":"quantity",
 				"props":{

@@ -5,7 +5,6 @@ import * as QuantityActions from '../ducks/quantity/actions';
 import { getQuantityData, getSymbol } from '../ducks/quantity/selectors'
 import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
 import { mathVarStyle } from './styles'
-import { CoordSys, Scale } from '../utils/scale'
 import Axis from './Axis'
 import Abstraction from './Abstraction'
 import Mass from './Mass'
@@ -21,36 +20,16 @@ import Circle from './Circle'
 
 class Plot extends React.Component {
 	render(){
-		var plotId = this.props.id,
-			width = this.props.width,//width in px from axis min
-			height = this.props.height,//height in px from axis min
-			pos = this.props.pos,
-			axisPadding = 50,
-			borderPadding = 10,
-			visibility = this.props.visibility !== undefined ? this.props.visibility: 1,
-			xQuantities = this.props.xQuantities,
-			yQuantities = this.props.yQuantities,
-			xQuantity = xQuantities[this.props.xActive],
-			yQuantity = yQuantities[this.props.yActive]
-		const { xMin, yMin, xMax, yMax } = this.props
 
-		var xScale = new Scale({//change to functional version
-			min: xMin,
-			max: xMax,
-			tMin: axisPadding,
-			tMax: width + axisPadding
-		})
-		var yScale = new Scale({
-			min: yMin,
-			max: yMax,
-			tMin: height+borderPadding,
-		  	tMax: borderPadding
-		})
-		var coordSys = new CoordSys(xScale, yScale)
+		const	axisPadding = 50,
+			borderPadding = 10,
+			visibility = this.props.visibility === undefined ? 1 : this.props.visibility//do not use or because 0 i sfalse
+
+		const { xMin, yMin, xMax, yMax, plotId, width, height, pos } = this.props
 
 		var childTypes = {
 			Abstraction: Abstraction,
-			Mass:Mass,
+			Mass: Mass,
 			Spring: Spring,
 			Anchor: Anchor,
 			Damper: Damper,
@@ -65,17 +44,17 @@ class Plot extends React.Component {
 			props.key = props.id
 			//props.coordSys = coordSys
 			//props.boundingRect = {xMin:axisPadding, xMax:axisPadding+width, yMin:height+borderPadding, yMax:borderPadding}
-			props.mask = plotId
 			return React.createElement(type, props)
 		}
+
 		var children = this.props.childData.map(createChild)
 		return (
 			<svg
 				style={{
-					position:"absolute",
-					left:pos.x-axisPadding,
+					position: "absolute",
+					left: pos.x-axisPadding,
 					//backgroundColor:'gray',//for debug
-					top:pos.y-height
+					top: pos.y-height
 				}}
 				width={width+axisPadding+borderPadding}
 				height={height+axisPadding+borderPadding}
@@ -88,20 +67,20 @@ class Plot extends React.Component {
 					</defs>
 					{children}
 					<Axis
-						min={xScale.min}
-						max={xScale.max}
-						p1={{x:axisPadding, y:height+borderPadding}}
-						p2={{x:width+axisPadding, y:height+borderPadding}}
+						min={xMin}
+						max={xMax}
+						p1={{ x: axisPadding, y: height+borderPadding }}
+						p2={{ x: width+axisPadding, y: height+borderPadding }}
 						offs={15}
 						/>
 					<text
 						x={width/2+axisPadding} y={height+axisPadding} textAnchor="middle" style={mathVarStyle}>{this.props.xLabel}
 					</text>
 					<Axis
-						min={yScale.min}
-						max={yScale.max}
-						p1={{x:axisPadding, y:height+borderPadding}}
-						p2={{x:axisPadding, y:borderPadding}}
+						min={yMin}
+						max={yMax}
+						p1={{ x: axisPadding, y: height+borderPadding }}
+						p2={{ x: axisPadding, y: borderPadding }}
 						offs={-15}
 						/>
 					<text
@@ -132,10 +111,10 @@ function mapStateToProps(state, props) {
 
 	const posObject = getPropValue(state, id, "pos")
 	const coordSys = props.coordinateSystem
-	const xMin = getPropValue(state, coordSys, 'xMin')
-	const xMax = getPropValue(state, coordSys, 'xMax')
-	const yMin = getPropValue(state, coordSys, 'yMin')
-	const yMax = getPropValue(state, coordSys, 'yMax')
+	const xMin = getPropValue(state, getPropValue(state, coordSys, 'xMin'), 'jsPrimitive')
+	const xMax = getPropValue(state, getPropValue(state, coordSys, 'xMax'), 'jsPrimitive')
+	const yMin = getPropValue(state, getPropValue(state, coordSys, 'yMin'), 'jsPrimitive')
+	const yMax = getPropValue(state, getPropValue(state, coordSys, 'yMax'), 'jsPrimitive')
 	return {
 		xActive,
 		yActive,
@@ -144,13 +123,15 @@ function mapStateToProps(state, props) {
 		xMax,
 		yMax,
 		pos:{
-			x: getPropValue(state, posObject, "x"),
-			y: getPropValue(state, posObject, "y")
+			x: getPropValue(state, getPropValue(state, posObject, "x"), 'jsPrimitive'),
+			y: getPropValue(state, getPropValue(state, posObject, "y"), 'jsPrimitive')
 		},
-		xLabel: getSymbol(state, xActive),
-		yLabel: getSymbol(state, yActive),
-		xQuantities: getQuantities(props.xVars),
-		yQuantities: getQuantities(props.yVars),
+		width: getPropValue(state, getPropValue(state, id, "width"), 'jsPrimitive'),
+		height: getPropValue(state, getPropValue(state, id, "height"), 'jsPrimitive'),
+		//xLabel: getSymbol(state, xActive),
+		//yLabel: getSymbol(state, yActive),
+		//xQuantities: getQuantities(props.xVars),
+		//yQuantities: getQuantities(props.yVars),
 		childData: getChildren(state,props.id)
 	};
 }

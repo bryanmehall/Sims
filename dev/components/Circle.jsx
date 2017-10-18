@@ -37,10 +37,9 @@ Circle.defaultProps = {
 function mapStateToProps(state, props) {
 	const posObject = getPropValue(state, props.id, 'centerPoint')
 	return {
-		radius: getPropValue(state, props.id, 'radius'),
-		cx: getPropValue(state, posObject, 'x'),
-		cy: getPropValue(state, posObject, 'y')
-
+		radius: getPropValue(state, getPropValue(state, props.id, 'radius'), 'jsPrimitive'),
+		cx: getPropValue(state, getPropValue(state, posObject, 'x'), 'jsPrimitive'),
+		cy: getPropValue(state, getPropValue(state, posObject, 'y'), 'jsPrimitive')
 	}
 }
 

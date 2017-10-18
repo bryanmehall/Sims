@@ -4,7 +4,7 @@ import { bindActionCreators } from 'redux';
 import SimActions from '../ducks/sim/actions'
 import { getLoadState } from '../ducks/sim/selectors'
 import { getValue } from '../ducks/quantity/selectors'
-import { getChildren } from '../ducks/object/selectors'
+import { getChildren, getObjects, getValue as getPropValue } from '../ducks/object/selectors'
 import Video from './Video'
 
 import Plot from './Plot'
@@ -101,10 +101,17 @@ class Sim extends React.Component {
 
 
 function mapStateToProps(state, props) {
-	return {
-		childData: getChildren(state, 'app'),
-		loadState: getLoadState(state)
+	const loadState = getLoadState(state)
+	if (loadState === 'loading'){
+		return {loadState, childData:[]}
+	} else {
+		const childData = getChildren(state, 'app')
+		return {
+			childData,
+			loadState
+		}
 	}
+
 }
 
 function mapDispatchToProps(dispatch) {

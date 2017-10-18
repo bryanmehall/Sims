@@ -1,8 +1,9 @@
-const getObject = function (state, id) {
+// todo: enumerate object constants
+
+export const getObject = function (state, id) {
 	const objectState = state.sim.object
 	try {
 		var objectData = Object.assign({}, objectState[id])
-
 		objectData.props.id = id
 	} catch (e){
 		throw new Error("could not find object named "+id)
@@ -28,43 +29,92 @@ export const getDef = (state, name, prop) => (
 )
 const primitives = { //move to new file?
 	//numbers
-	add: (args) => (args[0]+args[1]),
+	add: {
+		func: (args) => (args[0]+args[1]),
+		args: ['left', 'right'],
+		ret: ['result']
+	},
 	multiply: (args) => (args[0]*args[1]),
 	//strings
 	concat: (args) => (args.join(""))
 }
 
+
 export const getValue = (state, name, prop) => {
+
 	const def = getDef(state, name, prop)
-	console.log(name, prop, def)
-	const jsType = typeof def
-	if (jsType === 'number' || jsType === 'string' || jsType === 'boolean'){
-		return def
-	} else if (def.length === 0) {
-		return null
-	} else if (def.hasOwnProperty('function')) {
-		const args = def.args.map((arg) => (getValue(state, name, arg)))
-		const fn = getValue(state, name, def.function)
-		return primitives[fn](args)
-	} else {
-		//in the form [object, prop1, prop2...]
-		return def.reduce((objectId, propId) => (getValue(state, objectId, propId)))
+	if (def === undefined){
+		throw new Error(`def is undefined for ${prop} of ${name}`)
 	}
-	//extend child elements for multiple children
+	if (prop === 'jsPrimitive') {
+		switch (def.type) {
+			case 'number': {
+				if (def.hasOwnProperty('value')) {
+					return def.value
+				} else {
+					//make this so it can search between objects in a set if multiple things are equivalent
+					const equivObject = getValue(state, name, 'numericalEquiv')
+					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					return equivValue
+				}
+			}
+			case 'function': {
+				return def.function
+			}
+			case 'apply': {
+				const functionName = getValue(state, getValue(state, name, 'function'), 'jsPrimitive') //get js primitive of function
+				const functionPrimitive = primitives[functionName]
+				const argNames = functionPrimitive.args
+				const func = functionPrimitive.func
+				//for each: get jsPrimitive of argument
+				const args = argNames.map((argName) => (getValue(state, getValue(state, name, argName), 'jsPrimitive')))
+				const result = func(args)
+				return result
+			}
+			case 'set': {
+				return def.elements
+			}
+			case 'get': {
+				return def
+			}
+			case 'circle': {
+				return def
+			}
+			default: {
+				throw new Error(`unknown type, def: ${def}`)
+			}
+		}
+	} else {
+		const objectData = getObject(state, def)
+		if (objectData.type === 'get' && prop !== 'rootObject' && prop !== 'attribute') { //this will need to work for sets
+			const rootObject = getValue(state, def, 'rootObject')
+			const property = getDef(state, def, 'attribute')
+			const value = getValue(state, rootObject, property)
+			return value
+		}
+		return def
+	}
 }
 
-export const listProps = function(state, name){
+export const listProps = (state, name) => {
 	const objectData = getObject(state, name)
 	return Object.keys(objectData.props)
 }
 
+export const listMatchingObjects = (state, query) => {
+	//for now this does objectId but it needs to be updated to search for names, ....
+	const keys = Object.keys(state.sim.object)
+	const matches = keys.filter((id) => (id.includes(query)))
+	return matches
+}
 
 export const getChildren = function (state, id) {
 	const childId = getValue(state, id, "childElements") //extend for sets
 	if (childId === null){ //remove this condition for multiple children and replace with reduce
 		return []
 	} else {
-		return [getObject(state, childId)]
+		const childElements = getValue(state, childId, 'jsPrimitive')
+		return childElements.map((childId) => (getObject(state, childId)))
 	}
 
 	/*var objectData = getObject(state, id)
