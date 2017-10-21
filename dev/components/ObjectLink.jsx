@@ -34,11 +34,9 @@ const UnconnectedObjectLink = ({ objectId, objectData, setActiveObject }) => {
 		</div>
 	)
 }
-const mapStateToProps = (state, props) => {
-	return {
-		objectData: getObject(state, props.objectId)
-	}
-}
+const mapStateToProps = (state, props) => ({
+	objectData: getObject(state, props.objectId)
+})
 
 const mapDispatchToProps = (dispatch) => ({
 	setProp: (objectId, attrId, value) => {

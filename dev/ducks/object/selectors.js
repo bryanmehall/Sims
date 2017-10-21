@@ -1,4 +1,4 @@
-// todo: enumerate object constants
+
 
 export const getObject = function (state, id) {
 	const objectState = state.sim.object
@@ -58,6 +58,26 @@ export const getValue = (state, name, prop) => {
 					return equivValue
 				}
 			}
+			case 'bool': {
+				if (def.hasOwnProperty('value')) {
+					return def.value
+				} else {
+					//make this so it can search between objects in a set if multiple things are equivalent
+					const equivObject = getValue(state, name, 'logicalEquiv')
+					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					return equivValue
+				}
+			}
+			case 'string': {
+				if (def.hasOwnProperty('value')) {
+					return def.value
+				} else {
+					//make this so it can search between objects in a set if multiple things are equivalent
+					const equivObject = getValue(state, name, 'stringEquiv')
+					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					return equivValue
+				}
+			}
 			case 'function': {
 				return def.function
 			}
@@ -75,10 +95,10 @@ export const getValue = (state, name, prop) => {
 				return def.elements
 			}
 			case 'get': {
-				return def
+				return 'get primitive'
 			}
 			case 'circle': {
-				return def
+				return 'circle primitive'
 			}
 			default: {
 				throw new Error(`unknown type, def: ${def}`)

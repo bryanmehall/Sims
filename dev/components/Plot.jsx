@@ -2,7 +2,6 @@ import React from "react"
 import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
-import { getQuantityData, getSymbol } from '../ducks/quantity/selectors'
 import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
 import { mathVarStyle } from './styles'
 import Axis from './Axis'
@@ -14,9 +13,6 @@ import Damper from './Damper'
 import Pendulum from './Pendulum'
 import Vector from './Vector'
 import Circle from './Circle'
-
-
-
 
 class Plot extends React.Component {
 	render(){
@@ -98,13 +94,6 @@ class Plot extends React.Component {
 }
 
 function mapStateToProps(state, props) {
-	function getQuantities(quantityList){
-		var quantities = {}
-		quantityList.forEach(function(name){
-			quantities[name] = getQuantityData(state, name)
-		})
-		return quantities
-	}
 	const id = props.id
 	const xActive = props.xVars[0]
 	const yActive = props.yVars[0]
@@ -122,7 +111,7 @@ function mapStateToProps(state, props) {
 		yMin,
 		xMax,
 		yMax,
-		pos:{
+		pos: {
 			x: getPropValue(state, getPropValue(state, posObject, "x"), 'jsPrimitive'),
 			y: getPropValue(state, getPropValue(state, posObject, "y"), 'jsPrimitive')
 		},

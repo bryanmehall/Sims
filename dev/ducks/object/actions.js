@@ -1,7 +1,7 @@
-const addObject = (name, type, props, children) => ({
+const addObject = (name, type, props) => ({ // this used to have children and removing them could cause problems with animation
 	type: "ADD_OBJECT",
 	payload: {
-		name, type, props, children
+		name, type, props //remove type
 	}
 })
 
@@ -35,8 +35,6 @@ const setProp = (name, prop, value) => ({
 		name, prop, value
 	}
 })
-
-
 
 export default {
 	addObject,

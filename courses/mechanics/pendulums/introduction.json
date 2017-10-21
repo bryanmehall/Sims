@@ -163,19 +163,42 @@
 			"app": {
 				"type": "SmdApp",
 				"props": {
+					"name":"app",
 					"activeObject": "app",
 					"childElements": "appChildren"
+				}
+			},
+			"undef":{
+				"type":"undef",
+				"props":{
+					"name":"undef"
+				}
+			},
+			"true":{
+				"type":"bool",
+				"props":{
+					"name":"true",
+					"jsPrimitive": {"type":"bool", "value":true}
+				}
+			},
+			"false":{
+				"type":"bool",
+				"props":{
+					"name":"false",
+					"jsPrimitive": {"type":"bool", "value":true}
 				}
 			},
 			"appChildren": {
 				"type":"set",
 				"props": {
+					"name":"appChildren",
 					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
 				}
 			},
 			"pendulumPlot": {
 				"type": "Plot",
 					"props": {
+						"name":"pendulumPlot",
 						"xVar": "bobX",
 						"yVar": "bobY",
 						"coordinateSystem":"pendulumCoordSys",
@@ -191,30 +214,35 @@
 			"plotVisibility":{
 				"type":"number",
 				"props":{
+					"name":"plotVisibility",
 					"jsPrimitive": {"type": "number", "value": 1}
 				}
 			},
 			"plotChildren":{
 				"type": "set",
 				"props":{
+					"name":"plotChildren",
 					"jsPrimitive": {"type":"set", "elements":["circle", "circle1"]}
 				}
 			},
 			"plotWidth":{
 				"type":"number",
 				"props":{
+					"name":"plotWidth",
 					"jsPrimitive": {"type": "number", "value": 400}
 				}
 			},
 			"plotHeight":{
 				"type":"number",
 				"props":{
+					"name":"plotHeight",
 					"jsPrimitive": {"type": "number", "value": 450}
 				}
 			},
 			"plotPos": {
 				"type": "coordinatePoint",
 				"props": {
+					"name":"plotPos",
 					"x": "plotX",
 					"y": "plotY"
 				}
@@ -222,18 +250,21 @@
 			"plotX":{
 				"type":"number",
 				"props":{
+					"name":"plotX",
 					"jsPrimitive": {"type": "number", "value": 50}
 				}
 			},
 			"plotY":{
 				"type":"number",
 				"props":{
+					"name":"plotY",
 					"jsPrimitive": {"type": "number", "value": 500}
 				}
 			},
 			"pendulumCoordSys":{
 				"type":"coordSys",
 				"props":{
+					"name":"pendulumCoordSys",
 					"xMin":"xMin",
 					"xMax":"xMax",
 					"yMin":"yMin",
@@ -243,30 +274,35 @@
 			"xMin":{
 				"type":"number",
 				"props":{
+					"name":"xMin",
 					"jsPrimitive": {"type": "number", "value": -30}
 				}
 			},
 			"xMax":{
 				"type":"number",
 				"props":{
+					"name":"xMax",
 					"jsPrimitive": {"type": "number", "value": 30}
 				}
 			},
 			"yMin":{
 				"type":"number",
 				"props":{
+					"name":"yMin",
 					"jsPrimitive": {"type": "number", "value": -50}
 				}
 			},
 			"yMax":{
 				"type":"number",
 				"props":{
+					"name":"yMax",
 					"jsPrimitive": {"type": "number", "value": 10}
 				}
 			},
 			"circle": {
 				"type":"Circle",
 				"props":{
+					"name":"circle",
 					"radius":"getCircleRadius",
 					"centerPoint":"circleCenter",
 					"jsPrimitive":{ "type": "circle" }
@@ -275,6 +311,7 @@
 			"getCircleRadius": {
 				"type":"get",
 				"props":{
+					"name":"getCircleRadius",
 					"jsPrimitive": {"type": "get"},
 					"rootObject": "radiusExpression",
 					"attribute": "numericalEquiv"
@@ -283,34 +320,46 @@
 			"radiusExpression":{
 				"type":"expression",
 				"props":{
+					"name":"radiusExpression",
 					"left": "radiusLeft",
 					"right": "radiusRight",
 					"function": "additionFunction",
 					"numericalEquiv": "radiusResult",
+					"textRep": "expressionText",
 					"jsPrimitive": { "type":"apply" }
+				}
+			},
+			"expressionText":{
+				"type": "string",
+				"props":{
+					"name":"expressionText",
+					"jsPrimitive":{"type": "string", "value":"3+2"}
 				}
 			},
 			"numericalEquiv":{
 				"type":"attribute",
 				"props":{
-
+					"name":"numericalEquiv"
 				}
 			},
 			"additionFunction":{
 				"type": "function",
 				"props": {
+					"name":"additionFunction",
 					"jsPrimitive": { "type":"function", "function": "add"}
 				}
 			},
 			"radiusLeft":{
 				"type":"number",
 				"props":{
+					"name":"radiusLeft",
 					"jsPrimitive": {"type": "number", "value": 50}
 				}
 			},
 			"radiusResult":{
 				"type":"number",
 				"props":{
+					"name":"radiusResult",
 					"numericalEquiv": "radiusExpression",
 					"jsPrimitive": { "type": "number" }
 				}
@@ -318,12 +367,14 @@
 			"radiusRight":{
 				"type":"number",
 				"props":{
+					"name":"radiusRight",
 					"jsPrimitive": {"type": "number", "value": 100}
 				}
 			},
 			"circleCenter": {
 				"type":"coordinatePoint",
 				"props":{
+					"name":"circleCenter",
 					"x": "radiusX",
 					"y": "radiusY"
 				}
@@ -332,40 +383,54 @@
 			"radiusX":{
 				"type":"number",
 				"props":{
+					"name":"radiusX",
 					"jsPrimitive": {"type": "number", "value": 250}
 				}
 			},
 			"radiusY":{
 				"type":"number",
 				"props":{
+					"name":"radiusY",
 					"jsPrimitive": {"type": "number", "value": 200}
 				}
 			},
 			"circle1": {
 				"type":"Circle",
 				"props":{
+					"name":"circle1",
 					"radius":"getCircleRadius",
 					"centerPoint":"circle1Center",
+					"expanded":"expandedBool",
 					"jsPrimitive":{ "type": "circle" }
+				}
+			},
+			"expandedBool":{
+				"type":"bool",
+				"props": {
+					"name":"expandedBool",
+					"jsPrimitive": {"type":"bool", "value":false}
 				}
 			},
 			"circle1Center": {
 				"type":"coordinatePoint",
 				"props":{
+					"name":"circle1Center",
 					"x": "radiusX",
 					"y": "radiusY1"
 				}
 
 			},
-			"radiusY1":{
-				"type":"number",
+			"radiusY1": {
+				"type": "number",
 				"props":{
+					"name":"radiusY1",
 					"jsPrimitive": {"type": "number", "value": 100}
 				}
 			},
 			"coordinateTransform":{
 				"type": "coordinateTransform",
 				"props":{
+					"name":"coordinateTransform",
 					"from":"pendulumCoordSys",
 					"to":""
 				}
@@ -373,6 +438,7 @@
 			"pendulum": {
 				"type": "Pendulum",
 				"props": {
+					"name":"pendulum",
 					"length": "length",
 					"angle": "theta",
 					"anchorPos": "anchorPos",
@@ -385,12 +451,14 @@
 			"pendulumDiagram":{
 				"type": "Pendulum",
 				"props": {
+					"name":"pendulumDiagram",
 					"bobPos":"bobPos"
 				}
 			},
 			"bobPos":{
 				"type":"coordinatePoint",
 				"props":{
+					"name":"bobPos",
 					"x": "bobX",
 					"y": "bobY",
 					"coordinateSystem": "pendulumCoordSys"
@@ -399,6 +467,7 @@
 			"anchorPos": {
 				"type": "coordinatePoint",
 				"props": {
+					"name":"anchorPos",
 					"x": "anchorX",
 					"y": "anchorY",
 					"coordinateSystem": "pendulumCoordSys"
