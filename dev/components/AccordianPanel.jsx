@@ -47,7 +47,8 @@ class AccordianPanel extends React.Component {
 					width: 800,
 					padding: 5,
 					backgroundColor: '#ddd',
-					overflow: 'auto'
+					maxHeight: '800',
+					overflowY: 'auto'
 				}}
 				>
 				{historyTabs}

@@ -86,11 +86,13 @@ class Sim extends React.Component {
 		}
 		const children = this.props.childData.map(createChild)
 
-		const loadingIcon = (<div >Loading</div>)
-		const content =  children
+		const loadingIcon = (<div>Loading</div>)
+		const content = children
 
 		return (
-			<div style={simCardStyle}>
+			<div
+				style={simCardStyle}
+				onMouseEvent = {(e) => {console.log(e)}} >
 				{/*this.props.loadState === "loading" ? loadingIcon : null*/ }
 				{this.props.loadState === 'error' ? 'Error: Failed to Load Simulation' : null}
 				{content}

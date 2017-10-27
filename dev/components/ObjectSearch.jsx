@@ -20,8 +20,10 @@ class ObjectSearch extends React.Component {
 			const charCode = (typeof e.which == "number") ? e.which : e.keyCode
 			if (charCode === 13){ //backslash is keycode 92
 				if (self.state.newObject){
-					self.props.createInstance(value)
-					self.props.setProp(self.props.objectId, self.props.attrId, value+'1')
+					const randInt = Math.floor(Math.random()*1000000).toString(16) //do not use for more than proof of concept
+					const id = `${value}_${randInt}`
+					self.props.createInstance(value, id)
+					self.props.setProp(self.props.objectId, self.props.attrId, `search(${value})`)
 				} else {
 					self.props.setProp(self.props.objectId, self.props.attrId, value)
 				}
@@ -44,7 +46,6 @@ class ObjectSearch extends React.Component {
 }
 
 const mapStateToProps = (state, props) => ({
-
 })
 
 const mapDispatchToProps = (dispatch) => ({
@@ -54,8 +55,11 @@ const mapDispatchToProps = (dispatch) => ({
 	setActiveObject: (id) => {
 		dispatch(ObjectActions.setActiveObject(id))
 	},
-	createInstance: (type) => {
-		dispatch(ObjectActions.addObject(type+'1', type, { jsPrimitive: {type:'number', value:50}}))
+	createInstance: (searchQuerry, id) => {
+		//creating instance should be broken down into creating empty object and adding attributes to it
+		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { jsPrimitive: { type: 'search', querry: searchQuerry, id: id }}))
+
+		dispatch(ObjectActions.addObject(id, searchQuerry, {instanceOf:searchQuerry, jsPrimitive:{type:'number', value:0}}))
 	}
 })
 export default connect(mapStateToProps, mapDispatchToProps)(ObjectSearch)

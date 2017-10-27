@@ -165,7 +165,47 @@
 				"props": {
 					"name":"app",
 					"activeObject": "app",
-					"childElements": "appChildren"
+					"childElements": "appChildren",
+					"instanceOf":"object",
+					"attributes":"appAttrs",
+					"mouseInput":"mouse"
+				}
+			},
+			"mouse":{
+				"type":"mouse",
+				"props":{
+					"down":"mouseDown"
+				}
+			},
+			"mouseDown":{
+				"type":"bool",
+				"props":{
+					"jsPrimitive":{"type":"bool", "input":"mouseDown"}
+				}
+			},
+			"appAttrs":{
+				"type":"set",
+				"props":{
+					"jsPrimitive":{ "type": "set", "elements": ["name"] }
+				}
+			},
+
+			"object":{
+				"type": "object",
+				"props":{
+				}
+			},
+			"attribute":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"object"
+				}
+			},
+			"attributes":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+
 				}
 			},
 			"undef":{
@@ -185,7 +225,14 @@
 				"type":"bool",
 				"props":{
 					"name":"false",
-					"jsPrimitive": {"type":"bool", "value":true}
+					"jsPrimitive": {"type":"bool", "value":false}
+				}
+			},
+			"number":{
+				"type":"number",
+				"props":{
+					"name":"number",
+					"jsPrimitive": {"type":"number", "value":0}
 				}
 			},
 			"appChildren": {
@@ -193,6 +240,12 @@
 				"props": {
 					"name":"appChildren",
 					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
+				}
+			},
+			"name":{
+				"type":"attribute",
+				"props": {
+					"instanceOf": "attribute"
 				}
 			},
 			"pendulumPlot": {
@@ -305,6 +358,7 @@
 					"name":"circle",
 					"radius":"getCircleRadius",
 					"centerPoint":"circleCenter",
+					"highlighted":"false",
 					"jsPrimitive":{ "type": "circle" }
 				}
 			},
@@ -378,7 +432,6 @@
 					"x": "radiusX",
 					"y": "radiusY"
 				}
-
 			},
 			"radiusX":{
 				"type":"number",
@@ -398,10 +451,20 @@
 				"type":"Circle",
 				"props":{
 					"name":"circle1",
-					"radius":"getCircleRadius",
+					"radius":"conditionalBlock",
 					"centerPoint":"circle1Center",
 					"expanded":"expandedBool",
+					"highlighted":"false",
 					"jsPrimitive":{ "type": "circle" }
+				}
+			},
+			"conditionalBlock": {
+				"type":"ternary",
+				"props":{
+					"jsPrimitive": {"type":"ternary"},
+					"condition": "expandedBool",
+					"then":"radiusRight",
+					"else":"radiusLeft"
 				}
 			},
 			"expandedBool":{

@@ -1,10 +1,9 @@
-
-
 export const getObject = function (state, id) {
 	const objectState = state.sim.object
 	try {
 		var objectData = Object.assign({}, objectState[id])
 		objectData.props.id = id
+		objectData.props.hash = id
 	} catch (e){
 		throw new Error("could not find object named "+id)
 	}
@@ -61,6 +60,8 @@ export const getValue = (state, name, prop) => {
 			case 'bool': {
 				if (def.hasOwnProperty('value')) {
 					return def.value
+				} else if (def.hasOwnProperty('input')) {
+					return false //inputs[def.input]
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
 					const equivObject = getValue(state, name, 'logicalEquiv')
@@ -94,25 +95,45 @@ export const getValue = (state, name, prop) => {
 			case 'set': {
 				return def.elements
 			}
+			case 'union': {
+				const set1 = getValue(state, getValue(state, name, 'set1'), 'jsPrimitive')
+				const set2 = getValue(state, getValue(state, name, 'set2'), 'jsPrimitive')
+				console.log('getting union of ', set1, set2)
+				break;
+			}
 			case 'get': {
 				return 'get primitive'
 			}
 			case 'circle': {
 				return 'circle primitive'
 			}
+			case 'search': {
+				return def.id
+			}
 			default: {
-				throw new Error(`unknown type, def: ${def}`)
+				throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
 			}
 		}
 	} else {
-		const objectData = getObject(state, def)
+		const objectData = getObject(state, def)//move this logic to primitive for get object
 		if (objectData.type === 'get' && prop !== 'rootObject' && prop !== 'attribute') { //this will need to work for sets
 			const rootObject = getValue(state, def, 'rootObject')
 			const property = getDef(state, def, 'attribute')
 			const value = getValue(state, rootObject, property)
 			return value
+		} else if (objectData.type === 'search') {
+			return getValue(state, def, 'jsPrimitive')
+		} else if (objectData.type === 'ternary'){
+			const condition = getValue(state, getValue(state, def, 'condition'), 'jsPrimitive')
+			if (condition) { //eval then/else like this so then/else are lazily evaluated
+				return getValue(state, def, 'then')
+			} else {
+				return getValue(state, def, 'else')
+			}
+		} else {
+			return def
 		}
-		return def
+
 	}
 }
 

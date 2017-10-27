@@ -42,5 +42,5 @@ export default {
 	removeChild,
 	setProp,
 	setActive,
-	setActiveObject
+	setActiveObject,
 }
