@@ -22,7 +22,7 @@ import Sim from './Sim'
 class Part extends React.Component {
 	constructor(props) {
 		super(props);
-		this.state = { width: '0', height: '0', editMode:false };
+		this.state = { width: '0', height: '0', editMode:true };
 		this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
 	}
 

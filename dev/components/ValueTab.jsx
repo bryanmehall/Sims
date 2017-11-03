@@ -76,7 +76,7 @@ const ValueTab = ({ definition, value, objectId, attrId, setProp }) => {
 		)
 	} else {
 		const definitionDisplay = (
-			<ObjectLink objectId={definition}/>
+			<ObjectLink objectId={definition} magicPlaceholder={true}/>
 		)
 		return (
 			<div style={valueBlockStyle}>

@@ -4,12 +4,12 @@ import { connect } from 'react-redux'
 import { listProps, getActiveObject } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import AttributeTab from './AttributeTab'
-
+import TreeDiagram from './TreeDiagram'
 
 class AccordianPanel extends React.Component {
 	constructor(props){
 		super(props)
-		this.state = { history: ['app'] }
+		this.state = { history: [props.objectId] }
 	}
 	componentWillReceiveProps(nextProps){
 		const newId = nextProps.objectId
@@ -44,22 +44,26 @@ class AccordianPanel extends React.Component {
 		return (
 			<div
 				style={{
-					width: 800,
 					padding: 5,
 					backgroundColor: '#ddd',
-					maxHeight: '800',
-					overflowY: 'auto'
+					maxHeight: 800,
+					overflowY: 'auto',
+					display: 'flex'
 				}}
 				>
-				{historyTabs}
-				<h3 >{objectId}</h3>
-				<div>{attributeTabs}</div>
+				<div>
+					{historyTabs}
+					<h3 >{objectId}</h3>
+					<div>{attributeTabs}</div>
+				</div>
+				<TreeDiagram></TreeDiagram>
+
 			</div>
 		)
 	}
 }
 const mapStateToProps = (state) => {
-	const activeObject = getActiveObject(state)
+	const activeObject = 'object'//getActiveObject(state)
 	let attrs = []
 	try {
 		attrs = listProps(state, activeObject)

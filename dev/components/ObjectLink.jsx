@@ -1,24 +1,33 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getObject } from '../ducks/object/selectors'
+import { getObject, getValue } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 
-const UnconnectedObjectLink = ({ objectId, objectData, setActiveObject }) => {
+const UnconnectedObjectLink = ({ objectId, objectData, setActiveObject, magicPlaceholder, elements }) => {
+	//magic placeholder simulates searching to get object
 	const linkStyle = {
 		cursor: 'pointer',
 		border: '1px solid #888',
 		borderRadius: 4,
-		backgroundColor: '#ccc'
+		backgroundColor: magicPlaceholder ? '#cce' : '#ccc'
 	}
 	let items = ''
 	if (objectData.type === 'set'){
-		const elements = objectData.props.jsPrimitive.elements
 		items = elements.map(
 			(element) => (
 				<ObjectLink key={element} objectId={element}></ObjectLink>
 			)
 		)
+        items.push(
+            <div
+                style={{ backgroundColor: '#ccc', padding: 2, cursor: 'pointer' }}
+                key = "add button"
+                onClick={() => {}}
+                >
+                +
+            </div>
+        )
 	}
 	return (
 		<div>
@@ -26,7 +35,7 @@ const UnconnectedObjectLink = ({ objectId, objectData, setActiveObject }) => {
 				onClick={() => { setActiveObject(objectId) }}
 				style={linkStyle}
 			>
-				{objectId}
+				{magicPlaceholder ? `search(${objectId})` : objectId}
 			</div>
 			<div>
 				{items}
@@ -34,9 +43,22 @@ const UnconnectedObjectLink = ({ objectId, objectData, setActiveObject }) => {
 		</div>
 	)
 }
-const mapStateToProps = (state, props) => ({
-	objectData: getObject(state, props.objectId)
-})
+const mapStateToProps = (state, props) => {
+    const objectData = getObject(state, props.objectId)
+    if (objectData.type === 'set'){
+        const elements = getValue(state, props.objectId, 'jsPrimitive')
+        return {
+            elements,
+            objectData
+        }
+    } else {
+        return {
+            elements: [],
+            objectData
+        }
+    }
+
+}
 
 const mapDispatchToProps = (dispatch) => ({
 	setProp: (objectId, attrId, value) => {

@@ -2,6 +2,7 @@ import React, { PropTypes } from "react"
 import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import SimActions from '../ducks/sim/actions'
+import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
 import { getValue } from '../ducks/quantity/selectors'
 import { getChildren, getObjects, getValue as getPropValue } from '../ducks/object/selectors'
@@ -47,7 +48,7 @@ class Sim extends React.Component {
 
 	}
 	render(){
-		const { contentBlockId, partId, courseId } = this.props
+		const { contentBlockId, partId, courseId, setProp } = this.props
 		const active = this.props.contentBlockId !== null
 		const imageUrl = `/content/courses/${this.props.courseId}/${this.props.partId}/thumbnail.png`
 		const image = (
@@ -68,8 +69,8 @@ class Sim extends React.Component {
 		}
 		const simCardStyle = {
 			...cardStyle, 
-			width: 1200,
-			height: 650,
+			width: 400,
+			height: 400,
 			position: "relative",
 			overflow: 'hidden',
 			left: 0,
@@ -88,11 +89,24 @@ class Sim extends React.Component {
 
 		const loadingIcon = (<div>Loading</div>)
 		const content = children
-
+		const setMousePos = (e) => {
+			const x = e.pageX - e.currentTarget.offsetLeft
+			const y = e.pageY - e.currentTarget.offsetTop
+			setProp("mouseX", "jsPrimitive", { type: "number", id: 'mouseX', value: x })
+			setProp("mouseY", "jsPrimitive", { type: "number", id: 'mouseY', value: y })
+		}
+		const setMouseDown = () => {
+			setProp("mouseDown", "jsPrimitive", { type: "bool", id: 'mouseDown', value: true })
+		}
+		const setMouseUp = () => {
+			setProp("mouseDown", "jsPrimitive", { type: "bool", id: 'mouseDown', value: false })
+		}
 		return (
 			<div
 				style={simCardStyle}
-				onMouseEvent = {(e) => {console.log(e)}} >
+				onMouseMove = {setMousePos}
+				onMouseDown = {setMouseDown}
+				onMouseUp = {setMouseUp}>
 				{/*this.props.loadState === "loading" ? loadingIcon : null*/ }
 				{this.props.loadState === 'error' ? 'Error: Failed to Load Simulation' : null}
 				{content}
@@ -120,6 +134,9 @@ function mapDispatchToProps(dispatch) {
 	return {
 		fetchSimData: (path) => {
 			dispatch(SimActions.fetchSimData(path))
+		},
+		setProp: (object, prop, value) => {
+			dispatch(ObjectActions.setProp(object, prop, value))
 		}
 	}
 }

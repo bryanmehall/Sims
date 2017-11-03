@@ -19,13 +19,13 @@ const objectsReducer = (state = {}, action) => {
                 }
             })
         }
-        case 'REMOVE_OBJECT':{
+        case 'REMOVE_OBJECT': {
             const name = action
             break;
         }
-        case 'SET_PROP':{
-            const name = action.payload.name
-
+        case 'SET_PROP': {
+            const { name, id } = action.payload
+            //use id here
             return Object.assign({}, state, {
                     [name]: objectReducer(state[name], action)
             })
@@ -64,16 +64,13 @@ const objectReducer = (state ={}, action) => {
 			return newState
 		}
 		case "SET_PROP": {
-			const name = action.payload.name
-			const prop = action.payload.prop
-			const value = action.payload.value
+			const { prop, value } = action.payload
 			const newProps = Object.assign({}, state.props, {
 				[prop]: value
 			})
 			const newState = Object.assign({}, state, {
 				props: newProps
 			})
-
 			return newState
 		}
 		default: {

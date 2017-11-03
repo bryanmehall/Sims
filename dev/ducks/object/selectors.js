@@ -35,7 +35,13 @@ const primitives = { //move to new file?
 	},
 	multiply: (args) => (args[0]*args[1]),
 	//strings
-	concat: (args) => (args.join(""))
+	concat: (args) => (args.join("")),
+	//sets
+	union: {
+		func: (args) => (args[0].concat(args[1])),
+		args: ['set1', 'set2'],
+		ret: ['result']
+	}
 }
 
 
@@ -93,13 +99,17 @@ export const getValue = (state, name, prop) => {
 				return result
 			}
 			case 'set': {
-				return def.elements
-			}
-			case 'union': {
-				const set1 = getValue(state, getValue(state, name, 'set1'), 'jsPrimitive')
-				const set2 = getValue(state, getValue(state, name, 'set2'), 'jsPrimitive')
-				console.log('getting union of ', set1, set2)
-				break;
+				if (def.hasOwnProperty('elements')){
+					return def.elements
+				} else {
+					const equivObject = getValue(state, name, 'setEquiv')
+					if (equivObject === undefined){
+						throw 'set must have setEquiv property'
+					}
+					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+
+					return equivValue
+				}
 			}
 			case 'get': {
 				return 'get primitive'
@@ -108,8 +118,13 @@ export const getValue = (state, name, prop) => {
 				return 'circle primitive'
 			}
 			case 'search': {
+                // {type: "search", id:"idHere"}
 				return def.id
 			}
+            case 'new': {
+                console.log(def)
+                return def.id
+            }
 			default: {
 				throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
 			}
@@ -122,6 +137,8 @@ export const getValue = (state, name, prop) => {
 			const value = getValue(state, rootObject, property)
 			return value
 		} else if (objectData.type === 'search') {
+			return getValue(state, def, 'jsPrimitive')
+        } else if (objectData.type === 'new'){
 			return getValue(state, def, 'jsPrimitive')
 		} else if (objectData.type === 'ternary'){
 			const condition = getValue(state, getValue(state, def, 'condition'), 'jsPrimitive')
@@ -150,7 +167,12 @@ export const listMatchingObjects = (state, query) => {
 }
 
 export const getChildren = function (state, id) {
-	const childId = getValue(state, id, "childElements") //extend for sets
+    try {
+        var childId = getValue(state, id, "childElements") //extend for sets
+    } catch (e){
+        return []
+    }
+
 	if (childId === null){ //remove this condition for multiple children and replace with reduce
 		return []
 	} else {

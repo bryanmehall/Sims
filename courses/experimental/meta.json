@@ -1,0 +1,27 @@
+{
+	"id": "experimental",
+	"title": "Experimental",
+	"description": "Experimental and development features",
+	"parts":[
+		{
+			"id":"lynx",
+			"title":"Lynx",
+			"contentBlocks":[
+				{
+					"id": "upper-ontology",
+					"title":"Upper Ontology",
+					"text":"Upper Ontology",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "test-features",
+					"title":"Test Features",
+					"text":"Test Features",
+					"type":"anim",
+					"length":10
+				}
+			]
+		}
+	]
+}

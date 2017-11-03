@@ -24,6 +24,7 @@ import Home from "./components/Home"
 import NavBar from "./components/NavBar"
 //content
 import { animMiddleware } from "./animMiddleware"
+import { objectMiddleware } from "./objectMiddleware"
 import { runTests } from './tests'
 
 // error reporting
@@ -64,6 +65,7 @@ const sagaMiddleware = createSagaMiddleware()
 
 let middlewareList = [
 	animMiddleware,
+	objectMiddleware,
 	sagaMiddleware,
 	reduxMulti,
 	router.middleware
