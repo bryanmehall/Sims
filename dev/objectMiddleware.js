@@ -1,4 +1,4 @@
-import { getValue, getObject } from './ducks/object/selectors'
+import { getObject } from './ducks/object/selectors'
 export const objectMiddleware = store => next => action => {
 	const state = store.getState()
 	//#### for this to work it needs to update parents as well???
@@ -18,7 +18,8 @@ export const objectMiddleware = store => next => action => {
 			if (!value.hasOwnProperty('id')){
 				throw 'primitive needs id!!'
 			}
-			const newPayload = Object.assign(action.payload, { value, id: value.id})
+
+			const newPayload = Object.assign(action.payload, { value })
 			const actionWithId = Object.assign(action, { payload: newPayload })
 			return next(actionWithId)
 		}

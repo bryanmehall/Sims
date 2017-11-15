@@ -1,11 +1,9 @@
 import React, { PropTypes } from "react"
 import { connect } from "react-redux"
-import { bindActionCreators } from 'redux';
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { getValue } from '../ducks/quantity/selectors'
-import { getChildren, getObjects, getValue as getPropValue } from '../ducks/object/selectors'
+import { getChildren } from '../ducks/object/selectors'
 import Video from './Video'
 
 import Plot from './Plot'

@@ -4,6 +4,9 @@ export const getObject = function (state, id) {
 		var objectData = Object.assign({}, objectState[id])
 		objectData.props.id = id
 		objectData.props.hash = id
+		if (!objectData.props.hasOwnProperty('attributes')){
+			objectData.props.attributes = 'object'
+		}
 	} catch (e){
 		throw new Error("could not find object named "+id)
 	}
@@ -43,23 +46,36 @@ const primitives = { //move to new file?
 		ret: ['result']
 	}
 }
-
-
-export const getValue = (state, name, prop) => {
-
-	const def = getDef(state, name, prop)
-	if (def === undefined){
-		throw new Error(`def is undefined for ${prop} of ${name}`)
+export const getJSValue = (state, name, prop) => {
+	const value = getValue(state, name, prop)
+	const objectData = getObject(state, value) //replace eval: modify here
+	if (objectData.type === 'undef'){
+		return undefined
+	} else {
+		return getValue(state, objectData.props.id , 'jsPrimitive') //getValue of jsPrimitive works
 	}
-	if (prop === 'jsPrimitive') {
+
+}
+export const getId = (state, name, prop) => (
+	getValue(state, name, prop)
+)
+
+export const getValue = (state, name, prop) => { //getValue should be called eval and will need to support async actions eventually
+	const def = getDef(state, name, prop)
+	if (def === undefined) {
+		//throw new Error(`def is undefined for ${prop} of ${name}`)
+        console.warn(`def is undefined for ${prop} of ${name}`)
+        return 'undef'
+	}
+	if (prop === 'jsPrimitive') { // primitive objects
 		switch (def.type) {
 			case 'number': {
 				if (def.hasOwnProperty('value')) {
 					return def.value
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
-					const equivObject = getValue(state, name, 'numericalEquiv')
-					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					const equivObject = getId(state, name, 'numericalEquiv')
+					const equivValue = getId(state, equivObject, 'jsPrimitive')
 					return equivValue
 				}
 			}
@@ -70,8 +86,8 @@ export const getValue = (state, name, prop) => {
 					return false //inputs[def.input]
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
-					const equivObject = getValue(state, name, 'logicalEquiv')
-					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					const equivObject = getId(state, name, 'logicalEquiv')
+					const equivValue = getId(state, equivObject, 'jsPrimitive')
 					return equivValue
 				}
 			}
@@ -80,8 +96,8 @@ export const getValue = (state, name, prop) => {
 					return def.value
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
-					const equivObject = getValue(state, name, 'stringEquiv')
-					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					const equivObject = getId(state, name, 'stringEquiv')
+					const equivValue = getId(state, equivObject, 'jsPrimitive')
 					return equivValue
 				}
 			}
@@ -89,12 +105,12 @@ export const getValue = (state, name, prop) => {
 				return def.function
 			}
 			case 'apply': {
-				const functionName = getValue(state, getValue(state, name, 'function'), 'jsPrimitive') //get js primitive of function
+				const functionName = getJSValue(state, name, 'function') //get js primitive of function
 				const functionPrimitive = primitives[functionName]
 				const argNames = functionPrimitive.args
 				const func = functionPrimitive.func
 				//for each: get jsPrimitive of argument
-				const args = argNames.map((argName) => (getValue(state, getValue(state, name, argName), 'jsPrimitive')))
+				const args = argNames.map((argName) => (getJSValue(state, name, argName)))
 				const result = func(args)
 				return result
 			}
@@ -102,11 +118,11 @@ export const getValue = (state, name, prop) => {
 				if (def.hasOwnProperty('elements')){
 					return def.elements
 				} else {
-					const equivObject = getValue(state, name, 'setEquiv')
+					const equivObject = getId(state, name, 'setEquiv')
 					if (equivObject === undefined){
 						throw 'set must have setEquiv property'
 					}
-					const equivValue = getValue(state, equivObject, 'jsPrimitive')
+					const equivValue = getValue(state, equivObject, 'jsPrimitive') //ok js primitive returns primitive
 
 					return equivValue
 				}
@@ -122,26 +138,55 @@ export const getValue = (state, name, prop) => {
 				return def.id
 			}
             case 'new': {
-                console.log(def)
                 return def.id
             }
 			default: {
 				throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
 			}
 		}
-	} else {
+	} else { //pointer objects
 		const objectData = getObject(state, def)//move this logic to primitive for get object
-		if (objectData.type === 'get' && prop !== 'rootObject' && prop !== 'attribute') { //this will need to work for sets
-			const rootObject = getValue(state, def, 'rootObject')
+        if (objectData.type === 'get' && prop !== 'rootObject' && prop !== 'attribute') { //this will need to work for sets
+			const rootObject = getId(state, def, 'rootObject')
 			const property = getDef(state, def, 'attribute')
-			const value = getValue(state, rootObject, property)
-			return value
-		} else if (objectData.type === 'search') {
+            //console.log('getting', name, prop, def, rootObject)
+            if (rootObject === "undef") { //get from parent object 'name'
+                return getValue(state, name, property)
+            } else {
+                return getValue(state, rootObject, property)
+
+            }
+		} else if (objectData.type === 'find') { //find is relative to 'this' where get is relative to global object -- find is default
+            //def refers to find object, name refers to 'this'
+            if (prop === 'attribute' || prop === 'then') { return def }
+            let path = []
+			const scope = getId(state, name, "scope")
+			//need to find a good ui for scope...how to determine "this"
+			const root = (scope === "undef") ? name : scope
+            const getPath = (currentFind) => {
+                const attr = getId(state, currentFind, 'attribute')
+                path.push(attr)
+                const then = getId(state, currentFind, 'then')
+                if (then !== 'undef'){
+                    getPath(then)
+                }
+            }
+            getPath(def)
+            const findReducer = (currentObject, attribute) => (
+                getId(state, currentObject, attribute)
+            )
+			console.log(root, path)
+
+            return path.reduce(findReducer, root)
+
+        } else if (objectData.type === 'search') {
 			return getValue(state, def, 'jsPrimitive')
         } else if (objectData.type === 'new'){
-			return getValue(state, def, 'jsPrimitive')
+			console.log('creating new object')
+
+			return {type:'objectType'}
 		} else if (objectData.type === 'ternary'){
-			const condition = getValue(state, getValue(state, def, 'condition'), 'jsPrimitive')
+			const condition = getJSValue(state, def, 'condition')
 			if (condition) { //eval then/else like this so then/else are lazily evaluated
 				return getValue(state, def, 'then')
 			} else {
@@ -177,7 +222,8 @@ export const getChildren = function (state, id) {
 		return []
 	} else {
 		const childElements = getValue(state, childId, 'jsPrimitive')
-		return childElements.map((childId) => (getObject(state, childId)))
+		const elements = childElements === 'undef' ? [] : childElements
+		return elements.map((childId) => (getObject(state, childId)))
 	}
 
 	/*var objectData = getObject(state, id)

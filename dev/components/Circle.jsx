@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'
 import { connect } from "react-redux"
 import ObjectActions from '../ducks/object/actions'
 import { getCurrentCourseId, getCurrentPartId, getCurrentContentBlockId } from '../ducks/content/selectors'
-import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
+import { getJSValue } from '../ducks/object/selectors'
 import Draggable from "./Draggable"
 import { HighlightFilter } from './filters'
 
@@ -40,16 +40,13 @@ Circle.defaultProps = {
 }
 
 function mapStateToProps(state, props) {
-	const posObject = getPropValue(state, props.id, 'centerPoint')
-	const cx = getPropValue(state, posObject, 'x')
-	const cy = getPropValue(state, posObject, 'y')
-	const radius = getPropValue(state, props.id, 'radius')
-	const highlighted = getPropValue(state, props.id, 'highlighted')
+
+	const posObject = props.centerPoint
 	return {
-		radius: (radius === 'undef') ? 10 : getPropValue(state, radius, 'jsPrimitive'),
-		cx: (cx === 'undef') ? 0 : getPropValue(state, cx, 'jsPrimitive'),
-		cy: (cy === 'undef') ? 0 : getPropValue(state, cy, 'jsPrimitive'),
-		highlighted: getPropValue(state, highlighted, 'jsPrimitive')
+		radius: getJSValue(state, props.id, 'radius') || 10,
+		cx: getJSValue(state, posObject, 'x') || 0,
+		cy: getJSValue(state, posObject, 'y') || 0,
+		highlighted: getJSValue(state, props.id, 'highlighted')
 	}
 }
 

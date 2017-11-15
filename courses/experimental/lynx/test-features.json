@@ -174,7 +174,7 @@
 			"objectAttrs": {
 				"type": "set",
 				"props": {
-					"jsPrimitive": { "type": "set", "elements": ["accordianRep"] }
+					"jsPrimitive": { "type": "set", "elements": ["accordianRep", "instanceOf"] }
 				}
 			},
 			"appAttrs":{
@@ -186,9 +186,10 @@
 			"unionAttrs":{
 				"type":"apply",
 				"props":{
-					"set1":"objectAttrs",
+					"set1":"findParent",
 					"set2":"appAttrs",
 					"result":"unionResult",
+					"scope":"app",
 					"jsPrimitive":{"type":"apply"},
 					"function": "unionFunction"
 				}
@@ -250,6 +251,12 @@
 					"instanceOf":"attribute"
 				}
 			},
+            "instanceOf":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
 			"accordianRep":{
 				"type":"attribute",
 				"props":{
@@ -286,8 +293,14 @@
 			"appChildren": {
 				"type":"set",
 				"props": {
-					"name":"appChildren",
+					"name":"appChildrenName",
 					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
+				}
+			},
+			"appChildrenName":{
+				"type":"string",
+				"props":{
+					"jsPrimitive": {"type": "string", "value":"app children"}
 				}
 			},
 			"name":{
@@ -300,6 +313,13 @@
 				"type":"attribute",
 				"props": {
 					"instanceOf": "attribute"
+				}
+			},
+			"apply":{
+				"type":"apply",
+				"props":{
+					"jsPrimitive":{"type":"apply"},
+					"attributes":"unionResult"
 				}
 			},
 			"pendulumPlot": {
@@ -508,6 +528,22 @@
 					"jsPrimitive": {"type": "number", "value": 200}
 				}
 			},
+            "findAttributes":{
+                "type":"find",
+                "props":{
+                    "jsPrimitive": {"type": "find"},
+					"attribute": "attributes"
+                }
+            },
+            "findParent":{
+                "type":"find",
+                "props":{
+                    "jsPrimitive":{"type":"find"},
+                    "attribute":"instanceOf",
+                    "then":"findAttributes"
+                }
+            },
+
 			"circle1": {
 				"type":"Circle",
 				"props":{

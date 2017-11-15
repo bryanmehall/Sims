@@ -2,7 +2,7 @@ import React from "react"
 import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
-import { getChildren, getValue as getPropValue } from '../ducks/object/selectors'
+import { getChildren, getJSValue } from '../ducks/object/selectors'
 import { mathVarStyle } from './styles'
 import Axis from './Axis'
 import Abstraction from './Abstraction'
@@ -98,12 +98,12 @@ function mapStateToProps(state, props) {
 	const xActive = props.xVars[0]
 	const yActive = props.yVars[0]
 
-	const posObject = getPropValue(state, id, "pos")
+	const posObject = props.pos
 	const coordSys = props.coordinateSystem
-	const xMin = getPropValue(state, getPropValue(state, coordSys, 'xMin'), 'jsPrimitive')
-	const xMax = getPropValue(state, getPropValue(state, coordSys, 'xMax'), 'jsPrimitive')
-	const yMin = getPropValue(state, getPropValue(state, coordSys, 'yMin'), 'jsPrimitive')
-	const yMax = getPropValue(state, getPropValue(state, coordSys, 'yMax'), 'jsPrimitive')
+	const xMin = getJSValue(state, coordSys, 'xMin')
+	const xMax = getJSValue(state, coordSys, 'xMax')
+	const yMin = getJSValue(state, coordSys, 'yMin')
+	const yMax = getJSValue(state, coordSys, 'yMax')
 	return {
 		xActive,
 		yActive,
@@ -112,11 +112,11 @@ function mapStateToProps(state, props) {
 		xMax,
 		yMax,
 		pos: {
-			x: getPropValue(state, getPropValue(state, posObject, "x"), 'jsPrimitive'),
-			y: getPropValue(state, getPropValue(state, posObject, "y"), 'jsPrimitive')
+			x: getJSValue(state, posObject, "x"),
+			y: getJSValue(state, posObject, "y")
 		},
-		width: getPropValue(state, getPropValue(state, id, "width"), 'jsPrimitive'),
-		height: getPropValue(state, getPropValue(state, id, "height"), 'jsPrimitive'),
+		width: getJSValue(state, id, "width"),
+		height: getJSValue(state, id, "height"),
 		//xLabel: getSymbol(state, xActive),
 		//yLabel: getSymbol(state, yActive),
 		//xQuantities: getQuantities(props.xVars),

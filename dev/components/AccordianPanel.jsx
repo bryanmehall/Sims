@@ -57,13 +57,12 @@ class AccordianPanel extends React.Component {
 					<div>{attributeTabs}</div>
 				</div>
 				<TreeDiagram></TreeDiagram>
-
 			</div>
 		)
 	}
 }
 const mapStateToProps = (state) => {
-	const activeObject = 'object'//getActiveObject(state)
+	const activeObject = getActiveObject(state)
 	let attrs = []
 	try {
 		attrs = listProps(state, activeObject)

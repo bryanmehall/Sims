@@ -65,7 +65,7 @@ const sagaMiddleware = createSagaMiddleware()
 
 let middlewareList = [
 	animMiddleware,
-	objectMiddleware,
+	//objectMiddleware,
 	sagaMiddleware,
 	reduxMulti,
 	router.middleware
@@ -96,6 +96,7 @@ export const store = createStore(rootReducer, initialState, enhancers)
 
 
 sagaMiddleware.run(rootSaga)
+
 
 
 export const appComponent= (

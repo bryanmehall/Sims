@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getDef, getValue } from '../ducks/object/selectors'
+import { getDef } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import ObjectLink from './ObjectLink'
 import ObjectSearch from './ObjectSearch'
@@ -10,7 +10,7 @@ import ObjectSearch from './ObjectSearch'
 const valueBlockStyle = { paddingLeft: 40, paddingTop: 3, display: 'flex' }
 const parenStyle = { fontSize: 20, marginTop: -3 }
 
-const ValueTab = ({ definition, value, objectId, attrId, setProp }) => {
+const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 	const numberChange = (objectId, e) => {
 		const value = parseFloat(e.target.value) || 0
 		const primitive = { type: 'number', value: value }
@@ -70,20 +70,20 @@ const ValueTab = ({ definition, value, objectId, attrId, setProp }) => {
 				{isUndefined ? objectSearch : definitionDisplay}
 				{deleteButton}
 				<div style={parenStyle}>(</div>
-				<div>{JSON.stringify(value)}</div>
+				<div>{JSON.stringify(definition)}</div>
 				<div style={parenStyle}>)</div>
 			</div>
 		)
 	} else {
 		const definitionDisplay = (
-			<ObjectLink objectId={definition} magicPlaceholder={true}/>
+			<ObjectLink parentId={objectId} attrId={attrId} objectId={definition} magicPlaceholder={true}/>
 		)
 		return (
 			<div style={valueBlockStyle}>
 				{isUndefined ? objectSearch : definitionDisplay}
 				{deleteButton}
 				<div style={parenStyle}>(</div>
-				<ObjectLink objectId={value} />
+				<ObjectLink parentId={objectId} attrId={attrId} />
 				<div style={parenStyle}>)</div>
 			</div>
 		)
@@ -93,11 +93,9 @@ const ValueTab = ({ definition, value, objectId, attrId, setProp }) => {
 
 
 const mapStateToProps = (state, props) => {
-	const value = getValue(state, props.objectId, props.attrId)
 	const definition = getDef(state, props.objectId, props.attrId)
 	return {
-		definition,
-		value
+		definition
 	}
 }
 

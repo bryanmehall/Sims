@@ -37,7 +37,7 @@ class ObjectSearch extends React.Component {
 				<input
 					size={15}
 					onKeyUp={changeHandler}
-
+					placeholder={this.props.objectId}
 					alt="search for object by id '\' or 'new' to create new"
 					></input>
 			</div>
@@ -56,10 +56,11 @@ const mapDispatchToProps = (dispatch) => ({
 		dispatch(ObjectActions.setActiveObject(id))
 	},
 	createInstance: (searchQuerry, id) => {
-		//creating instance should be broken down into creating empty object and adding attributes to it
-		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { jsPrimitive: { type: 'search', querry: searchQuerry, id: id }}))
-
-		dispatch(ObjectActions.addObject(id, searchQuerry, {instanceOf:searchQuerry, jsPrimitive:{type:'number', value:0}}))
+		dispatch(ObjectActions.createInstance(searchQuerry, id))
+		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { jsPrimitive: { type: 'search', querry: searchQuerry, id: id } }))
+		dispatch(ObjectActions.addObject(id, searchQuerry, {}))
+        dispatch(ObjectActions.setProp(id, 'instanceOf', searchQuerry))
+        dispatch(ObjectActions.setProp(id, 'attributes', 'findParent'))
 	}
 })
 export default connect(mapStateToProps, mapDispatchToProps)(ObjectSearch)
