@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getDef } from '../ducks/object/selectors'
+import { getValue, objectLib } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import ObjectLink from './ObjectLink'
 import ObjectSearch from './ObjectSearch'
@@ -10,7 +10,8 @@ import ObjectSearch from './ObjectSearch'
 const valueBlockStyle = { paddingLeft: 40, paddingTop: 3, display: 'flex' }
 const parenStyle = { fontSize: 20, marginTop: -3 }
 
-const ValueTab = ({ definition, objectId, attrId, setProp }) => {
+const ValueTab = ({ definition, value, objectData, attrId, setProp }) => {
+	const objectId = objectData.props.id
 	const numberChange = (objectId, e) => {
 		const value = parseFloat(e.target.value) || 0
 		const primitive = { type: 'number', value: value }
@@ -31,6 +32,9 @@ const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 		setProp(objectId, 'jsPrimitive', primitive)
 	}
 	const defDisplay = (definition, objectId) => {
+		if (definition === undefined){
+			return <div>undef</div>
+		}
 		if (definition.hasOwnProperty('value')) {
 			switch (definition.type) {
 				case 'number': {
@@ -48,7 +52,7 @@ const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 		}
 	}
 	const removeDef = () => {
-		setProp(objectId, attrId, "undef")
+		setProp(objectId, attrId.props.id, "undef")
 	}
 	const deleteButton = (
 		<div
@@ -58,8 +62,9 @@ const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 			x
 		</div>
 	)
-	const isPrimitive = typeof definition !== 'string'
-	const isUndefined = definition === "undef"
+	const isPrimitive = definition !== undefined && !definition.hasOwnProperty('props')
+	const isUndefined = definition === undefined
+
 	const objectSearch = <ObjectSearch objectId={objectId} attrId={attrId}/>
 	if (isPrimitive) {
 		const definitionDisplay = (
@@ -76,14 +81,19 @@ const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 		)
 	} else {
 		const definitionDisplay = (
-			<ObjectLink parentId={objectId} attrId={attrId} objectId={definition} magicPlaceholder={true}/>
+			<ObjectLink
+				parentData={{ type: 'undef', props: { id: 'undef' } }}
+				attrId={attrId}
+				objectData={definition}
+				magicPlaceholder={true}
+			/>
 		)
 		return (
 			<div style={valueBlockStyle}>
 				{isUndefined ? objectSearch : definitionDisplay}
 				{deleteButton}
 				<div style={parenStyle}>(</div>
-				<ObjectLink parentId={objectId} attrId={attrId} />
+				<ObjectLink parentData={objectData} attrId={attrId} objectData={value} />
 				<div style={parenStyle}>)</div>
 			</div>
 		)
@@ -93,18 +103,19 @@ const ValueTab = ({ definition, objectId, attrId, setProp }) => {
 
 
 const mapStateToProps = (state, props) => {
-	const definition = getDef(state, props.objectId, props.attrId)
+	const stringDef = props.objectData.props[props.attrId]
+	const value = props.attrId === 'id' ? props.objectData.props.id :
+		getValue(state, 'placeholder', props.attrId, props.objectData)
+	const definition = typeof stringDef === 'string' ? objectLib.constructSearch(stringDef) : stringDef
 	return {
-		definition
+		definition,
+		value
 	}
 }
 
 const mapDispatchToProps = (dispatch) => ({
 	setProp: (objectId, attrId, value) => {
 		dispatch(ObjectActions.setProp(objectId, attrId, value))
-	},
-	setActiveObject: (id) => {
-		dispatch(ObjectActions.setActiveObject(id))
 	}
 })
 

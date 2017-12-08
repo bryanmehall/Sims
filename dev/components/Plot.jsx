@@ -2,7 +2,6 @@ import React from "react"
 import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
-import { getChildren, getJSValue } from '../ducks/object/selectors'
 import { mathVarStyle } from './styles'
 import Axis from './Axis'
 import Abstraction from './Abstraction'
@@ -121,7 +120,7 @@ function mapStateToProps(state, props) {
 		//yLabel: getSymbol(state, yActive),
 		//xQuantities: getQuantities(props.xVars),
 		//yQuantities: getQuantities(props.yVars),
-		childData: getChildren(state,props.id)
+		childData: []//get Children(state,props.id)
 	};
 }
 

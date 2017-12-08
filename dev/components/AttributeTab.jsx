@@ -1,29 +1,19 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getDef } from '../ducks/object/selectors'
+import { getJSValue } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 //import ReactTags from 'react-tag-autocomplete'
 import ValueTab from './ValueTab'
 
-const AttributeTab = ({ objectId, attrId, definition}) => {
-
-	if (definition === undefined) {
-		throw new Error(`definition is undefined for ${objectId}.${attrId} def:${JSON.stringify(definition)}`)
-	} else {
-		return (
-			<div style={{ padding: 10, borderTop: '1px solid #aaa' }}>
-				{attrId}:
-				<ValueTab objectId={objectId} attrId={attrId}/>
-			</div>
-		)
-	}
-
-}
+const AttributeTab = ({ objectData, attr }) => (
+	<div style={{ padding: 10, borderTop: '1px solid #aaa' }}>
+		{attr.props.id}:
+		<ValueTab objectData={objectData} attrId={attr.props.id}/>
+	</div>
+)
 const mapStateToProps = (state, props) => {
-	return {
-		definition: getDef(state, props.objectId, props.attrId)
-	}
+	return {}
 }
 
 const mapDispatchToProps = (dispatch) => ({

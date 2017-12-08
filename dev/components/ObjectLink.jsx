@@ -1,13 +1,12 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getObject, getValue, getJSValue } from '../ducks/object/selectors'
+import { getObject, getValue, getJSValue, objectLib } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import ObjectSearch from './ObjectSearch'
 
-const UnconnectedObjectLink = ({ parentId, attrId, objectData, setActiveObject, setProp, magicPlaceholder, elements, updateObject, displayText, createSearchObject }) => {
+const UnconnectedObjectLink = ({ parentData, attrId, objectData, objectId, setActiveObject, setProp, magicPlaceholder, prevVal, updateObject, displayText, createSearchObject }) => {
 	//magic placeholder simulates searching to get object
-	const objectId = objectData.props.id
 	if (objectData.type === 'search'){
 		return <ObjectSearch objectId={objectId} attrId={attrId}></ObjectSearch>
 	}
@@ -19,24 +18,13 @@ const UnconnectedObjectLink = ({ parentId, attrId, objectData, setActiveObject, 
 	}
 	let items = ''
 	if (objectData.type === 'set'){
-		items = elements.map(
-			(element) => (
-				<ObjectLink key={element.props.id} objectId={element.props.id} attrId={attrId} parentId={parentId}></ObjectLink>
-			)
-		)
-        items.push(
+        items = (
             <div
                 style={{ backgroundColor: '#ccc', padding: 2, cursor: 'pointer' }}
                 key = "add button"
                 onClick={() => {
-					console.log(elements, objectData.props)
-					createSearchObject()
 
-					const newPrimitive = {type:'set', id:objectId, elements:elements.concat('search1')}
-					console.log('adding primitive', newPrimitive)
-					setProp(objectId, 'jsPrimitive', newPrimitive)
-                    //const newId = updateObject(objectId, objectData, parentId, attrId)
-
+					setProp(parentData.props.id, attrId, objectLib.union(prevVal, objectLib.undef, objectData))
                 }}
                 >
                 +
@@ -46,7 +34,7 @@ const UnconnectedObjectLink = ({ parentId, attrId, objectData, setActiveObject, 
 	return (
 		<div>
 			<div
-				onClick={() => { setActiveObject(objectId) }}
+				onClick={() => { setActiveObject(objectData) }}
 				style={linkStyle}
 			>
 				{displayText}
@@ -58,29 +46,29 @@ const UnconnectedObjectLink = ({ parentId, attrId, objectData, setActiveObject, 
 	)
 }
 const mapStateToProps = (state, props) => {
-	const value = getValue(state, props.parentId, props.attrId) //replace eval: modify here
-    const objectData = getObject(state, value)
-	const id = objectData.props.id
-	const displayText = props.magicPlaceholder ? `search(${id})` : id
-
-    /*if (objectData.type === 'set'){
-		const els = getVal(ue(state, props.objectId, 'jsPrimitive')
-        const elements = els || []
-		console.log(elements)
-		const elementData = elements.map((element) => (getObject(state, element)))
-        return {
-            elements:elementData,
+	const objectData = props.objectData
+	if (props.attrId === 'id'){
+		console.log(objectData, props.attrId)
+		return {
+			prevVal:objectLib.undef,
+			displayText: JSON.stringify(objectData),
+			objectData: objectLib.undef,
+			objectId: objectData
+		}
+	} else {
+		const prevVal = getValue(state, 'placeholder', 'prevVal', objectData)
+		const id = objectData.props.id
+		const displayText = props.magicPlaceholder ? `search(${id})` :
+							props.attrId === 'prevVal' ? <pre>{JSON.stringify(objectData, null, 2)}</pre>:
+							id
+		const objectId = objectData.props.id
+		return {
+			prevVal,
 			displayText,
-            objectData
-        }
-    } else {*/
-        return {
-            elements: [],
-			displayText,
-            objectData
-        }
-   // }
-
+			objectData,
+			objectId
+		}
+	}
 }
 
 const mapDispatchToProps = (dispatch) => ({
@@ -101,8 +89,8 @@ const mapDispatchToProps = (dispatch) => ({
 	createSearchObject: () => {
 		dispatch(ObjectActions.addObject('search1', 'search', {jsPrimitive:{type:'search'}}))
 	},
-	setActiveObject: (id) => {
-		dispatch(ObjectActions.setActiveObject(id))
+	setActiveObject: (objectData) => {
+		dispatch(ObjectActions.setActiveObject(objectData))
 	}
 })
 const ObjectLink = connect(mapStateToProps, mapDispatchToProps)(UnconnectedObjectLink)

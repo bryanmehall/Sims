@@ -1,7 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getObject } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 
 class ObjectSearch extends React.Component {
@@ -22,10 +21,10 @@ class ObjectSearch extends React.Component {
 				if (self.state.newObject){
 					const randInt = Math.floor(Math.random()*1000000).toString(16) //do not use for more than proof of concept
 					const id = `${value}_${randInt}`
-					self.props.createInstance(value, id)
-					self.props.setProp(self.props.objectId, self.props.attrId, `search(${value})`)
+					self.props.createNew(value, id)
+					self.props.setProp(self.props.objectId, self.props.attrId, `new(${value})`)
 				} else {
-					self.props.setProp(self.props.objectId, self.props.attrId, value)
+					self.props.createPointer(value)
 				}
 
 			}
@@ -55,12 +54,11 @@ const mapDispatchToProps = (dispatch) => ({
 	setActiveObject: (id) => {
 		dispatch(ObjectActions.setActiveObject(id))
 	},
-	createInstance: (searchQuerry, id) => {
-		dispatch(ObjectActions.createInstance(searchQuerry, id))
+	createPointer: (searchQuerry) => {
 		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { jsPrimitive: { type: 'search', querry: searchQuerry, id: id } }))
-		dispatch(ObjectActions.addObject(id, searchQuerry, {}))
-        dispatch(ObjectActions.setProp(id, 'instanceOf', searchQuerry))
-        dispatch(ObjectActions.setProp(id, 'attributes', 'findParent'))
+	},
+	createNew: (searchQuerry, id) => {
+		dispatch(ObjectActions.addObject(`new(${searchQuerry})`, "new", { jsPrimitive: { type: 'new', querry: searchQuerry, id: id } }))
 	}
 })
 export default connect(mapStateToProps, mapDispatchToProps)(ObjectSearch)

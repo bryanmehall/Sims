@@ -6,157 +6,6 @@
 		"contentBlock": "forces"
 	},
 	"keyframes": [
-		{
-			"time": 9,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 0.2,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "massHighlight",
-						"initValue": 0,
-						"finalValue": 1
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 11,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 1,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "massHighlight",
-						"initValue": 1,
-						"finalValue": 0
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 10,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 0.2,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "stringHighlight",
-						"initValue": 0,
-						"finalValue": 1
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 12,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 1,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "stringHighlight",
-						"initValue": 1,
-						"finalValue": 0
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 11.5,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 0.2,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "anchorHighlight",
-						"initValue": 0,
-						"finalValue": 1
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 14,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 1,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "anchorHighlight",
-						"initValue": 1,
-						"finalValue": 0
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 15,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenQuantity",
-					"dur": 4,
-					"params": {
-						"quantityName": "theta0",
-						"initValue": 0,
-						"finalValue": 0.5
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 15,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenProperty",
-					"dur": 0.5,
-					"params": {
-						"objectName": "pendulum",
-						"propName": "angleHighlight",
-						"initValue": 0,
-						"finalValue": 1
-					},
-					"interp": "linear"
-				}
-			]
-		},
-		{
-			"time": 21,
-			"dt": 0,
-			"actions": [
-				{
-					"type": "tweenQuantity",
-					"dur": 20,
-					"params": {
-						"quantityName": "t",
-						"initValue": 0,
-						"finalValue": 20
-					},
-					"interp": "linear"
-				}
-			]
-		}
 	],
 	"initialState": {
 		"object": {
@@ -165,40 +14,93 @@
 				"props": {
 					"name":"app",
 					"activeObject": "app",
+					"graphicalRepresentation":"window",
 					"childElements": "appChildren",
 					"instanceOf":"object",
-					"attributes":"unionResult",
 					"mouseInput":"mouse"
+				}
+			},
+			"window":{
+				"type":"window",
+				"props":{
+					"jsPrimitive":{"type":"group"},
+					"childElements": "windowChildren"
 				}
 			},
 			"objectAttrs": {
 				"type": "set",
 				"props": {
-					"jsPrimitive": { "type": "set", "elements": ["accordianRep", "instanceOf"] }
+					"jsPrimitive": { "type": "set" },
+					"subset1":"accordianRep",
+					"subset2":"instanceOf"
 				}
 			},
 			"appAttrs":{
 				"type":"set",
 				"props": {
-					"jsPrimitive":{ "type": "set", "elements": ["name","childElements"] }
+					"jsPrimitive": { "type": "set"},
+					"subset1":"appAttrsSubset1",
+					"subset2":"appAttrsSubset2"
 				}
 			},
+			"appAttrsSubset1":{
+				"type":"set",
+				"props": {
+					"subset1":"attributes",
+					"subset2":"instanceOf"
+				}
+			},
+			"appAttrsSubset2":{
+				"type":"set",
+				"props": {
+					"subset1":"name",
+					"subset2":"graphicalRepresentation"
+				}
+			},
+
 			"unionAttrs":{
 				"type":"apply",
 				"props":{
 					"set1":"findParent",
 					"set2":"appAttrs",
 					"result":"unionResult",
+					"setEquiv":"unionResult",
+					"attributes":"unionAttrsAttrs",
 					"scope":"app",
 					"jsPrimitive":{"type":"apply"},
 					"function": "unionFunction"
+				}
+			},
+			"scope":{
+				"type":"attribute",
+				"props":{
+
+				}
+			},
+			"unionAttrsAttrs":{
+				"type":"set",
+				"props": {
+					"jsPrimitive":{
+						"type": "set",
+						"elements": ["set1","set2","result","attributes", "scope", "function" ]
+					}
 				}
 			},
 			"unionResult":{
 				"type":"set",
 				"props":{
 					"jsPrimitive":{"type":"set"},
-                    "setEquiv":"unionAttrs"
+                    "setEquiv":"unionAttrs",
+					"attributes":"unionResultAttrs"
+				}
+			},
+			"unionResultAttrs":{
+				"type":"set",
+				"props": {
+					"jsPrimitive":{
+						"type": "set",
+						"elements": ["setEquiv","attributes"]
+					}
 				}
 			},
 			"mouse":{
@@ -257,6 +159,42 @@
 					"instanceOf":"attribute"
 				}
 			},
+			"activeObject":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"mouseInput":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"prevVal":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"id":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"hash":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"graphicalRepresentation":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
 			"accordianRep":{
 				"type":"attribute",
 				"props":{
@@ -294,7 +232,24 @@
 				"type":"set",
 				"props": {
 					"name":"appChildrenName",
-					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
+					"jsPrimitive":{ "type": "set" },
+					"subset1":"pendulumPlot"
+				}
+			},
+			"windowChildren": {
+				"type":"set",
+				"props": {
+					"jsPrimitive":{ "type": "set" },
+					"subset1":"circle1"
+				}
+			},
+
+			"circle2":{
+				"type":"circle",
+				"props":{
+					"jsPrimitive":{"type":"circle"},
+					"centerPoint":"circleCenter",
+					"radius":"getCircleRadius"
 				}
 			},
 			"appChildrenName":{
@@ -325,17 +280,7 @@
 			"pendulumPlot": {
 				"type": "Plot",
 					"props": {
-						"name":"pendulumPlot",
-						"xVar": "bobX",
-						"yVar": "bobY",
-						"coordinateSystem":"pendulumCoordSys",
-						"xVars": "bobX",
-						"yVars": "bobY",
-						"width": "plotWidth",
-						"height": "plotHeight",
-						"pos": "plotPos",
-						"visibility": "plotVisibility",
-						"childElements":"plotChildren"
+						"name":"pendulumPlot"
 					}
 			},
 			"plotVisibility":{
@@ -470,6 +415,108 @@
 					"name":"numericalEquiv"
 				}
 			},
+			"jsPrimitive":{
+				"type":"attribute",
+				"props":{
+					"name":"jsPrimitive"
+				}
+			},
+			"subset1":{
+				"type":"attribute",
+				"props":{
+					"name":"subset1"
+				}
+			},
+			"subset2":{
+				"type":"attribute",
+				"props":{
+					"name":"subset2"
+				}
+			},
+			"set1":{
+				"type":"attribute",
+				"props":{
+					"name":"set1"
+				}
+			},
+			"set2":{
+				"type":"attribute",
+				"props":{
+					"name":"set2"
+				}
+			},
+			"centerPoint":{
+				"type":"attribute",
+				"props":{
+					"name":"centerPoint"
+				}
+			},
+			"radius":{
+				"type":"attribute",
+				"props":{
+					"name":"radius"
+				}
+			},
+			"x":{
+				"type":"attribute",
+				"props":{
+					"name":"x"
+				}
+			},
+			"y":{
+				"type":"attribute",
+				"props":{
+					"name":"y"
+				}
+			},
+			"left":{
+				"type":"attribute",
+				"props":{
+					"name":"left"
+				}
+			},
+			"right":{
+				"type":"attribute",
+				"props":{
+					"name":"right"
+				}
+			},
+			"textRep":{
+				"type":"attribute",
+				"props":{
+					"name":"textRep"
+				}
+			},
+			"expanded":{
+				"type":"attribute",
+				"props":{
+					"name":"expanded"
+				}
+			},
+			"highlighted":{
+				"type":"attribute",
+				"props":{
+					"name":"highlighted"
+				}
+			},
+			"pos":{
+				"type":"attribute",
+				"props":{
+					"name":"pos"
+				}
+			},
+			"down":{
+				"type":"attribute",
+				"props":{
+					"name":"down"
+				}
+			},
+			"function":{
+				"type":"attribute",
+				"props":{
+					"name":"right"
+				}
+			},
 			"additionFunction":{
 				"type": "function",
 				"props": {
@@ -503,7 +550,7 @@
 				"type":"number",
 				"props":{
 					"name":"radiusRight",
-					"jsPrimitive": {"type": "number", "value": 100}
+					"jsPrimitive": {"type": "number", "value": 0}
 				}
 			},
 			"circleCenter": {
@@ -526,6 +573,14 @@
 				"props":{
 					"name":"radiusY",
 					"jsPrimitive": {"type": "number", "value": 200}
+				}
+			},
+			"find":{
+				"type":"find",
+				"props":{
+					"jsPrimitive":{"type":"find"},
+					"attribute":"undef",
+					"then":"undef"
 				}
 			},
             "findAttributes":{

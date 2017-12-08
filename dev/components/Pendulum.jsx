@@ -6,7 +6,7 @@ import QuantityActions from '../ducks/quantity/actions'
 import SimActions from '../ducks/sim/actions'
 import {getValue, getColor, getHighlighted, getTransformedValue, getCoordSys, getQuantityData} from '../ducks/quantity/selectors'
 import {getCurrentCourseId, getCurrentPartId, getCurrentContentBlockId} from '../ducks/content/selectors'
-import {getChildren, getValue as getPropValue} from '../ducks/object/selectors'
+import { getValue as getPropValue } from '../ducks/object/selectors'
 import Path from "./Path"
 import Draggable from "./Draggable"
 import {HighlightFilter} from './filters'

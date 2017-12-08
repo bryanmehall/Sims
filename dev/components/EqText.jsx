@@ -3,7 +3,6 @@ import {connect} from "react-redux"
 
 import QuantityActions from '../ducks/quantity/actions'
 import ObjectActions from '../ducks/object/actions'
-import { getProp } from '../ducks/object/selectors'
 import {mathTextStyle} from './styles'
 
 

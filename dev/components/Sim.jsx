@@ -3,16 +3,16 @@ import { connect } from "react-redux"
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { getChildren } from '../ducks/object/selectors'
+import { getJSValue, getObject } from '../ducks/object/selectors'
 import Video from './Video'
 
 import Plot from './Plot'
+import Circle from './Circle'
+import Group from './Group'
 import Expression from './Expression'
 import Tracker from './Tracker'
 import { cardStyle } from './styles'
 import Link from 'redux-first-router-link'
-
-
 
 class Sim extends React.Component {
 	constructor(props){
@@ -59,12 +59,6 @@ class Sim extends React.Component {
 						draggable: 'false' }} src={imageUrl}></img>
 			</Link>
 		)
-		const childTypes = {
-			"Plot": Plot,
-            "Expression": Expression,
-			"Tracker": Tracker,
-			"Video": Video
-		}
 		const simCardStyle = {
 			...cardStyle, 
 			width: 400,
@@ -77,16 +71,7 @@ class Sim extends React.Component {
 			backgroundColor: '#fff' 
 		}
 		//combine these into one file for importing children
-		function createChild(childData){
-			var type = childTypes[childData.type]
-			var props = {...childData.props, contentBlockId, partId, courseId}
-			props.key = props.id
-			return React.createElement(type, props)
-		}
-		const children = this.props.childData.map(createChild)
 
-		const loadingIcon = (<div>Loading</div>)
-		const content = children
 		const setMousePos = (e) => {
 			const x = e.pageX - e.currentTarget.offsetLeft
 			const y = e.pageY - e.currentTarget.offsetTop
@@ -100,28 +85,31 @@ class Sim extends React.Component {
 			setProp("mouseDown", "jsPrimitive", { type: "bool", id: 'mouseDown', value: false })
 		}
 		return (
-			<div
+			<svg
 				style={simCardStyle}
 				onMouseMove = {setMousePos}
 				onMouseDown = {setMouseDown}
 				onMouseUp = {setMouseUp}>
 				{/*this.props.loadState === "loading" ? loadingIcon : null*/ }
 				{this.props.loadState === 'error' ? 'Error: Failed to Load Simulation' : null}
-				{content}
-			</div>
+				<Group children={this.props.childData.children}></Group>
+			</svg>
 		)
 	}
 }
 
 
-function mapStateToProps(state, props) {
+function mapStateToProps(state) {
 	const loadState = getLoadState(state)
 	if (loadState === 'loading'){
-		return {loadState, childData:[]}
+		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
-		const childData = getChildren(state, 'app')
+		//const childData = getJSValue(state, 'app', "childElements")
+		const appData = getObject(state, 'app')
+		const window = getJSValue(state, 'app', 'graphicalRepresentation', appData)
+		//console.log(window)
 		return {
-			childData,
+			childData: window,
 			loadState
 		}
 	}

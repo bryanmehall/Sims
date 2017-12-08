@@ -4,7 +4,6 @@ import ReactDOM from "react-dom"
 import {connect} from "react-redux"
 import { bindActionCreators } from 'redux'
 import QuantityActions from '../ducks/quantity/actions'
-import {getChildren} from '../ducks/object/selectors'
 import Value from './Value'
 import EqText from './EqText'
 
@@ -58,7 +57,7 @@ class Expression extends React.Component{
 
 function mapStateToProps(state, props) {
 	return {
-		childData: getChildren(state, props.id)
+		childData: []//get Children(state, props.id)
 	}
 }
 

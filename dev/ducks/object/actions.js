@@ -13,8 +13,8 @@ const setActive = (name, active) => ({
         value: active
 	}
 })
-const setActiveObject = (name) => (
-	setProp("app", "activeObject", name)
+const setActiveObject = (objectData) => (
+	setProp("app", "activeObject", objectData)
 )
 const addChild = (childName, name) => ({
 	type: "ADD_CHILD",

@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { listProps, getActiveObject } from '../ducks/object/selectors'
+import { getActiveObject } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 
 

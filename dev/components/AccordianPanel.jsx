@@ -1,7 +1,8 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { listProps, getActiveObject } from '../ducks/object/selectors'
+import { getLoadState } from '../ducks/sim/selectors'
+import { getJSValue, getValue, getObject, getSetData } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import AttributeTab from './AttributeTab'
 import TreeDiagram from './TreeDiagram'
@@ -9,16 +10,16 @@ import TreeDiagram from './TreeDiagram'
 class AccordianPanel extends React.Component {
 	constructor(props){
 		super(props)
-		this.state = { history: [props.objectId] }
+		this.state = { history: [] }
 	}
 	componentWillReceiveProps(nextProps){
-		const newId = nextProps.objectId
-		const currentId = this.props.objectId
+		const newId = nextProps.objectData.props.id
+		const currentId = this.props.objectData.props.id
 		const currentHistory = this.state.history
 		const newIndex = currentHistory.indexOf(newId)
 		if (newId !== currentId){
 			if (newIndex === -1){ //if going outward in the tree
-				const newHistory = [...currentHistory, newId]
+				const newHistory = [...currentHistory, nextProps.objectData]
 				this.setState({ history: newHistory })
 			} else { //if going back up the tree
 				const newHistory = currentHistory.slice(0,newIndex+1)
@@ -29,16 +30,20 @@ class AccordianPanel extends React.Component {
 
 	}
 	render() {
-		const { objectId, attrs } = this.props
-		const navActive = (e) => { this.props.setActiveObject(e.target.id) }
-		const attributeTabs = attrs.map((attr) => (<AttributeTab key={attr} objectId={objectId} attrId={attr}/>))
-		const historyTabs = this.state.history.map((id) => (
+		if (this.props.notLoaded){//prevent accordian panel and tree from erroring
+			return <div>loading</div>
+		}
+		const { objectData, attrs } = this.props
+		const navActive = (e) => { this.props.setActiveObject(e.target.objectData) }
+		const attributeTabs = attrs.map((attr) => (<AttributeTab key={attr.props.id} objectData={objectData} attr={attr}/>))
+		const historyTabs = this.state.history.map((historyObjectData) => (
 			<span
 				onClick={navActive}
-				id={id}
+				id={historyObjectData.props.id}
+				objectData={historyObjectData}
 				style={{ cursor: 'pointer' }}
-				key={id}
-				> > {id}</span>
+				key={historyObjectData.props.id}
+				> > {historyObjectData.props.id}</span>
 
 		))
 		return (
@@ -53,7 +58,7 @@ class AccordianPanel extends React.Component {
 				>
 				<div>
 					{historyTabs}
-					<h3 >{objectId}</h3>
+					<h3 >{objectData.props.id}</h3>
 					<div>{attributeTabs}</div>
 				</div>
 				<TreeDiagram></TreeDiagram>
@@ -62,23 +67,30 @@ class AccordianPanel extends React.Component {
 	}
 }
 const mapStateToProps = (state) => {
-	const activeObject = getActiveObject(state)
-	let attrs = []
-	try {
-		attrs = listProps(state, activeObject)
-	} catch (e){
-		attrs = []
+	const loadState = getLoadState(state)
+	if (loadState === 'loading'){
+		return { objectData:{type:'undef', props:{id:'undef'}}, attrs:[], notLoaded:true }
 	}
+	const appData = getObject(state, 'app')
+	const activeObjectData = getValue(state, 'placeholder', 'activeObject', appData)
+	//const prevActiveObject = getValue(state, 'someId', 'prevVal', getValue(state, 'app', 'activeObject'))
+	//console.log('##########', prevActiveObject)
+	const activeObject = activeObjectData.props.id
+	if (activeObject === 'undef'){
+		return { objectId: activeObject, attrs: [], notLoaded: true }
+	}
+	const attrsSet = getValue(state, 'placeholder', 'attributes', activeObjectData)
+	const attrs = getSetData(state, attrsSet)
 	return {
-		objectId: activeObject,
+		objectData: activeObjectData,
 		attrs: attrs
 	}
 }
 
 const mapDispatchToProps = (dispatch) => (
 	{
-		setActiveObject: (id) => {
-			dispatch(ObjectActions.setActiveObject(id))
+		setActiveObject: (objectData) => {
+			dispatch(ObjectActions.setActiveObject(objectData))
 		}
 	}
 )
