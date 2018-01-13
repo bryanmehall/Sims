@@ -5,7 +5,6 @@ import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
 import { getJSValue, getObject } from '../ducks/object/selectors'
 import Video from './Video'
-
 import Plot from './Plot'
 import Circle from './Circle'
 import Group from './Group'
@@ -61,8 +60,8 @@ class Sim extends React.Component {
 		)
 		const simCardStyle = {
 			...cardStyle, 
-			width: 400,
-			height: 400,
+			width: 600,
+			height: 600,
 			position: "relative",
 			overflow: 'hidden',
 			left: 0,
@@ -107,6 +106,7 @@ function mapStateToProps(state) {
 		//const childData = getJSValue(state, 'app', "childElements")
 		const appData = getObject(state, 'app')
 		const window = getJSValue(state, 'app', 'graphicalRepresentation', appData)
+		console.log(window)
 		//console.log(window)
 		return {
 			childData: window,

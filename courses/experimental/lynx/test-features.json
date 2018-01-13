@@ -12,7 +12,13 @@
 			"app": {
 				"type": "SmdApp",
 				"props": {
-					"name":"app",
+					"name":{
+						"type": "string",
+						"props":{
+							"jsPrimitive":{"type":"string", "value":"App"}
+
+						}
+					},
 					"activeObject": "app",
 					"graphicalRepresentation":"window",
 					"childElements": "appChildren",
@@ -138,25 +144,146 @@
 			"object":{
 				"type": "object",
 				"props":{
-					"attributes":"objectAttrs"
+					"attributes":"objectAttrs",
+					"accordianRep":{
+						"type":"group",
+						"props":{
+							"jsPrimitive":{"type":"group"},
+							"childElements":{
+								"type":"set",
+								"props":{
+									"jsPrimitive":{"type":"set"},
+									"subset1":{
+										"type": "text",
+										"props": {
+											"jsPrimitive": { "type": "text"},
+											"pos":{
+												"type":"coordinatePoint",
+												"props":{
+													"x":{
+														"type":"number",
+														"props":{
+															"jsPrimitive":{"type":"number", "value":50}
+														}
+													},
+													"y":{
+														"type":"number",
+														"props":{
+															"jsPrimitive":{"type":"number", "value":50}
+														}
+													}
+												}
+											},
+											"innerText":{
+												"type":"string",
+												"props":{
+													"jsPrimitive":{"type":"string", "value":"objectAttrRep"}
+												}
+											}
+										}
+									},
+									"subset2":{
+										"type":"group",
+										"props":{
+											"jsPrimitive":{ "type": "group" },
+											"childElements":{
+												"type": "get",
+												"props":{
+													"rootObject":"objectAttrs",
+													"attribute":"textRep",
+													"forEach":"true"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			},
 			"attribute":{
 				"type":"attribute",
 				"props":{
-					"instanceOf":"object"
+					"instanceOf":"object",
+					"textRep":"textRepresentation",
+					"name":{
+						"type":"string",
+						"props":{
+							"jsPrimitive":{"type":"string", "value":"attribute" }
+						}
+					}
+				}
+			},
+			"textRepresentation":{
+				"type":"text",
+				"props":{
+					"jsPrimitive":{"type":"text"},
+					"pos":{
+						"type":"coordinatePoint",
+						"props":{
+							"x":{
+								"type":"number",
+								"props":{
+									"jsPrimitive":{"type":"number", "value":50}
+								}
+							},
+							"y":{
+								"type":"number",
+								"props":{
+									"jsPrimitive":{"type":"number", "value":100}
+								}
+							}
+						}
+					},
+					"innerText":{
+						"type":"get",
+						"props":{
+							"attribute":"name",
+							"rootObject":{
+								"type":"get",
+								"props":{
+									"rootObject":{
+										"type":"search",
+                                        "props":{
+                                            "jsPrimitive":{"type":"search", "query":"textRepresentation"}
+                                        }
+									},
+									"attribute":"parentConcept"
+								}
+							}
+						}
+					},
+					"name":{
+						"type":"string",
+						"props":{
+							"jsPrimitive":{"type":"string", "value":"attr" }
+						}
+					}
 				}
 			},
 			"attributes":{
 				"type":"attribute",
 				"props":{
-					"instanceOf":"attribute"
+					"instanceOf":"attribute",
+					"name":{
+						"type":"string",
+						"props":{
+							"jsPrimitive":{"type":"string", "value":"attributes" }
+						}
+					}
 				}
 			},
             "instanceOf":{
 				"type":"attribute",
 				"props":{
-					"instanceOf":"attribute"
+					"instanceOf":"attribute",
+					"name":{
+						"type":"string",
+						"props":{
+							"jsPrimitive":{"type":"string", "value":"instance of" }
+						}
+					}
 				}
 			},
 			"activeObject":{
@@ -165,6 +292,18 @@
 					"instanceOf":"attribute"
 				}
 			},
+			"forEach":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+            "setEquiv":{
+                "type":"attribute",
+                "props":{
+					"instanceOf":"attribute"
+				}
+            },
 			"mouseInput":{
 				"type":"attribute",
 				"props":{
@@ -172,6 +311,12 @@
 				}
 			},
 			"prevVal":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"parentValue": {
 				"type":"attribute",
 				"props":{
 					"instanceOf":"attribute"
@@ -197,8 +342,14 @@
 			},
 			"accordianRep":{
 				"type":"attribute",
-				"props":{
-					"instanceOf": "attribute"
+				"props": {
+					"instanceOf": "attribute",
+					"name":{
+                        "type":"string",
+                        "props":{
+                            "jsPrimitive":{"type":"string", "value":"accordian representation"}
+                        }
+                    }
 				}
 			},
 			"undef":{
@@ -240,7 +391,27 @@
 				"type":"set",
 				"props": {
 					"jsPrimitive":{ "type": "set" },
-					"subset1":"circle1"
+					"subset1":"circle1",
+					"subset2":{
+						"type":"group",
+						"props":{
+							"jsPrimitive":{"type":"group"},
+							"childElements":{
+								"type":"set",
+								"props":{
+									"jsPrimitive":{"type":"set"},
+									"subset1":{
+										"type":"get",
+										"props":{
+											"jsPrimitive":{"type":"get"},
+											"rootObject":"object",
+											"attribute":"accordianRep"
+											}
+									}
+								}
+							}
+						}
+					}
 				}
 			},
 
@@ -421,6 +592,13 @@
 					"name":"jsPrimitive"
 				}
 			},
+			"innerText":{
+				"type":"attribute",
+				"props":{
+					"name":"innerText",
+                    "inverseAttribute":"parentValue"
+				}
+			},
 			"subset1":{
 				"type":"attribute",
 				"props":{
@@ -484,9 +662,22 @@
 			"textRep":{
 				"type":"attribute",
 				"props":{
-					"name":"textRep"
+					"name":"textRep",
+                    "inverseAttribute":"parentConcept"
 				}
 			},
+             "inverseAttribute":{
+                "type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+            },
+             "parentConcept":{
+                "type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+            },
 			"expanded":{
 				"type":"attribute",
 				"props":{
@@ -499,6 +690,25 @@
 					"name":"highlighted"
 				}
 			},
+            "condition":{
+                "type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+            },
+            "else":{
+                "type":"attribute",
+				"props":{
+					"instanceOf":"expanded"
+				}
+            },
+            "rootObject":{
+                "type":"attribute",
+				"props":{
+					"instanceOf":"expanded",
+                    "inverseAttribute":"parentValue"
+				}
+            },
 			"pos":{
 				"type":"attribute",
 				"props":{

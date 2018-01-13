@@ -61,7 +61,7 @@ class AccordianPanel extends React.Component {
 					<h3 >{objectData.props.id}</h3>
 					<div>{attributeTabs}</div>
 				</div>
-				<TreeDiagram></TreeDiagram>
+				{/*<TreeDiagram></TreeDiagram>*/}
 			</div>
 		)
 	}

@@ -23,8 +23,11 @@ const UnconnectedObjectLink = ({ parentData, attrId, objectData, objectId, setAc
                 style={{ backgroundColor: '#ccc', padding: 2, cursor: 'pointer' }}
                 key = "add button"
                 onClick={() => {
+					const value = prevVal.type === 'undef' ? objectData : prevVal
+					const newSet = objectLib.union(value, objectLib.undef, objectData)
 
-					setProp(parentData.props.id, attrId, objectLib.union(prevVal, objectLib.undef, objectData))
+					console.log(value, newSet)
+					setProp(parentData.props.id, attrId, newSet)
                 }}
                 >
                 +
@@ -48,7 +51,7 @@ const UnconnectedObjectLink = ({ parentData, attrId, objectData, objectId, setAc
 const mapStateToProps = (state, props) => {
 	const objectData = props.objectData
 	if (props.attrId === 'id'){
-		console.log(objectData, props.attrId)
+		//console.log(objectData, props.attrId)
 		return {
 			prevVal:objectLib.undef,
 			displayText: JSON.stringify(objectData),
