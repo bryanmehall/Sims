@@ -194,7 +194,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 	if (objectData === undefined){
 		throw new Error('must have object def'+name+prop) //"get rid of this when everything is switched"
 	}
-
+    console.log('getting ', prop, ' of ', objectData)
 	const def = objectData.props[prop]
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop
 	//console.log(def, prop)
@@ -265,7 +265,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				}
 			}
 			case 'string': {
-				console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!string', valueData)
 				if (valueData.hasOwnProperty('value')) {
 
 					return valueData.value
@@ -293,10 +292,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			case 'set': {//there shouldn't be js primitive for sets?
 				const equivObjectData = getValue(state, 'placeholder', 'setEquiv', objectData)
 				if (equivObjectData.type === "undef"){
-					console.log("$$$$$", objectData)
-
 					const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
-
 					const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
 					return [].concat(set1, set2)
 				} else {
@@ -304,6 +300,11 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					return equivValue
 				}
 			}
+            case 'array': {
+                const firstValue = getJSValue(state, 'placeholder', 'firstElement', objectData)
+                console.log('array', firstValue, objectData)
+                return []
+            }
 			case 'get': {
 
 				return 'get primitive'
@@ -351,7 +352,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			}
 			case 'group':{
 				const children = getJSValue(state, 'placeholder', 'childElements', objectData)
-
 				const noUndefChildren = children.filter((child) => (child !== undefined))
 
 				return {type:"Group", children:noUndefChildren}
@@ -379,14 +379,13 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		if (valueData.type === 'get' /*&& prop !== 'rootObject'*/) { //this will need to work for sets
 			counter += 1
 			//console.log(objectData, valueData)
-			if (counter> 50){throw 'count'}
+			if (counter> 100){throw 'count'}
 			//console.log(prop, 'of', objectData, 'is')
             const valueDataWithParent = returnWithPrevValue(name, prop, attrData, valueData, objectData)
 			const rootObjectData = getValue(state, 'placeholder', 'rootObject', valueDataWithParent)
 			const iterate = getValue(state, 'placeholder', 'forEach', valueDataWithParent)
 			const property = valueData.props.attribute
-
-			if (typeof property !== 'string') { throw 'need to handle object props' }
+			if (typeof property !== 'string') { throw 'need to handle object props'}
 			const root = rootObjectData.type === "undef" ? objectData : rootObjectData
 			const parent = objectData.type === 'get' ? root : root//get rid of this
 			if (iterate.type === 'undef' || iterate.type === 'false'){ //
@@ -437,11 +436,17 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			const id = getValue(state, 'placeholder','jsPrimitive', valueData)
 
 			const resultObjectData = getObject(state, id) //the only time to use getObject should be here????
-            const text = objectData.props.parentValue.props.parentValue
-
-			console.log('text', text)
-
-			return text//resultObjectData
+            const getParentByName = (objData, query) => {
+                if (objData.props.id === query){
+                    return objData
+                } else if (!objData.props.hasOwnProperty('parentValue')){
+                    throw new Error('no parent value found for'+ query)
+                } else {
+                    return getParentByName(objData.props.parentValue, query)
+                }
+            }
+            const result = getParentByName(objectData, id)
+			return result//resultObjectData
         } else if (valueData.type === 'new'){
 			const generatorData = getObject(state, def).props.jsPrimitive
 			const type = generatorData.querry

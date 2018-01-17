@@ -344,6 +344,7 @@
 				"type":"attribute",
 				"props": {
 					"instanceOf": "attribute",
+                    "inverseAttribute":"parent",
 					"name":{
                         "type":"string",
                         "props":{
