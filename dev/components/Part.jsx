@@ -145,7 +145,7 @@ class Part extends React.Component {
 
 						</div>
 					)}
-					{isActive && this.state.editMode ? <AccordianPanel></AccordianPanel> : null}
+                    {/*{isActive && this.state.editMode ? <AccordianPanel></AccordianPanel> : null}*/}
 					{editIcon}
 				</div>
 

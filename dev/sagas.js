@@ -2,6 +2,7 @@ import { call, put, takeEvery, takeLatest, fork } from 'redux-saga/effects'
 import SimActions from './ducks/sim/actions'
 import ContentActions from './ducks/content/actions'
 import axios from 'axios'
+import {lynxParser} from './lynxParser'
 
 function fetchJson(path) {
 	let url
@@ -12,12 +13,26 @@ function fetchJson(path) {
 	}
 	return axios.get(url)
 }
+function fetchLynx(path){
+    const url = typeof path === 'string' ? '/content'+path+'.lynx'
+                                         : '/content/'+path.join('/')+'.lynx'
+    return axios.get(url)
 
+}
 //sim
 function* fetchSimData(action) {
 	try {
-		const response = yield call(fetchJson, action.payload.path)
-		yield put(SimActions.initializeSimState(response.data))
+        let response
+        try{
+		  const lynxFile = yield call(fetchLynx, action.payload.path)
+          response = lynxParser(lynxFile.data)
+        } catch(e) {
+            console.warn('could not find lynx file at ', action.payload.path)
+            const jsonFile = yield call(fetchJson, action.payload.path)
+            response = jsonFile.data
+        }
+        console.log(response)
+		yield put(SimActions.initializeSimState(response))
 	} catch (e) {
 
 		yield put(SimActions.simDataFetchFailed(e))

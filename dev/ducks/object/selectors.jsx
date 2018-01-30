@@ -26,7 +26,7 @@ const primitives = { //move to new file?
 	//numbers
 	add: {
 		func: (args) => (args[0]+args[1]),
-		args: ['left', 'right'],
+		args: ['op1', 'op2'],
 		ret: ['result']
 	},
 	multiply: (args) => (args[0]*args[1]),
@@ -40,9 +40,10 @@ const primitives = { //move to new file?
 	}
 }
 export const getJSValue = (state, name, prop, objData) => {
-	//if (prop === 'childElements'){console.log('gettingJS', name, prop, objData)}
+
 	//const objectData = objData === undefined ? getObject(state, name) : objData
 	const valueData = getValue(state, 'placeholder', prop, objData)
+    //if (prop === 'subset2'){console.log('gettingJS', name, prop, objData, valueData)}
 	//const objectData = getObject(state, value) //replace eval: modify here
 	if (valueData.type === 'undef'){
 		return undefined
@@ -170,32 +171,35 @@ const getPrevValue = (key) => { //get previous
 	}
 }
 
-const returnWithPrevValue = (name, attr, attrData,  valueData, objectData) => {//adds previous value and parent value to props and reflexive attributes
-
+const returnWithPrevValue = (name, attr, attrData,  valueData, objectData) => { //adds previous value and parent value to props and reflexive attributes
 	const key = name+attr
-	//if (key === 'circle1expanded') console.log(stateTable.circle1expanded)
-    const hasInverse = attrData.props.hasOwnProperty('inverseAttribute')
-    const inverse = hasInverse ? {[attrData.props.inverseAttribute]:objectData}: {}
+	if (objectData.type === 'app'){ //special case for root in this case app
+        objectData = objectLib.undef
+    }
+    const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
+    const inverse = hasInverse ? {[attrData.props.inverseAttribute]:objectData}: {} //get inverse value (parent)
+    const inverseAttrs = Object.assign({parentValue:objectData}, inverse)
 	const propsWithoutPrevious =  Object.assign({}, valueData.props, { prevVal: valueData })
 	const valueWithoutPrevious = Object.assign({}, valueData, { props: propsWithoutPrevious })
 	const prevVal = addState(key, valueWithoutPrevious)
+    console.log(JSON.stringify(objectData).length, attr)
 	if (prevVal === null){
-		const newProps = Object.assign(Object.assign({}, valueData.props, inverse))
+		const newProps = Object.assign(Object.assign({}, valueData.props, inverseAttrs))
 		//if (valueData.props.id === "textRepresentation"){console.log('$$$$$$$$$abc', attr, objectData, valueData)}
 		return Object.assign(Object.assign({}, valueData, { props:newProps }))
 	} else {
-		const newProps = Object.assign(Object.assign({}, valueData.props, { prevVal}, inverse))
+		const newProps = Object.assign(Object.assign({}, valueData.props, { prevVal}, inverseAttrs))
 		//if (valueData.props.id === "textRepresentation"){console.log('&&&&&&&&&abc', attr, objectData, valueData)}
 		return Object.assign(Object.assign({}, valueData, { props:newProps }))
 	}
 }
 let counter = 0
 export const getValue = (state, name, prop, objectData) => { //get Value should be called eval and will need to support async actions eventually
-	if (objectData === undefined){
-		throw new Error('must have object def'+name+prop) //"get rid of this when everything is switched"
+    if (objectData === undefined){
+		throw new Error('must have object def for '+prop) //"get rid of this when everything is switched"
 	}
-    console.log('getting ', prop, ' of ', objectData)
-	const def = objectData.props[prop]
+
+	let def = objectData.props[prop]
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop
 	//console.log(def, prop)
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values
@@ -203,18 +207,13 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		if (objectData.type === 'object'){
 			return objectLib.undef
 		}
+
 		if (!objectData.props.hasOwnProperty('instanceOf')){
 			inheritedData = getObject(state, 'object')
 		} else {
 			inheritedData = getValue(state, 'placeholder', 'instanceOf', objectData)
 		}
-		if (inheritedData.type === 'undef'){
-			console.log('could not find parent')
-		} else {
-			const inheritedValue = getValue(state, 'placeholder', prop, inheritedData)
-			return returnWithPrevValue('placeholder', prop, attrData, inheritedValue, objectData)
-		}
-
+        def = inheritedData.props[prop]
 	}
 	const valueData = typeof def === 'string' ? getObject(state, def) : def
 	name = objectData.props.id
@@ -224,7 +223,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 	}
 
 	if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
-
 		if (objectData.props.hasOwnProperty('attributes')){
 			const attributeData = objectLib.union(valueData, objectLib)
 			return returnWithPrevValue(name, prop,attrData, valueData, objectData)
@@ -266,11 +264,9 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			}
 			case 'string': {
 				if (valueData.hasOwnProperty('value')) {
-
 					return valueData.value
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
-
 					const equivObjectData = getValue(state, 'name', 'stringEquiv', objectData)
 					const equivValue = getValue(state, 'equivObject', 'jsPrimitive', equivObjectData)
 					return equivValue
@@ -301,9 +297,19 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				}
 			}
             case 'array': {
-                const firstValue = getJSValue(state, 'placeholder', 'firstElement', objectData)
-                console.log('array', firstValue, objectData)
-                return []
+                const firstElement = getValue(state, 'placeholder', 'firstElement', objectData)
+                const createArray = (element, array) => {
+                    if (element.type === 'undef'){
+                        return array
+                    } else {
+                        const value = getJSValue(state, 'placeholder', 'value', element)
+                        const nextElement = getValue(state, 'placeholder', 'nextElement', element)
+                        return createArray(nextElement, array.concat(array, [value]))
+                    }
+                }
+
+
+                return createArray(firstElement, [])
             }
 			case 'get': {
 
@@ -330,14 +336,21 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					context.stroke();
 				`)*/
 			}
+
+            case 'rectangle':{
+                const pos = getValue(state, 'placeholder', 'pos', objectData)
+				const x= getJSValue(state, 'placeholder', 'x', pos)
+				const y = getJSValue(state, 'placeholder', 'y', pos)
+				const width = getJSValue(state, 'placeholder', 'width', objectData)
+                const height = getJSValue(state, 'placeholder', 'height', objectData)
+				return {type:"Rectangle", x, y, width, height}
+            }
 			case 'text': {
 				const pos = getValue(state, 'placeholder', 'pos', objectData)
 				const x = getJSValue(state, 'placeholder', 'x', pos)
 				const y = getJSValue(state, 'placeholder', 'y', pos)
-				console.log('######## start', prop, objectData)
 				const string = getJSValue(state, 'placeholder', 'innerText', objectData)
                 const filteredString =  typeof string === "string" ? string : "undef"
-				console.log('!!!!!!!! end', prop, objectData, string)
 				return { type: "Text", x, y, string:filteredString }
 			}
 			case 'search': {
@@ -376,10 +389,13 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 						}
 					}*/
 
-		if (valueData.type === 'get' /*&& prop !== 'rootObject'*/) { //this will need to work for sets
+		if (valueData.type === 'get' && prop !== 'parentValue') {
+            //for sets set forEach attribute to true
+            //is there a better way to avoid the parentValue check to prevent an infinite loop?
 			counter += 1
-			//console.log(objectData, valueData)
-			if (counter> 100){throw 'count'}
+			if (counter > 50){
+                throw 'count'
+            }
 			//console.log(prop, 'of', objectData, 'is')
             const valueDataWithParent = returnWithPrevValue(name, prop, attrData, valueData, objectData)
 			const rootObjectData = getValue(state, 'placeholder', 'rootObject', valueDataWithParent)
@@ -388,7 +404,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			if (typeof property !== 'string') { throw 'need to handle object props'}
 			const root = rootObjectData.type === "undef" ? objectData : rootObjectData
 			const parent = objectData.type === 'get' ? root : root//get rid of this
-			if (iterate.type === 'undef' || iterate.type === 'false'){ //
+			if (iterate.type === 'undef' || iterate.type === 'false'){
 				if (property === 'rootObject'){throw 'nested can not be root'}
 				const returnValue = getValue(state, 'placeholder', property, parent)
 				return returnWithPrevValue(name, prop, attrData, returnValue, parent)
@@ -397,12 +413,12 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				const values = elements.map(
 					(element) => {
 						const elemValue = getValue(state, 'placeholder', property, element)
-						const elemReturn = returnWithPrevValue(name, prop,attrData, elemValue, 'b')
+						const elemReturn = returnWithPrevValue(name, prop,attrData, elemValue, objectData)
 						return elemReturn
 					}
 				)
 				const returnValue = objectLib.constructSet('needToChangeSetId', values)
-				return returnWithPrevValue(name, prop,attrData, returnValue, 'a')
+				return returnWithPrevValue(name, prop,attrData, returnValue, objectData)
 			} else {
 				throw 'invalid type for iterate flag'
 			}
@@ -433,19 +449,21 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
             return getObject(state, resultId) //needs to return objectData for full result
 
         } else if (valueData.type === 'search') {
-			const id = getValue(state, 'placeholder','jsPrimitive', valueData)
-
-			const resultObjectData = getObject(state, id) //the only time to use getObject should be here????
+			const query = getValue(state, 'placeholder','jsPrimitive', valueData) //name to search for
+			const resultObjectData = getObject(state, query) //the only time to use getObject should be here????
             const getParentByName = (objData, query) => {
-                if (objData.props.id === query){
+                const name  = getJSValue(state, 'placeholder', 'name', objData)
+                const parentValue = getValue(state, 'placeholder', 'parentValue', objData)
+                if (name === query){
                     return objData
-                } else if (!objData.props.hasOwnProperty('parentValue')){
-                    throw new Error('no parent value found for'+ query)
+                } else if (parentValue.type === 'undef'){
+                    return resultObjectData
+                    //throw new Error('no parent value found for '+ query+' in '+JSON.stringify(objData))
                 } else {
                     return getParentByName(objData.props.parentValue, query)
                 }
             }
-            const result = getParentByName(objectData, id)
+            const result = getParentByName(objectData, query)
 			return result//resultObjectData
         } else if (valueData.type === 'new'){
 			const generatorData = getObject(state, def).props.jsPrimitive

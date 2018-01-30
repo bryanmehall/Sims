@@ -10,7 +10,7 @@
 	"initialState": {
 		"object": {
 			"app": {
-				"type": "SmdApp",
+				"type": "app",
 				"props": {
 					"name":{
 						"type": "string",
@@ -30,6 +30,12 @@
 				"type":"window",
 				"props":{
 					"jsPrimitive":{"type":"group"},
+                    "width":{
+                        "type":"number",
+                        "props":{
+                            "jsPrimitive":{"type":"number", "value":400}
+                        }
+                    },
 					"childElements": "windowChildren"
 				}
 			},
@@ -340,6 +346,61 @@
 					"instanceOf":"attribute"
 				}
 			},
+            "box":{
+                "type":"box",
+                "props":{
+                    "jsPrimitive":{"type":"rectangle"},
+                    "pos":{
+                        "type":"coordinatePoint",
+                        "props":{
+                            "x":{
+                                "type":"number",
+                                "props":{
+                                    "jsPrimitive":{"type":"number", "value":20}
+                                }
+                            },
+                            "y":{
+                                "type":"number",
+                                "props":{
+                                    "jsPrimitive":{"type":"number", "value":20}
+                                }
+                            }
+                        }
+                    },
+                    "width":{
+                        "type":"get",
+						"props":{
+							"attribute":"width",
+
+							"rootObject":{
+                                "type":"get",
+                                "props":{
+                                    "attribute":"parentElement",
+                                    "rootObject":{
+                                        "type":"get",
+                                        "props":{
+                                            "rootObject":{
+                                                "type":"search",
+                                                "props":{
+                                                    "jsPrimitive":{"type":"search", "query":"box"}
+                                                }
+                                            },
+                                            "attribute":"elementOf"
+                                        }
+                                    }
+                                }
+
+							}
+						}
+                    },
+                    "height":{
+                        "type":"number",
+                        "props":{
+                            "jsPrimitive":{"type":"number", "value":100}
+                        }
+                    }
+                }
+            },
 			"accordianRep":{
 				"type":"attribute",
 				"props": {
@@ -392,7 +453,7 @@
 				"type":"set",
 				"props": {
 					"jsPrimitive":{ "type": "set" },
-					"subset1":"circle1",
+					"subset1":"box",
 					"subset2":{
 						"type":"group",
 						"props":{
@@ -439,9 +500,16 @@
 			"childElements":{
 				"type":"attribute",
 				"props": {
-					"instanceOf": "attribute"
+					"instanceOf": "attribute",
+                    "inverseAttribute":"parentElement"
 				}
 			},
+            "parentElement":{
+                "type":"attribute",
+                "props":{
+                    "instanceOf":"attribute"
+                }
+            },
 			"apply":{
 				"type":"apply",
 				"props":{
@@ -603,15 +671,22 @@
 			"subset1":{
 				"type":"attribute",
 				"props":{
-					"name":"subset1"
+					"name":"subset1",
+                    "inverseAttribute":"elementOf"
 				}
 			},
 			"subset2":{
 				"type":"attribute",
-				"props":{
+				"props": {
 					"name":"subset2"
 				}
 			},
+            "elementOf": {
+                "type":"attribute",
+				"props":{
+					"name":"elementOf"
+				}
+            },
 			"set1":{
 				"type":"attribute",
 				"props":{
@@ -658,6 +733,19 @@
 				"type":"attribute",
 				"props":{
 					"name":"right"
+				}
+			},
+            "height":{
+				"type":"attribute",
+				"props":{
+					"name":"height"
+				}
+			},
+            "width":{
+				"type":"attribute",
+				"props":{
+					"name":"width",
+                    "inverseAttribute":"parentValue"
 				}
 			},
 			"textRep":{

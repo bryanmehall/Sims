@@ -1,6 +1,7 @@
 import React from 'react'
 import Circle from './Circle'
 import Text from './Text'
+import Rectangle from './Rectangle'
 
 class Group extends React.Component {
 	constructor(props){
@@ -8,7 +9,8 @@ class Group extends React.Component {
 		const childTypes = {
 			Circle: Circle,
 			Text: Text,
-			Group: Group
+			Group: Group,
+            Rectangle:Rectangle
 		}
 
 		this.createChildren = (childData) => {

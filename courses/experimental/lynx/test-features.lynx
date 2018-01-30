@@ -1,0 +1,152 @@
+app = new object
+    name:"app"
+    type:app
+    activeObject:window
+    graphicalRepresentation:window
+
+window = new object
+    jsPrimitive: {group}
+    type:window
+    name:"window"
+    childElements: new set
+        subset1: app.activeObject.accordianRep
+        subset2: moose.textRepresentation
+    width:200
+
+object = new object
+    name:"object"
+    accordianRep:new group
+        name: "accordianRep"
+        childElements: new set
+            subset1: new rectangle
+                width: 200
+                height: 100
+                pos: new coordinatePosition
+                    x:20
+                    y:20
+            subset2: new set
+                subset1: new text
+                    innerText:accordianRep.parentConcept.name
+                    pos: new coordinatePosition
+                        x:25
+                        y:35
+                subset2: new group
+                    childElements: new array
+                        x:100
+                        firstElement:new element
+                            value:new text
+                                name: "attrText"
+                                innerText:"abc"
+                                height:30
+                                pos: new coordinatePosition
+                                    x:attrText.parentValue.array.x
+                                    y:60
+                                bottom:new apply
+                                    op1: attrText.pos.y
+                                    op2: attrText.height
+                                    function:"add"
+                                left: attrText.pos.x
+                            nextElement: new element
+                                value: new text
+                                    name:"attrText"
+                                    innerText:"xyz"
+                                    pos: new coordinatePosition
+                                        x:attrText.parentValue.previousElement.value.left
+                                        y:attrText.parentValue.previousElement.value.bottom
+
+array = new object
+    jsPrimitive:{array}
+firstElement = new attribute
+    inverseAttribute:array
+attrText = new object
+nextElement = new attribute
+    inverseAttribute: previousElement
+previousElement = new attribute
+coordinatePosition = new object
+element = new object
+value = new object
+attribute = new object
+    inverseAttribute:parentValue
+rectangle = new geometricObject
+    jsPrimitive:{rectangle}
+attributes = new attribute
+prevVal = new attribute
+id = new attribute
+hash = new attribute
+activeObject = new attribute
+name = new attribute
+graphicalRepresentation = new attribute
+accordianRep = new attribute
+    inverseAttribute: parentConcept
+jsPrimitive = new attribute
+setEquiv = new attribute
+childElements = new attribute
+subset1 = new attribute
+subset2 = new attribute
+centerPoint = new attribute
+x = new attribute
+y = new attribute
+bottom = new attribute
+left = new attribute
+radius = new attribute
+rootObject = new attribute
+    inverseAttribute: parentValue
+forEach = new attribute
+pos = new attribute
+innerText = new attribute
+    inverseAttribute: parentValue
+parentValue = new attribute
+instanceOf = new attribute
+type = new attribute
+parentConcept = new attribute
+
+width = new attribute
+height = new attribute
+apply = new object
+    jsPrimitive:{apply}
+
+function = new attribute
+op1 = new attribute
+op2 = new attribute
+
+textRepresentation = new attribute
+    inverseAttribute:parentConcept
+
+set = new object
+    type:set
+    jsPrimitive:{set}
+
+group = new object
+    type:group
+    jsPrimitive:{group}
+
+geometricObject = new object
+
+text = new object
+    jsPrimitive:{text}
+    type:text
+    innerText:"abc"
+    pos: new coordinatePosition
+        x:50
+        y:100
+
+animal = new object
+    textRepresentation:new text
+        name:"textRepresentation"
+        innerText:textRepresentation.parentConcept.name
+        pos:new coordinatePosition
+            x:300
+            y:400
+
+moose = new animal
+    name:"moose"
+
+bear = new animal
+    name:"bear"
+
+circle = new geometricObject
+    jsPrimitive:{circle}
+    centerPoint:new coordinatePoint
+        x:300
+        y:400
+    radius:5

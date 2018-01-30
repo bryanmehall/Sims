@@ -1,0 +1,125 @@
+
+start
+  = Module
+  
+Module 
+	= declarations:(Declaration "\n"*)+ {
+    	var objects = {}
+        declarations.forEach(function(declaration){
+        	objects[declaration[0].id]  = declaration[0]
+        })
+        var module = {
+            keyframes:[],
+            quantity:{},
+        	initialState:{
+                object:objects
+            }
+        }
+        return module
+    }
+Declaration
+	= "\n"*id:Name " "*"="" "*object:Object {return Object.assign({}, object, {id:id})}
+
+Object "object"
+	= value:New "{{"?attributes:("\n""    "*Attribute)*"}}"? {
+    	var props = {}
+    	attributes.forEach(function(attr){props[attr[2].name] = attr[2].value})
+        props.instanceOf = props.hasOwnProperty('instanceOf') ? props.instanceOf : value
+        var type = props.hasOwnProperty('type') ? props.type : value //override type property 
+        //--get rid of this when switching type system
+    	return {
+        	type:type,
+            props:props
+        } 
+    }
+
+Attribute 
+    = name:Name":"" "?value:(Expression) {
+        return {
+        	name:name,
+            value:value
+       }
+   }
+Expression "expression"
+	= Ternary / Value
+    
+Value "value"
+	=  Primitive / Number / String / Get / Object / Name 
+
+Name "name"
+	= name:[a-zA-Z0-9]+ {return name.join("")}
+    
+New = "new "name:Name {return name}
+Search = query:Name {
+	return {
+		type:"search",
+        props:{
+            jsPrimitive:{type:"search", "query":query}
+        }
+        }
+    }
+////////references
+Get "get"
+    = root:Search? attributes:("."Name)+ {
+    function buildPath(rootObject, attr){
+      var getData = {
+          type:"get",
+          props:{
+              attribute:attr[1]
+          }
+      }
+      if (rootObject !== null){
+      	  getData.props.rootObject = rootObject
+      }
+      return getData
+    }
+    return attributes.reduce(buildPath, root)
+}
+
+Ternary "ternary"
+    = "if" _ condition:Value _ "then"_ then:Value _"else"_ alt:Value {
+    return {
+        type:"ternary",
+        props:{
+        	condition:condition,
+        	then:then,
+        	alt:alt
+        }
+    }
+    }
+     
+////////primitives
+Number 
+	= value:Float / value:Int {
+        return {
+         	type:"number",
+            props:{
+            	jsPrimitive:{type:"number", value:value}
+            }
+        }
+    }
+    
+Int "int"
+	= digits:[0-9]+ {
+    	return parseInt(digits.join(""))
+     }
+Float "number"
+  = left:[0-9]+ "." right:[0-9]+ {
+    return parseFloat(left.join("") + "." +   right.join("")); 
+    }
+
+String "string"
+     = '"'characters:[a-zA-Z]*'"' {
+         var value = characters.join("")
+         return {
+         	type:"string",
+            props:{
+            	jsPrimitive:{type:"string", value:value}
+            }
+        }
+     }
+
+Primitive "static primitive"
+    ="{"type:Name"}" {return {type:type}}
+//whitespace
+_ = " "?

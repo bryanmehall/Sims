@@ -105,9 +105,11 @@ function mapStateToProps(state) {
 	} else {
 		//const childData = getJSValue(state, 'app', "childElements")
 		const appData = getObject(state, 'app')
+        console.time('draw')
 		const window = getJSValue(state, 'app', 'graphicalRepresentation', appData)
+        console.timeEnd('draw')
+
 		console.log(window)
-		//console.log(window)
 		return {
 			childData: window,
 			loadState
