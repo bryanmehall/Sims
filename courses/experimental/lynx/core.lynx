@@ -1,0 +1,48 @@
+object = new object
+attribute = new object
+
+app = new object
+    graphicalRepresentation:window
+
+group = new object
+    jsPrimitive:{group}
+
+window = new group
+    childElements:new set
+
+graphicalRepresentation = new attribute
+
+jsPrimitive = new attribute
+childElements = new attribute
+name = new attribute
+parentValue = new attribute
+inverseAttribute = new attribute
+instanceOf = new attribute
+
+set = new object
+    jsPrimitive:{set}
+setEquiv = new attribute
+subset1 = new attribute
+subset2 = new attribute
+
+text = new object
+    jsPrimitive:{text}
+pos = new attribute
+x = new attribute
+y = new attribute
+coordinatePosition = new object
+innerText = new attribute
+
+get = new object
+rootObject = new attribute
+forEach = new attribute
+
+ternary = new object
+    jsPrimitive:{ternary}
+condition = new attribute
+then = new attribute
+alt = new attribute
+
+equal = new function
+
+down = new attribute

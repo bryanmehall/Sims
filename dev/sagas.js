@@ -24,10 +24,19 @@ function* fetchSimData(action) {
 	try {
         let response
         try{
-		  const lynxFile = yield call(fetchLynx, action.payload.path)
-          response = lynxParser(lynxFile.data)
+            const lynxFile = yield call(fetchLynx, action.payload.path)
+            const corePath = "/courses/experimental/lynx/core"
+            const lynxCore = yield call(fetchLynx, corePath)
+            const fileData = lynxParser(lynxFile.data)
+            const coreData = lynxParser(lynxCore.data)
+            console.log(Object.assign(coreData, fileData))
+            response = {
+                keyframes:[],
+                quantity:{},
+                initialState:{object:Object.assign(coreData, fileData)}
+            }
         } catch(e) {
-            console.warn('could not find lynx file at ', action.payload.path)
+            console.warn('could not find lynx file at ', action.payload.path, e)
             const jsonFile = yield call(fetchJson, action.payload.path)
             response = jsonFile.data
         }

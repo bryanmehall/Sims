@@ -20,6 +20,13 @@
 					"text":"Test Features",
 					"type":"anim",
 					"length":10
+				},
+                {
+					"id": "functions",
+					"title":"Functions",
+					"text":"Functions",
+					"type":"anim",
+					"length":10
 				}
 			]
 		}

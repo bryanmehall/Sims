@@ -1,4 +1,4 @@
-import hash from 'object-hash'
+import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 
 export const getObject = function (state, id) {
 	//this should only be a shim for values defined in json
@@ -6,7 +6,6 @@ export const getObject = function (state, id) {
 	try {
 		var objectData = Object.assign({}, objectState[id])
 		objectData.props.id = id
-		objectData.props.hash = id
 		return objectData
 	} catch (e){
 		throw new Error("could not find object named "+JSON.stringify(id))
@@ -22,25 +21,100 @@ export const getDef = (state, name, prop) => {
 	const objectData = getObject(state, name)
 	return objectData.props[prop]
 }
-const primitives = { //move to new file?
+const combineArgs = (args) => {
+    const deduplicated = Array.from(new Set(Array.prototype.concat(...args.map((arg)=>(arg.args)))))
+    //determine if args are above or below level of current function
+    return deduplicated
+
+}
+//build string of function from {string:" ", args:[]} object and add that function to the function table
+const buildFunction = (primitive) => {
+    console.log(primitive.string)
+    const func = new Function(primitive.args, primitive.string)
+    functionTable[primitive.hash] = func
+    return primitive.hash
+}
+const primitives = { //these should fold constants //move to new file?
 	//numbers
-	add: {
-		func: (args) => (args[0]+args[1]),
+	addition: {
+		func: (args) => {
+            console.log(args)
+            return { string: `${args[0].string} + ${args[1].string}`, args: combineArgs(args) }
+        },
 		args: ['op1', 'op2'],
 		ret: ['result']
 	},
-	multiply: (args) => (args[0]*args[1]),
+	subtraction: {
+		func: (args) => (`${args[0]} - ${args[1]}`),
+		args: ['op1', 'op2'],
+		ret: ['result']
+	},
+    multiplication: {
+		func: (args) => (`${args[0]} * ${args[1]}`),
+		args: ['op1', 'op2'],
+		ret: ['result']
+	},
+    division: {
+		func: (args) => (`${args[0]} / ${args[1]}`),
+		args: ['op1', 'op2'],
+		ret: ['result']
+	},
 	//strings
 	concat: (args) => (args.join("")),
+    //bool
+    or:{
+        func:(args) => (`${args[0]} || ${args[1]}`),
+        args: ['op1', 'op2'],
+		ret: ['result']
+    },
+    and:{
+        func:(args) => (`${args[0]} && ${args[1]}`),
+        args: ['op1', 'op2'],
+		ret: ['result']
+    },
+    equal:{
+        func:(args) => (`${args[0]} == ${args[1]}`),
+        args: ['op1', 'op2'],
+		ret: ['result']
+    },
+    lessThan:{
+        func:(args) => (`${args[0]} \< ${args[1]}`),
+        args: ['op1', 'op2'],
+		ret: ['result']
+    },
+    greaterThan:{
+        func:(args) => (`${args[0]} \> ${args[1]}`),
+        args: ['op1', 'op2'],
+		ret: ['result']
+    },
 	//sets
 	union: {
 		func: (args) => ([].concat(args[0], args[1])),
 		args: ['set1', 'set2'],
 		ret: ['result']
+	},
+    setToArray: {
+		func: (args) => {
+            console.log('setToArray', args[0])
+            return []
+        },
+		args: ['op1'],
+		ret: ['result']
 	}
-}
-export const getJSValue = (state, name, prop, objData) => {
 
+}
+let functionTable = {}//only js
+let stateTable = {}
+let objectTable = {}
+
+export const compile = (state) => {
+    const appData = getObject(state, 'app')
+    const display = getJSValue(state, 'app', 'graphicalRepresentation', appData)
+    const renderMonad = new Function('functionTable', `return ${display.string}`)//returns a thunk with all of render information enclosed
+    return { renderMonad, functionTable }
+}
+
+export const getJSValue = (state, name, prop, objData) => {
 	//const objectData = objData === undefined ? getObject(state, name) : objData
 	const valueData = getValue(state, 'placeholder', prop, objData)
     //if (prop === 'subset2'){console.log('gettingJS', name, prop, objData, valueData)}
@@ -48,14 +122,22 @@ export const getJSValue = (state, name, prop, objData) => {
 	if (valueData.type === 'undef'){
 		return undefined
 	} else {
-
 		return getValue(state, 'placeholder' , 'jsPrimitive', valueData) //get Value of jsPrimitive works
 	}
 }
+
 const getHash = (objectData) => {
-	const hashData = objectData.props
-	//delete hashData.hash
-	return hash(hashData)
+	const hashData = Object.assign({}, objectData.props, { parentValue: "parent", hash: "hash" })
+    const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))//hash(hashData)
+    objectTable[digest] = objectData
+	return digest
+}
+
+const objectFromHash = (hash) => {
+    return objectTable[hash]
+}
+const isHash = (str) => {
+    return str.includes("$hash")
 }
 
 export const getId = (state, name, prop, valueDef) => {
@@ -67,7 +149,14 @@ export const getId = (state, name, prop, valueDef) => {
 	}
 	return objectData.props.id
 }
-let stateTable = {}
+/*
+sample function for checkbox
+checkbox(){
+    return (){
+        checkmark(20, "green")}
+}
+*/
+
 export const objectLib = {
 	id: (id) => ({
 		type:'id',
@@ -147,6 +236,7 @@ export const objectLib = {
 //careful, this state scheme might not work if updates are nested more than one level deep...if the change is below a search
 //####################################
 const addState = (key, value) => { //returns prevValue Data
+    console.log('adding state')
 	//this is for dirty checking. is it possible to only update dependencies?
 	if (stateTable.hasOwnProperty(key)){ //key has been evaluated
 		const needsUpdate = JSON.stringify(value) !== JSON.stringify(getPrevValue(key)) //only update if the value actually changed
@@ -171,51 +261,73 @@ const getPrevValue = (key) => { //get previous
 	}
 }
 
-const returnWithPrevValue = (name, attr, attrData,  valueData, objectData) => { //adds previous value and parent value to props and reflexive attributes
-	const key = name+attr
+const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
+    //adds previous value and parent value to props and reflexive attributes
+    const key = name+attr
 	if (objectData.type === 'app'){ //special case for root in this case app
         objectData = objectLib.undef
     }
+    const parentHash = getHash(objectData)
+    const hash = getHash(valueData)
     const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
-    const inverse = hasInverse ? {[attrData.props.inverseAttribute]:objectData}: {} //get inverse value (parent)
-    const inverseAttrs = Object.assign({parentValue:objectData}, inverse)
-	const propsWithoutPrevious =  Object.assign({}, valueData.props, { prevVal: valueData })
+    const inverse = hasInverse ? { [attrData.props.inverseAttribute]: parentHash }: {} //get inverse value (parent)
+    const inverseAttrs = Object.assign({ parentValue: parentHash, hash }, inverse)
+	const propsWithoutPrevious = Object.assign({}, valueData.props, { prevVal: valueData })
 	const valueWithoutPrevious = Object.assign({}, valueData, { props: propsWithoutPrevious })
-	const prevVal = addState(key, valueWithoutPrevious)
-    console.log(JSON.stringify(objectData).length, attr)
+	const prevVal = null//addState(key, valueWithoutPrevious)
+    //console.log(JSON.stringify(objectData).length, attr, parentHash)
 	if (prevVal === null){
 		const newProps = Object.assign(Object.assign({}, valueData.props, inverseAttrs))
-		//if (valueData.props.id === "textRepresentation"){console.log('$$$$$$$$$abc', attr, objectData, valueData)}
-		return Object.assign(Object.assign({}, valueData, { props:newProps }))
+		return Object.assign(Object.assign({}, valueData, { props: newProps }))
 	} else {
-		const newProps = Object.assign(Object.assign({}, valueData.props, { prevVal}, inverseAttrs))
+		const newProps = Object.assign(Object.assign({}, valueData.props, inverseAttrs))
 		//if (valueData.props.id === "textRepresentation"){console.log('&&&&&&&&&abc', attr, objectData, valueData)}
-		return Object.assign(Object.assign({}, valueData, { props:newProps }))
+		return Object.assign(Object.assign({}, valueData, { props: newProps }))
 	}
 }
+let timer = performance.now()
 let counter = 0
+
+const limiter = (timeLimit, countLimit)=>{
+    const dt = performance.now()-timer
+    counter+=1
+    if (counter>countLimit){
+        throw 'count'
+    } else if (dt>timeLimit){
+        throw 'timer'
+    }
+}
+
 export const getValue = (state, name, prop, objectData) => { //get Value should be called eval and will need to support async actions eventually
+    if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
+        console.log(objectData)
+        throw new Error("hashes not equal")
+    }
+    //console.log('getting', dt, prop)
     if (objectData === undefined){
 		throw new Error('must have object def for '+prop) //"get rid of this when everything is switched"
-	}
-
+	} else if (typeof objectData === "string" && isHash(objectData)){
+        objectData = objectFromHash(objectData)
+    }
 	let def = objectData.props[prop]
-    const attrData = typeof prop === 'string' ? getObject(state, prop) : prop
+    if (typeof def === "string" && isHash(def)){
+        def = objectFromHash(def)
+    }
+    const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
 	//console.log(def, prop)
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values
 		let inheritedData
 		if (objectData.type === 'object'){
 			return objectLib.undef
 		}
-
-		if (!objectData.props.hasOwnProperty('instanceOf')){
-			inheritedData = getObject(state, 'object')
+		if (!objectData.props.hasOwnProperty('instanceOf')) {
+			inheritedData = getObject(state, 'object')//objectlib.object
 		} else {
-			inheritedData = getValue(state, 'placeholder', 'instanceOf', objectData)
+			inheritedData = getValue(state, 'placeholder', 'instanceOf', objectData) //parent is passed in?
 		}
         def = inheritedData.props[prop]
 	}
-	const valueData = typeof def === 'string' ? getObject(state, def) : def
+	const valueData = typeof def === 'string' ? getObject(state, def) : def//consequences of making async?
 	name = objectData.props.id
 	if (objectData === undefined) {
 		console.log('object data undefined for ', name, prop, 'ObjectData: ', objectData)
@@ -242,17 +354,17 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		switch (valueData.type) {
 			case 'number': {
 				if (valueData.hasOwnProperty('value')) {
-					return valueData.value
+					return {string:JSON.stringify(valueData.value), args:[]}
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
 					const equivObjectData = getValue(state, 'placeholder', 'numericalEquiv', objectData)
 					const equivValue = getValue(state, 'placeholder', 'jsPrimitive', equivObjectData)
-					return equivValue
+					return {string:equivValue, args:[]}
 				}
 			}
 			case 'bool': {
 				if (valueData.hasOwnProperty('value')) {
-					return valueData.value
+					return JSON.stringify(valueData.value)
 				} else if (valueData.hasOwnProperty('input')) {
 					return false //inputs[def.input]
 				} else {
@@ -264,7 +376,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			}
 			case 'string': {
 				if (valueData.hasOwnProperty('value')) {
-					return valueData.value
+					return  JSON.stringify(valueData.value)//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!security risk if brackets are allowed in string
 				} else {
 					//make this so it can search between objects in a set if multiple things are equivalent
 					const equivObjectData = getValue(state, 'name', 'stringEquiv', objectData)
@@ -273,20 +385,41 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				}
 			}
 			case 'function': {
-				return valueData.function
+                const name = getJSValue(state, 'placeholder', 'name', objectData)//get rid of this eval
+                console.log('name', name)
+                if (!functionTable.hasOwnProperty(name)){
+                    const result = getJSValue(state, 'placeholder', 'result', objectData)
+                    console.log('result', result, objectData)
+                    functionTable[name] = `function ${eval(name)}(op1){${result}}`
+                }
+				return name
 			}
 			case 'apply': {
-				const functionName = getJSValue(state, 'placeholder', 'function', objectData) //get js primitive of function
-				const functionPrimitive = primitives[functionName]
-				const argNames = functionPrimitive.args
-				const func = functionPrimitive.func
-				//for each: get jsPrimitive of argument
-				const args = argNames.map((argName) => (getJSValue(state, 'placeholder', argName, objectData)))
-				const result = func(args)
-				return result
+				const functionName = eval(getJSValue(state, 'placeholder', 'function', objectData)) //get js primitive of function
+				if (primitives.hasOwnProperty(functionName.type)){
+                    const functionPrimitive = primitives[functionName.type]
+                    const argNames = functionPrimitive.args
+                    const func = functionPrimitive.func
+                    //for each: get jsPrimitive of argument
+                    console.log('obj', getValue(state, 'placeholder', 'op2', objectData))
+                    const args = argNames.map((argName) => (getJSValue(state, 'placeholder', argName, objectData)))
+                    const result = func(args)
+                    return result
+                } else {
+                    //eventually get args from a set and then retrieve those from apply
+                    //eventully move this to postprocessor
+                    //
+
+                    const name = getJSValue(state, 'placeholder', 'function', objectData)
+                    console.log('functionData', name, objectData)
+                    const op1 = getJSValue(state, 'placeholder', 'op1', objectData)
+                    const applyString = `${name}(${op1})`
+                    return applyString
+                }
 			}
 			case 'set': {//there shouldn't be js primitive for sets?
 				const equivObjectData = getValue(state, 'placeholder', 'setEquiv', objectData)
+                //console.log(equivObjectData)
 				if (equivObjectData.type === "undef"){
 					const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
 					const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
@@ -297,28 +430,90 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				}
 			}
             case 'array': {
-                const firstElement = getValue(state, 'placeholder', 'firstElement', objectData)
-                const createArray = (element, array) => {
-                    if (element.type === 'undef'){
-                        return array
-                    } else {
-                        const value = getJSValue(state, 'placeholder', 'value', element)
-                        const nextElement = getValue(state, 'placeholder', 'nextElement', element)
-                        return createArray(nextElement, array.concat(array, [value]))
+                const equivArrayData = getValue(state, 'placeholder', 'arrayEquiv', objectData)
+
+                if (equivArrayData.type === "undef"){
+                    const firstElement = getValue(state, 'placeholder', 'firstElement', objectData)
+                    const createArray = (element, array) => {
+                        if (element.type === 'undef'){
+                            return array
+                        } else {
+                            const value = getJSValue(state, 'placeholder', 'value', element)
+                            const nextElement = getValue(state, 'placeholder', 'nextElement', element)
+                            return createArray(nextElement, array.concat(array, [value]))
+                        }
                     }
+                    const array = createArray(firstElement, [])
+                    return array
+                } else {
+                    console.log("no array equiv")
+                    return []
                 }
-
-
-                return createArray(firstElement, [])
             }
-			case 'get': {
 
-				return 'get primitive'
+            case 'get': {
+                const parent = getValue(state, 'placeholder', "parentValue", objectData)
+                const parentName = eval(getJSValue(state, 'placeholder', "name", parent))
+                const rootObject = getJSValue(state, 'placeholder',"rootObject", objectData)
+                /*
+                    //root Objcet should always be another get?
+                    hasRoot = this.props.hasOwnProperty('rootObject')//alternatively use set membership
+
+                    const rootObject = getJSValue(state, 'placeholder',"rootObject", objectData)
+                */
+                const query = rootObject.args[0].query
+                /*current assumptions:
+                    get attribute is not parent value
+                    get is one level deep
+                    search is always root element of get
+                    attribute is a string not an object
+                */
+                if(query === parentName){//get is entirely contained within higher level function
+                    const attribute = objectData.props.attribute
+                    const getStack = [...rootObject.args, objectData].slice(1)
+                    const result = getStack.reduce( (parentData, objectData)=>{
+                        const attr = objectData.props.attribute
+                        return getValue(state, 'placeholder', attr, parentData)
+                    }, parent)
+                    return getValue(state, 'placeholder', 'jsPrimitive', result)
+                } else {
+                    const nestedGet = { string:objectData.props.hash , args: [...rootObject.args, objectData] }
+                    return nestedGet
+                }
 			}
-			case 'accordianRep': {
-				return <div>test</div>
+			case 'search': {//replace this with a call to database(closer to concept of new)
+                const parent = getValue(state, 'placeholder', "parentValue", objectData)
+                const parentName = eval(getJSValue(state, 'placeholder', "name", parent))
+                /*if (query === parentName){
+                    return parent
+                } else {
+                    return parentValue()
+                }*/
+                const query = def.query
+                return { args:[{query}] }
 			}
-			case 'circle': {
+            case 'ternary': {
+                const condition = getJSValue(state, 'placeholder', 'condition', objectData)
+                const then = getJSValue(state, 'placeholder', 'then', objectData)
+                const alt = getJSValue(state, 'placeholder', 'alt', objectData)
+                console.log('#####running ternary')
+                return `if(${condition}){${then}} else {${alt}}`
+                if (condition === true){
+                    const value = getJSValue(state, 'placeholder', 'then', objectData)
+                    return value
+                } else {
+                    const value = getJSValue(state, 'placeholder', 'alt', objectData)
+                    return value
+                }
+            }
+            case 'new': {
+                return def.id
+            }
+			case 'id':{
+				return def.id
+			}
+            //output primitives
+            case 'circle': {
 				const centerPoint = getValue(state, 'placeholder', 'centerPoint', objectData)
 				const cx= getJSValue(state, 'placeholder', 'x', centerPoint)
 				const cy = getJSValue(state, 'placeholder', 'y', centerPoint)
@@ -336,41 +531,46 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					context.stroke();
 				`)*/
 			}
-
             case 'rectangle':{
                 const pos = getValue(state, 'placeholder', 'pos', objectData)
 				const x= getJSValue(state, 'placeholder', 'x', pos)
 				const y = getJSValue(state, 'placeholder', 'y', pos)
 				const width = getJSValue(state, 'placeholder', 'width', objectData)
                 const height = getJSValue(state, 'placeholder', 'height', objectData)
-				return {type:"Rectangle", x, y, width, height}
+                const color = getJSValue(state, 'placeholder', 'color', objectData)
+				return {type:"Rectangle", x, y, width, height, color}
             }
 			case 'text': {
 				const pos = getValue(state, 'placeholder', 'pos', objectData)
-				const x = getJSValue(state, 'placeholder', 'x', pos)
-				const y = getJSValue(state, 'placeholder', 'y', pos)
+				const x = getJSValue(state, 'placeholder', 'x', pos).string
+				const y = getJSValue(state, 'placeholder', 'y', pos).string
 				const string = getJSValue(state, 'placeholder', 'innerText', objectData)
                 const filteredString =  typeof string === "string" ? string : "undef"
-				return { type: "Text", x, y, string:filteredString }
-			}
-			case 'search': {
-                // {type: "search", id:"idHere"}
-				return def.query
-			}
-            case 'new': {
-                return def.id
-            }
-			case 'id':{
-				return def.id
+				return {
+                    hash:objectData.props.hash,
+                    string:`return function(prim){prim.text(${x}, ${y}, ${filteredString}, 20 ,0 ,0 ,0 );}`,
+                    args:[] //combine args of x,y,text
+                }
 			}
 			case 'group':{
-				const children = getJSValue(state, 'placeholder', 'childElements', objectData)
-				const noUndefChildren = children.filter((child) => (child !== undefined))
 
-				return {type:"Group", children:noUndefChildren}
+				const children = getJSValue(state, 'placeholder', 'childElements', objectData)
+
+				const noUndefChildren = children.filter((child) => (child !== undefined))
+                const childFunctions = noUndefChildren.map(buildFunction)
+                //need to sort by z-order
+                const programText = childFunctions.map((functionName)=>(`functionTable.${functionName}()(prim)`)).join(";\n\t")
+                //console.log('child', childFunctions[0], functionTable[childFunctions[0]]()())
+				return {string:`function(prim){${programText}}`, args:[]}
+                //{type:"Group", children:noUndefChildren}
 			}
 			default: {
-				throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
+                if (def.hasOwnProperty('type')){
+                    console.log(def)
+                    return def
+                } else {
+                    throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
+                }
 			}
 		}
 	} else { //pointer objects
@@ -389,26 +589,21 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 						}
 					}*/
 
-		if (valueData.type === 'get' && prop !== 'parentValue') {
+		/*if (valueData.type === 'get' && prop !== 'parentValue') {
             //for sets set forEach attribute to true
             //is there a better way to avoid the parentValue check to prevent an infinite loop?
-			counter += 1
-			if (counter > 50){
-                throw 'count'
-            }
-			//console.log(prop, 'of', objectData, 'is')
             const valueDataWithParent = returnWithPrevValue(name, prop, attrData, valueData, objectData)
 			const rootObjectData = getValue(state, 'placeholder', 'rootObject', valueDataWithParent)
-			const iterate = getValue(state, 'placeholder', 'forEach', valueDataWithParent)
+			const iterate = eval(getJSValue(state, 'placeholder', 'forEach', valueDataWithParent))
 			const property = valueData.props.attribute
 			if (typeof property !== 'string') { throw 'need to handle object props'}
 			const root = rootObjectData.type === "undef" ? objectData : rootObjectData
 			const parent = objectData.type === 'get' ? root : root//get rid of this
-			if (iterate.type === 'undef' || iterate.type === 'false'){
+			if (iterate === undefined || iterate === false){
 				if (property === 'rootObject'){throw 'nested can not be root'}
 				const returnValue = getValue(state, 'placeholder', property, parent)
 				return returnWithPrevValue(name, prop, attrData, returnValue, parent)
-			} else if (iterate.props.id === 'true'){
+			} else if (iterate === true){
 				const elements = getSetData(state, root)
 				const values = elements.map(
 					(element) => {
@@ -420,11 +615,12 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				const returnValue = objectLib.constructSet('needToChangeSetId', values)
 				return returnWithPrevValue(name, prop,attrData, returnValue, objectData)
 			} else {
+                console.log(iterate)
 				throw 'invalid type for iterate flag'
 			}
 
 
-		} else if (valueData.type === 'find' && prop !== 'attribute' & prop!== 'then' && prop ) { //find is relative to 'this' where get is relative to global object -- find is default
+		} *//*else if (valueData.type === 'find' && prop !== 'attribute' & prop!== 'then' && prop ) { //find is relative to 'this' where get is relative to global object -- find is default
             //def refers to find object, name refers to 'this'
 			console.log(parentObject)
 			throw 'need to fix or remove find'
@@ -448,19 +644,21 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 
             return getObject(state, resultId) //needs to return objectData for full result
 
-        } else if (valueData.type === 'search') {
+        } *//* if (valueData.type === 'search') {
 			const query = getValue(state, 'placeholder','jsPrimitive', valueData) //name to search for
 			const resultObjectData = getObject(state, query) //the only time to use getObject should be here????
             const getParentByName = (objData, query) => {
-                const name  = getJSValue(state, 'placeholder', 'name', objData)
+                const name = getJSValue(state, 'placeholder', 'name', objData)//name of objData
                 const parentValue = getValue(state, 'placeholder', 'parentValue', objData)
+
                 if (name === query){
                     return objData
                 } else if (parentValue.type === 'undef'){
                     return resultObjectData
                     //throw new Error('no parent value found for '+ query+' in '+JSON.stringify(objData))
                 } else {
-                    return getParentByName(objData.props.parentValue, query)
+                    const parent = objectFromHash(objData.props.parentValue)
+                    return getParentByName(parent, query)
                 }
             }
             const result = getParentByName(objectData, query)
@@ -477,20 +675,20 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					attributes: 'findParent'
 				}
 			}
-		} else if (valueData.type === 'ternary'){
-			const condition = getJSValue(state, 'placeholder', 'condition', valueData)
-
+		}/* /*else if (valueData.type === 'ternary' && prop !== 'parentValue'&& prop!=='name' && prop !== 'condition'){//add js primitive but keep this indirection here too?
+            const condition = getJSValue(state, 'placeholder', 'condition', valueData)
+            console.log(condition)
 			if (condition) { //eval then/else like this so then/else are lazily evaluated
 				const value = getValue(state, 'placeholder', 'then', valueData)
 				return returnWithPrevValue(name, prop, attrData, value, objectData)
 			} else {
-				const value = getValue(state, 'placeholder', 'else', valueData)
+				const value = getValue(state, 'placeholder', 'alt', valueData)
 				return returnWithPrevValue(name, prop, attrData, value, objectData)
 
 			}
-		} else {
+		}*/ //else {
 			return returnWithPrevValue(name, prop, attrData, valueData, objectData)
-		}
+		//}
 	}
 }
 

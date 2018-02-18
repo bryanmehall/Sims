@@ -1,0 +1,55 @@
+window = new group
+    childElements: new set
+        subset1: new text
+            name:"textRep"
+            pos:new coordinatePosition
+                x:new apply
+                    name:"test"
+                    op1:test.x.y
+                    op2:30
+                    function:addition
+                    x:new func
+                        y:20
+                y:20
+            innerText:"abc"
+        subset2: new text
+            name:"app"
+            mouse: new object
+                pos: new coordinatePosition
+                    x:10
+                    y:10
+            pos: new coordinatePosition
+                x:100
+                y:100
+            innerText:"xyz"
+
+addition = new func
+    name:"addition"
+    caller:addition.parentValue
+    jsPrimitive:{addition}
+
+func = new object
+    jsPrimitive:{function}
+
+sq = new func
+    name:"sq"
+    op1:sq.caller.op1
+    numericalEquiv:sq.op1*sq.op1
+
+factorial = new func
+    name:"factorial"
+    op1:factorial.caller.op1
+    result: new ternary
+        condition: 1 == 1
+        then: 1
+        alt: new apply
+            function:factorial
+            op1:1
+
+apply = new object
+    jsPrimitive:{apply}
+op1 = new attribute
+op2 = new attribute
+result = new attribute
+caller = new attribute
+function = new attribute

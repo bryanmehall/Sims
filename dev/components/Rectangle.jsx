@@ -5,13 +5,14 @@ import ObjectActions from '../ducks/object/actions'
 
 class Rectangle extends React.Component {
 	render() {
-		const { x, y, width, height } = this.props
+		const { x, y, width, height, color } = this.props
 		return (
 			<rect
 				x={x}
 				y={y}
 				width={width}
                 height = {height}
+                fill = {color || 'black'}
                 opacity= {0.2}
 			/>
 

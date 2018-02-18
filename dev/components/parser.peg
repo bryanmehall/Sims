@@ -1,4 +1,55 @@
+{
+var symbolTable = {
+	"+":"addition",
+    "*":"multiplication",
+    "-":"subtraction",
+    "/":"division",
+    "<":"lessThan",
+    ">":"greaterThan",
+    "==":"equal",
+    "&&":"and",
+    "||":"or"
+}
 
+function createString(str){
+	return {
+        type:"string",
+        props:{
+            jsPrimitive:{type:"string", value:str}
+        }
+	}
+}
+function createBinOp(left, right, op){
+	return {
+    	type:"apply",
+        props:{
+            jsPrimitive:{type:"apply"},
+            op1:left,
+            op2:right,
+            function:createFunction(symbolTable[op])
+        }
+    } 
+}
+function createApply(arg, op){
+	return {
+    	type:"apply",
+        props:{
+            jsPrimitive:{type:"apply"},
+            op1:arg,
+            function:createFunction(op)
+        }
+    }
+}
+function createFunction(name){
+	return {
+    	type:"function",
+        props:{
+        	name:createString(name),
+        	jsPrimitive:{type:"function"}
+        }
+    }
+}
+}
 start
   = Module
   
@@ -8,14 +59,8 @@ Module
         declarations.forEach(function(declaration){
         	objects[declaration[0].id]  = declaration[0]
         })
-        var module = {
-            keyframes:[],
-            quantity:{},
-        	initialState:{
-                object:objects
-            }
-        }
-        return module
+        
+        return objects
     }
 Declaration
 	= "\n"*id:Name " "*"="" "*object:Object {return Object.assign({}, object, {id:id})}
@@ -41,10 +86,29 @@ Attribute
        }
    }
 Expression "expression"
-	= Ternary / Value
+	= Ternary /  Or
     
 Value "value"
-	=  Primitive / Number / String / Get / Object / Name 
+	=  Primitive /Bool/ Number / String / Get / Object / Name
+
+Apply "function application"
+	= name:Name "("arg:Expression")"{return createApply(arg, name)}
+
+Or "or"
+	= left:And _ op:"||" _ right:Or { return createBinOp(left, right, op)}
+    / And
+And "and"
+	= left:Equal _ op:"&&" _ right:And { return createBinOp(left, right, op)}
+    /Equal
+Equal "equality"
+	=  left:Sum _ op:("<"/">"/"==") _ right:Equal { return createBinOp(left, right, op)}
+    /Sum
+Sum "sum"
+	= left:Product _ op:("+"/"-") _ right:Sum { return createBinOp(left, right, op)}
+    /Product
+Product "product"
+	= left:Value _ op:("*"/"/") _ right:Product { return createBinOp(left, right, op)}
+    / Apply / Value
 
 Name "name"
 	= name:[a-zA-Z0-9]+ {return name.join("")}
@@ -65,6 +129,7 @@ Get "get"
       var getData = {
           type:"get",
           props:{
+              jsPrimitive:{type:"get"},
               attribute:attr[1]
           }
       }
@@ -81,6 +146,7 @@ Ternary "ternary"
     return {
         type:"ternary",
         props:{
+        	instanceOf:"ternary",
         	condition:condition,
         	then:then,
         	alt:alt
@@ -111,14 +177,17 @@ Float "number"
 String "string"
      = '"'characters:[a-zA-Z]*'"' {
          var value = characters.join("")
-         return {
-         	type:"string",
-            props:{
-            	jsPrimitive:{type:"string", value:value}
-            }
-        }
+         return createString(value)
      }
-
+Bool "bool"
+	= value:("true" / "false") {
+    return {
+    	type:"bool",
+        "props":{
+        	jsPrimitive:{type:"bool", value:value==="true"}
+        }
+       }
+    }
 Primitive "static primitive"
     ="{"type:Name"}" {return {type:type}}
 //whitespace

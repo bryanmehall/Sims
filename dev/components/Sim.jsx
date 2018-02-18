@@ -3,7 +3,7 @@ import { connect } from "react-redux"
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { getJSValue, getObject } from '../ducks/object/selectors'
+import { compile } from '../ducks/object/selectors'
 import Video from './Video'
 import Plot from './Plot'
 import Circle from './Circle'
@@ -23,14 +23,38 @@ class Sim extends React.Component {
 	componentDidMount(){
 		const contentBlockId = this.props.contentBlockId
 		this.loadSim(contentBlockId)
+        let canvas = document.getElementById('canvas')
+        canvas.width = canvas.getBoundingClientRect().width;
+        canvas.height = canvas.getBoundingClientRect().height;
+        this.ctx = canvas.getContext('2d')
 	}
-	componentWillReceiveProps(nextProps){
-		//componentWill update takes next props as argument
-
+    componentDidUpdate(nextProps){
+        let ctx = this.ctx
+        const prim = {
+            rect:(x,y,width, height,r,g,b)=>{
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+                ctx.fillRect(x, y, width, height)
+            },
+            text:(x, y, innerText, size, r,g,b) => {
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
+                ctx.font = `${size}px serif`
+                ctx.fillText(innerText, x, y)
+            }
+        }
+        const functionTable = this.props.functionTable
+        const render = this.props.renderMonad(functionTable)//returns render thunk
+        render(prim)//render is a thunk except for a context to render to(here wrapped in prim)
 		const contentBlockId = nextProps.contentBlockId
 		if (this.props.contentBlockId !== contentBlockId) { //only update on change
 			this.loadSim(contentBlockId)
 		}
+    }
+	componentWillReceiveProps(nextProps){
+		//componentWill update takes next props as argument
+
+        //ctx.fillStyle = 'rgb(255, 0, 0)';
+        //ctx.fillRect(10, 10, 50, 50);
+
 	}
 	loadSim(contentBlockId){
 		if (contentBlockId === null){
@@ -45,6 +69,7 @@ class Sim extends React.Component {
 
 	}
 	render(){
+
 		const { contentBlockId, partId, courseId, setProp } = this.props
 		const active = this.props.contentBlockId !== null
 		const imageUrl = `/content/courses/${this.props.courseId}/${this.props.partId}/thumbnail.png`
@@ -70,30 +95,41 @@ class Sim extends React.Component {
 			backgroundColor: '#fff' 
 		}
 		//combine these into one file for importing children
-
+        this.inputAvailable = true
+        let mouseX = 0
+        let mouseY = 0
+        let mouseDown = false
 		const setMousePos = (e) => {
-			const x = e.pageX - e.currentTarget.offsetLeft
-			const y = e.pageY - e.currentTarget.offsetTop
-			setProp("mouseX", "jsPrimitive", { type: "number", id: 'mouseX', value: x })
-			setProp("mouseY", "jsPrimitive", { type: "number", id: 'mouseY', value: y })
+			mouseX = e.pageX - e.currentTarget.offsetLeft || 0
+            mouseY = e.pageY - e.currentTarget.offsetTop || 0
+            this.inputAvailable = true
 		}
 		const setMouseDown = () => {
-			setProp("mouseDown", "jsPrimitive", { type: "bool", id: 'mouseDown', value: true })
+			mouseDown = true
+            this.inputAvailable = true
 		}
 		const setMouseUp = () => {
-			setProp("mouseDown", "jsPrimitive", { type: "bool", id: 'mouseDown', value: false })
+			mouseDown = false
+            this.inputAvailable = true
 		}
+
 		return (
+            <canvas id="canvas" width="600" height="600" style={simCardStyle}>
+
+            </canvas>
+        )
+        /*(
+
 			<svg
 				style={simCardStyle}
 				onMouseMove = {setMousePos}
 				onMouseDown = {setMouseDown}
 				onMouseUp = {setMouseUp}>
-				{/*this.props.loadState === "loading" ? loadingIcon : null*/ }
+
 				{this.props.loadState === 'error' ? 'Error: Failed to Load Simulation' : null}
 				<Group children={this.props.childData.children}></Group>
 			</svg>
-		)
+		)*/
 	}
 }
 
@@ -103,19 +139,16 @@ function mapStateToProps(state) {
 	if (loadState === 'loading'){
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
-		//const childData = getJSValue(state, 'app', "childElements")
-		const appData = getObject(state, 'app')
         console.time('draw')
-		const window = getJSValue(state, 'app', 'graphicalRepresentation', appData)
+		const {renderMonad, functionTable} = compile(state)
         console.timeEnd('draw')
 
-		console.log(window)
 		return {
-			childData: window,
+			renderMonad,
+            functionTable,
 			loadState
 		}
 	}
-
 }
 
 function mapDispatchToProps(dispatch) {

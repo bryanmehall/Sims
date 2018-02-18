@@ -11,10 +11,10 @@ class Text extends React.Component {
 		const { x, y, string, font, color, fontSize } = this.props
 		return (
 			<text
-				x={x}
-				y={y}
+				x={eval(x)}
+				y={eval(y)}
 			>
-				{string}
+				{eval(string)}
 			</text>
 
 		)

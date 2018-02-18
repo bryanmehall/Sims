@@ -1,6 +1,5 @@
 app = new object
     name:"app"
-    type:app
     activeObject:window
     graphicalRepresentation:window
 
@@ -8,10 +7,15 @@ window = new object
     jsPrimitive: {group}
     type:window
     name:"window"
+    mouse: new object
+        pos: new coordinatePosition
+            x:20
+            y:20
     childElements: new set
         subset1: app.activeObject.accordianRep
         subset2: moose.textRepresentation
     width:200
+    height:400
 
 object = new object
     name:"object"
@@ -19,11 +23,22 @@ object = new object
         name: "accordianRep"
         childElements: new set
             subset1: new rectangle
-                width: 200
+                name:"rectBox"
+                width: factorial(1)
                 height: 100
+                mouseOver: window.mouse.pos.x > rectBox.left && window.mouse.pos.x < rectBox.right && window.mouse.pos.y > rectBox.top && window.mouse.pos.y < rectBox.bottom
+                color: new ternary
+                    jsPrimitive:{ternary}
+                    condition:rectBox.mouseOver
+                    then:"green"
+                    alt:"red"
                 pos: new coordinatePosition
                     x:20
                     y:20
+                top:rectBox.pos.y
+                bottom: rectBox.pos.y+rectBox.height
+                left:rectBox.pos.x
+                right:rectBox.pos.x+rectBox.width
             subset2: new set
                 subset1: new text
                     innerText:accordianRep.parentConcept.name
@@ -31,34 +46,52 @@ object = new object
                         x:25
                         y:35
                 subset2: new group
-                    childElements: new array
-                        x:100
-                        firstElement:new element
-                            value:new text
-                                name: "attrText"
-                                innerText:"abc"
-                                height:30
-                                pos: new coordinatePosition
-                                    x:attrText.parentValue.array.x
-                                    y:60
-                                bottom:new apply
-                                    op1: attrText.pos.y
-                                    op2: attrText.height
-                                    function:"add"
-                                left: attrText.pos.x
-                            nextElement: new element
-                                value: new text
-                                    name:"attrText"
-                                    innerText:"xyz"
-                                    pos: new coordinatePosition
-                                        x:attrText.parentValue.previousElement.value.left
-                                        y:attrText.parentValue.previousElement.value.bottom
+                    pos: new coordinatePosition
+                        x:25
+                        y:60
+                    childElements: new apply
+                        function: setToArray
+                        op1:new set
+                            subset1:"xyz"
+                            subset2:"b"
 
+setToArray = new function
+    name:"setToArray"
+    set:setToArray.parentValue.op1
+    result:new array
+        firstElement:new element
+            value:setToArray.set.subset1
+
+concat = new function
+    name:"concat"
+    op1:concat.parentValue.op1
+    op2:concat.parentValue.op2
+    result: new array
+        firstValue:new element
+            value:concat.op1
+
+
+factorial = new function
+    name:"factorial"
+    op1:factorial.parentValue.op1
+    result:new ternary
+        condition:factorial.op1 == 1
+        then:1
+        alt: factorial.op1*factorial(factorial.op1-1)
+
+arrayEquiv = new attribute
+result = new attribute
+get = new object
+mouse = new attribute
+    name:"mouse"
+ternary = new object
 array = new object
     jsPrimitive:{array}
 firstElement = new attribute
     inverseAttribute:array
 attrText = new object
+rectBox = new object
+mouseOver = new attribute
 nextElement = new attribute
     inverseAttribute: previousElement
 previousElement = new attribute
@@ -67,27 +100,52 @@ element = new object
 value = new object
 attribute = new object
     inverseAttribute:parentValue
+    textRepresentation:new text
+        name:"textRepresentation"
+        innerText:textRepresentation.parentConcept.name
+        pos:new coordinatePosition
+            x:200
+            y:200
 rectangle = new geometricObject
     jsPrimitive:{rectangle}
+    name:"rectangle"
+    color:"black"
+color = new attribute
 attributes = new attribute
+condition = new attribute
+then = new attribute
+alt = new attribute
+bool = new object
+true = new bool
+false = new bool
 prevVal = new attribute
 id = new attribute
 hash = new attribute
 activeObject = new attribute
 name = new attribute
+    name: "name"
 graphicalRepresentation = new attribute
 accordianRep = new attribute
     inverseAttribute: parentConcept
+    name:"accordianRep"
+
 jsPrimitive = new attribute
+    name:"jsPrimitive"
+
 setEquiv = new attribute
 childElements = new attribute
+    inverseAttribute:parentElement
+    name:"childElements"
+parentElement = new attribute
 subset1 = new attribute
 subset2 = new attribute
 centerPoint = new attribute
 x = new attribute
 y = new attribute
+top = new attribute
 bottom = new attribute
 left = new attribute
+right = new attribute
 radius = new attribute
 rootObject = new attribute
     inverseAttribute: parentValue
@@ -98,6 +156,7 @@ innerText = new attribute
 parentValue = new attribute
 instanceOf = new attribute
 type = new attribute
+    name:"type"
 parentConcept = new attribute
 
 width = new attribute
