@@ -30,6 +30,14 @@ class Sim extends React.Component {
 	}
     componentDidUpdate(nextProps){
         let ctx = this.ctx
+        const checkTypes = (type, vars) => {
+            vars.forEach((variable)=>{
+                if(typeof variable !== type){
+                    console.log('variables', vars)
+                    throw new Error(`Lynx typeError: type of ${variable} is not ${type}`)
+                }
+            })
+        }
         const prim = {
             rect:(x,y,width, height,r,g,b)=>{
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
@@ -38,7 +46,8 @@ class Sim extends React.Component {
             text:(x, y, innerText, size, r,g,b) => {
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.font = `${size}px serif`
-                ctx.fillText(innerText, x, y)
+                checkTypes('number', [x,y,r,g,b])
+                ctx.fillText(innerText || "undef", x, y)
             }
         }
         const functionTable = this.props.functionTable

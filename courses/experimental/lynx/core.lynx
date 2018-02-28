@@ -2,7 +2,12 @@ object = new object
 attribute = new object
 
 app = new object
+    jsPrimitive:{app}
     graphicalRepresentation:window
+    mouse: new object
+        pos: new coordinatePosition
+            x:10
+            y:10
 
 group = new object
     jsPrimitive:{group}
@@ -27,6 +32,7 @@ subset2 = new attribute
 
 text = new object
     jsPrimitive:{text}
+
 pos = new attribute
 x = new attribute
 y = new attribute
