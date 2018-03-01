@@ -1,13 +1,16 @@
 window = new group
     name:"group"
     pos:new coordinatePosition
-        x:400
+        x:100
         y:100
     childElements: new set
         subset1: new text
             name:"text"
-            x:group.pos.x
-            y:group.pos.y
+            x:100
+            y:50
+            r:100
+            g:100
+            b:0
             pos:new coordinatePosition
                 x:50
                 y:50

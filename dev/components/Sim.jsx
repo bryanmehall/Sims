@@ -43,7 +43,8 @@ class Sim extends React.Component {
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.fillRect(x, y, width, height)
             },
-            text:(x, y, innerText, size, r,g,b) => {
+            text:(x, y, innerText, r,g,b) => {
+                const size=20
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.font = `${size}px serif`
                 checkTypes('number', [x,y,r,g,b])

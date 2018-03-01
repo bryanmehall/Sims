@@ -38,6 +38,9 @@ x = new attribute
 y = new attribute
 coordinatePosition = new object
 innerText = new attribute
+r = new attribute
+g = new attribute
+b = new attribute
 
 get = new object
 rootObject = new attribute
