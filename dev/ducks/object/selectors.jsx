@@ -22,7 +22,7 @@ export const getDef = (state, name, prop) => {
 	return objectData.props[prop]
 }
 const combineArgs = (args) => {
-    const reduced = args.reduce( (combined, prim)=>(Object.assign(combined, prim.args)),{})
+    const reduced = args.reduce((combined, prim) => (Object.assign(combined, prim.args)),{})
     return reduced
 }
 //build string of function from {string:" ", args:[]} object and add that function to the function table
@@ -35,8 +35,9 @@ const buildFunction = (primitive) => {
     functionTable[primitive.hash] = func
     return `functionTable.${primitive.hash}(${argsList.join(",")})(prim)`
 }
-const foldPrimitive = (state, argumentPrimitives, objectData) => {//list of dependent objects in the form [{string:..., args:...}]
-    const objectName = eval(getJSValue(state, 'placeholder', "name", objectData).string)//switch to comparing hashes?
+const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dependent objects in the form [{string:..., args:...}]
+    const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
+    const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
     const args = combineArgs(argumentPrimitives)//combine arguments of sub functions
     const searchArgs = Object.entries(args).filter((arg) => (arg[1].hasOwnProperty('query'))) //separate arguments that are searches
     //for each searchArg, test if the query matches the name of the current object
@@ -46,8 +47,8 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => {//list of depe
         const argKey = searchArg[0] //key of arg
         const query = searchArg[1].query
         const getStack = searchArg[1].getStack
-        if(query === objectName){//get is entirely contained within higher level function
-            const result = getStack.reduce( (currObjData, getObject)=>{
+        if (query === objectName){ //get is entirely contained within higher level function
+            const result = getStack.reduce((currObjData, getObject) => {
                 const attr = getObject.props.attribute
                 return getValue(state, 'placeholder', attr, currObjData)
             }, objectData)
@@ -55,7 +56,7 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => {//list of depe
             delete args[argKey] //remove resolved get from args
             varDefs.push(`var ${argKey} = ${jsResult.string};\n`)//be able to handle js result being another get
         } else {
-            console.log('need to handle this else?')
+            //console.log('need to handle this else?')
         }
 
     })
@@ -423,6 +424,9 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					return equivValue
 				}
 			}
+            case 'addition':{ //change this to a generic builtin function
+                return {hash:objectData.props.hash, string:"+", args:{}, inline:true}
+            }
 			case 'function': {
                 const name = getJSValue(state, 'placeholder', 'name', objectData)//get rid of this eval
                 console.log('name', name)
@@ -434,6 +438,21 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				return name
 			}
 			case 'apply': {
+                const paramNames = ['op1','function', 'op2']//add support for binary op
+                const parameters = paramNames.map((paramName) => (
+                    getJSValue(state, 'placeholder', paramName, objectData)
+                ))
+                const foldedPrimitives = foldPrimitive(state, parameters, objectData)
+                const childFunctions = foldedPrimitives.hashes
+                const variables = foldedPrimitives.variableDefs
+                const programText = childFunctions.join("")
+				return {
+                    hash:objectData.props.hash,
+                    string:programText,
+                    args:combineArgs(parameters),
+                    inline:true
+                }
+                /*
 				const functionName = eval(getJSValue(state, 'placeholder', 'function', objectData)) //get js primitive of function
 				if (primitives.hasOwnProperty(functionName.type)){
                     const functionPrimitive = primitives[functionName.type]
@@ -454,7 +473,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     const op1 = getJSValue(state, 'placeholder', 'op1', objectData)
                     const applyString = `${name}(${op1})`
                     return applyString
-                }
+                }*/
 			}
 			case 'set': {//there shouldn't be js primitive for sets?
 				const equivObjectData = getValue(state, 'placeholder', 'setEquiv', objectData)
@@ -491,12 +510,15 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
             }
 
             case 'get': {
+
                 const rootObject = getJSValue(state, 'placeholder',"rootObject", objectData)
                 const searchArgs = Object.entries(rootObject.args)
+
+                if (searchArgs.length>1){throw 'search args lengthe longer than one'}
                 const query = searchArgs[0][1].query
                 const getStack = searchArgs[0][1].getStack//this only works for one search. is more than one ever needed in args?
                 const hash = objectData.props.hash
-                return { hash, string:hash , args: {[hash]:{query, getStack:[...getStack, objectData]}} }
+                return { hash, string:hash , args: {[hash]:{query, getStack:[...getStack, objectData]}},inline:true }
 			}
 			case 'search': {//replace this with a call to database?(closer to concept of new)
                 const query = def.query
@@ -535,17 +557,20 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
             }
 			case 'text': {
                 const paramNames = ["x", "y", "innerText", "r", "g", "b"]
+
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
+
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
+                console.log(foldedPrimitives)
                 const childFunctions = foldedPrimitives.hashes
                 const variables = foldedPrimitives.variableDefs
                 const programText = childFunctions.join(",")
 				return {
                     hash:objectData.props.hash,
                     string:`${variables} return function(prim){prim.text(${programText} );}`,//this is the rendering function
-                    args:combineArgs(parameters) //combine args of x,y,text
+                    args:foldedPrimitives.arguments //combine args of x,y,text
                 }
 			}
 			case 'group':{
@@ -557,15 +582,20 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 //need to sort by z-order
                 const programText = childFunctions.join(";\n\t")
 				return {
+                    hash:objectData.props.hash,
                     string:`${variables} return function(prim){${programText}}`,
                     args:foldedPrimitives.arguments
                 }
 			}
             case 'app':{
                 const graphicalRep = getJSValue(state, 'placeholder', 'graphicalRepresentation', objectData)
+                const foldedPrimitives = foldPrimitive(state, [graphicalRep], objectData)
+                const childFunctions = foldedPrimitives.hashes
+                const variables = foldedPrimitives.variableDefs
+                const programText = childFunctions[0]
                 return {
-                    string:graphicalRep.string, //this needs to be changed for more inputs/outputs
-                    args: combineArgs([graphicalRep.args])
+                    string:`${variables} return function(prim){${programText}}`, //this needs to be changed for more inputs/outputs
+                    args: foldedPrimitives.arguments
                 }
             }
 			default: {

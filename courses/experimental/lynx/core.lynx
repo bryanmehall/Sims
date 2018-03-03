@@ -3,11 +3,12 @@ attribute = new object
 
 app = new object
     jsPrimitive:{app}
+    name:"app"
     graphicalRepresentation:window
     mouse: new object
         pos: new coordinatePosition
             x:10
-            y:10
+            y:100
 
 group = new object
     jsPrimitive:{group}
@@ -24,6 +25,7 @@ parentValue = new attribute
 inverseAttribute = new attribute
 instanceOf = new attribute
 
+mouse = new attribute
 set = new object
     jsPrimitive:{set}
 setEquiv = new attribute
