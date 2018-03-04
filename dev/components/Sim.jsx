@@ -24,8 +24,11 @@ class Sim extends React.Component {
 		const contentBlockId = this.props.contentBlockId
 		this.loadSim(contentBlockId)
         let canvas = document.getElementById('canvas')
-        canvas.width = canvas.getBoundingClientRect().width;
-        canvas.height = canvas.getBoundingClientRect().height;
+        this.width = canvas.getBoundingClientRect().width
+        this.height = canvas.getBoundingClientRect().height
+        canvas.width = this.width
+        canvas.height = this.height
+
         this.ctx = canvas.getContext('2d')
 	}
     componentDidUpdate(nextProps){
@@ -38,22 +41,25 @@ class Sim extends React.Component {
                 }
             })
         }
-        const prim = {
+        this.prim = {
             rect:(x,y,width, height,r,g,b)=>{
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.fillRect(x, y, width, height)
             },
-            text:(x, y, innerText, r,g,b) => {
+            text: (x, y, innerText, r, g, b) => {
                 const size=20
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.font = `${size}px serif`
                 checkTypes('number', [x,y,r,g,b])
                 ctx.fillText(innerText || "undef", x, y)
+            },
+            clear: () => {
+                ctx.clearRect(0, 0, this.width, this.height);
             }
         }
         const functionTable = this.props.functionTable
-        const render = this.props.renderMonad(functionTable)//returns render thunk
-        render(prim)//render is a thunk except for a context to render to(here wrapped in prim)
+        this.render = this.props.renderMonad(functionTable)//returns render thunk
+        this.render(this.prim, {mouseX:0, mouseY:0}) //render is a thunk except for a context to render to(here wrapped in prim)
 		const contentBlockId = nextProps.contentBlockId
 		if (this.props.contentBlockId !== contentBlockId) { //only update on change
 			this.loadSim(contentBlockId)
@@ -106,12 +112,13 @@ class Sim extends React.Component {
 		}
 		//combine these into one file for importing children
         this.inputAvailable = true
-        let mouseX = 0
-        let mouseY = 0
         let mouseDown = false
 		const setMousePos = (e) => {
-			mouseX = e.pageX - e.currentTarget.offsetLeft || 0
-            mouseY = e.pageY - e.currentTarget.offsetTop || 0
+			const mouseX = e.pageX - e.currentTarget.offsetLeft || 0
+            const mouseY = e.pageY - e.currentTarget.offsetTop || 0
+            this.prim.clear()
+            this.render(this.prim, {mouseX, mouseY})
+
             this.inputAvailable = true
 		}
 		const setMouseDown = () => {
@@ -124,8 +131,13 @@ class Sim extends React.Component {
 		}
 
 		return (
-            <canvas id="canvas" width="600" height="600" style={simCardStyle}>
-
+            <canvas
+                id="canvas"
+                width="600"
+                height="600"
+                style={simCardStyle}
+                onMouseMove = {setMousePos}
+            >
             </canvas>
         )
         /*(

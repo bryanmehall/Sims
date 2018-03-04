@@ -7,8 +7,12 @@ app = new object
     graphicalRepresentation:window
     mouse: new object
         pos: new coordinatePosition
-            x:10
-            y:100
+            x:new input
+                name:"mouseX"
+                jsPrimitive:{input}
+            y:new input
+                name:"mouseY"
+                jsPrimitive:{input}
 
 group = new object
     jsPrimitive:{group}

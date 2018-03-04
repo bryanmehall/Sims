@@ -3,14 +3,12 @@ window = new group
     childElements: new set
         subset1: new text
             name:"text"
-            x:200
+            x:text.pos.x
             y:text.pos.y
-            r:255
+            r:0
             g:0
             b:0
-            pos:new coordinatePosition
-                x:100
-                y:100
+            pos:app.mouse.pos
             innerText:"abc"
 
 addition = new func

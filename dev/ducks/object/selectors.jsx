@@ -42,24 +42,46 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
     const searchArgs = Object.entries(args).filter((arg) => (arg[1].hasOwnProperty('query'))) //separate arguments that are searches
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
+
     let varDefs = [] //place to put variable defs for resolved searches
+    console.log('before', args, searchArgs)
     searchArgs.forEach((searchArg) => {
         const argKey = searchArg[0] //key of arg
         const query = searchArg[1].query
         const getStack = searchArg[1].getStack
+        console.log(query, objectName)
         if (query === objectName){ //get is entirely contained within higher level function
-            const result = getStack.reduce((currObjData, getObject) => {
-                const attr = getObject.props.attribute
-                return getValue(state, 'placeholder', attr, currObjData)
-            }, objectData)
-            const jsResult = getValue(state, 'placeholder', 'jsPrimitive', result)
+            let currObjectData = objectData//need to use foor loop instead of reduce for breaking on a get
+            for (var i=0; i<getStack.length; i++){
+                const getObject = getStack[i] //get first 'get' object off the stack
+                const attr = getObject.props.attribute //attribute to go to
+                const nextValue = getValue(state, 'placeholder', attr, currObjectData) //evaluate attr of currentobject
+                if (nextValue.type === 'get'){
+                    //get the jsPrimitive of the get that is pointed to
+                    const jsGet = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+                    //append remaining args on getstack to the end of jsGet's getStack
+                    //get arguments of that get primitive
+                    const nextArgs = jsGet.args[jsGet.hash]
+                    //get the leftover path from the first get
+                    //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
+                    const leftoverGetStack = getStack.slice(i+1)
+                    const newGetStack = nextArgs.getStack.concat(leftoverGetStack)
+                    args[argKey] = Object.assign({}, nextArgs, {getStack:newGetStack})
+
+                    console.log('jsGet', jsGet.args[jsGet.hash])
+                    return
+                }
+                currObjectData = nextValue
+            }
+            const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currObjectData)
             delete args[argKey] //remove resolved get from args
             varDefs.push(`var ${argKey} = ${jsResult.string};\n`)//be able to handle js result being another get
         } else {
-            //console.log('need to handle this else?')
+             //console.log('need to handle this else?')
         }
 
     })
+    console.log('after', args)
     const variableDefs = varDefs.join('')
     const compiledFunctions = argumentPrimitives.map(buildFunction)
     return {hashes:compiledFunctions, arguments:args, variableDefs}
@@ -140,6 +162,7 @@ let objectTable = {}
 export const compile = (state) => {
     const appData = getObject(state, 'app')
     const display = getValue(state, 'app', 'jsPrimitive', appData)
+    console.log(display.string)
     const renderMonad = new Function('functionTable', `${display.string}`)//returns a thunk with all of render information enclosed
     return { renderMonad, functionTable }
 }
@@ -382,6 +405,17 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		return objectLib.undef
 	} else if (prop === 'jsPrimitive') { // primitive objects
 		switch (valueData.type) {
+            case 'input':{
+                const hash = objectData.props.hash
+                const name = eval(getJSValue(state, 'placeholder', 'name', objectData).string)
+                console.log('input', hash, name)
+                return {
+                    hash,
+                    string:'inputs.'+name,
+                    args:{name},
+                    inline:true
+                }
+            }
 			case 'number': {
 				if (valueData.hasOwnProperty('value')) {
 					return {
@@ -561,7 +595,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
-
+                console.log('params', parameters[0])
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 console.log(foldedPrimitives)
                 const childFunctions = foldedPrimitives.hashes
@@ -593,8 +627,9 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const childFunctions = foldedPrimitives.hashes
                 const variables = foldedPrimitives.variableDefs
                 const programText = childFunctions[0]
+                console.log(variables)
                 return {
-                    string:`${variables} return function(prim){${programText}}`, //this needs to be changed for more inputs/outputs
+                    string:`return function(prim, inputs){${variables} ${programText}}`, //this needs to be changed for more inputs/outputs
                     args: foldedPrimitives.arguments
                 }
             }
