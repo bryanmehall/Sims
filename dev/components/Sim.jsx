@@ -58,8 +58,8 @@ class Sim extends React.Component {
             }
         }
         const functionTable = this.props.functionTable
-        this.render = this.props.renderMonad(functionTable)//returns render thunk
-        this.render(this.prim, {mouseX:0, mouseY:0}) //render is a thunk except for a context to render to(here wrapped in prim)
+        this.render = this.props.renderMonad(functionTable)//returns compiled program
+        this.render(this.prim, {mouseX:0, mouseY:0, mouseDown:false})
 		const contentBlockId = nextProps.contentBlockId
 		if (this.props.contentBlockId !== contentBlockId) { //only update on change
 			this.loadSim(contentBlockId)
@@ -102,7 +102,7 @@ class Sim extends React.Component {
 		const simCardStyle = {
 			...cardStyle, 
 			width: 600,
-			height: 600,
+			height: 200,
 			position: "relative",
 			overflow: 'hidden',
 			left: 0,
@@ -129,16 +129,26 @@ class Sim extends React.Component {
 			mouseDown = false
             this.inputAvailable = true
 		}
-
+        const functionTable = this.props.functionTable
+        const tableVis = this.props.loadState !=='loading' ? Object.keys(functionTable).map((func)=>(
+            <pre key={func}>{func}:{functionTable[func].toString()}</pre>
+        )): 'loading'
 		return (
-            <canvas
-                id="canvas"
-                width="600"
-                height="600"
-                style={simCardStyle}
-                onMouseMove = {setMousePos}
-            >
-            </canvas>
+            <div>
+                <canvas
+                    id="canvas"
+                    width="600"
+                    height="600"
+                    style={simCardStyle}
+                    onMouseMove = {setMousePos}
+                >
+                </canvas>
+                <pre style={{...cardStyle, backgroundColor:"white", position:'absolute', top:300}}>
+                    {this.props.loadState !=='loading' ? this.props.renderMonad.toString() : "loading"}
+
+                    {tableVis}
+                </pre>
+            </div>
         )
         /*(
 
@@ -164,7 +174,6 @@ function mapStateToProps(state) {
         console.time('draw')
 		const {renderMonad, functionTable} = compile(state)
         console.timeEnd('draw')
-
 		return {
 			renderMonad,
             functionTable,

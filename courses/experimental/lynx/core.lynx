@@ -58,6 +58,6 @@ condition = new attribute
 then = new attribute
 alt = new attribute
 
-equal = new function
-
 down = new attribute
+query = new attribute
+search = new object

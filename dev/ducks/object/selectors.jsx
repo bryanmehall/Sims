@@ -1,5 +1,10 @@
 import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
+/*
+refactor todo:
+    -make adding to function table a monad
+    -switch render and prim to just io
 
+*/
 export const getObject = function (state, id) {
 	//this should only be a shim for values defined in json
 	const objectState = state.sim.object
@@ -25,15 +30,21 @@ const combineArgs = (args) => {
     const reduced = args.reduce((combined, prim) => (Object.assign(combined, prim.args)),{})
     return reduced
 }
+
 //build string of function from {string:" ", args:[]} object and add that function to the function table
 const buildFunction = (primitive) => {
     if (primitive.inline){
         return primitive.string
     }
     const argsList = Object.keys(primitive.args).concat('functionTable')
-    const func = new Function(argsList, primitive.string)
-    functionTable[primitive.hash] = func
-    return `functionTable.${primitive.hash}(${argsList.join(",")})(prim)`
+    const func = new Function(argsList, 'return '+primitive.string)
+    addToFunctionTable(primitive.hash, func)
+    const primString = primitive.args.prim ? "(prim)":""//hack to add(prim) to the end if it depends on prim--refactor
+
+    return `functionTable.${primitive.hash}(${argsList.join(",")})${primString}`
+}
+const addToFunctionTable = (hash, func) => {//adding functions to table should become a monad
+    functionTable[hash] = func
 }
 const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dependent objects in the form [{string:..., args:...}]
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
@@ -44,12 +55,10 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
     //if it does, the search is resolved, if not, pass it up the tree
 
     let varDefs = [] //place to put variable defs for resolved searches
-    console.log('before', args, searchArgs)
     searchArgs.forEach((searchArg) => {
         const argKey = searchArg[0] //key of arg
         const query = searchArg[1].query
         const getStack = searchArg[1].getStack
-        console.log(query, objectName)
         if (query === objectName){ //get is entirely contained within higher level function
             let currObjectData = objectData//need to use foor loop instead of reduce for breaking on a get
             for (var i=0; i<getStack.length; i++){
@@ -67,8 +76,6 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
                     const leftoverGetStack = getStack.slice(i+1)
                     const newGetStack = nextArgs.getStack.concat(leftoverGetStack)
                     args[argKey] = Object.assign({}, nextArgs, {getStack:newGetStack})
-
-                    console.log('jsGet', jsGet.args[jsGet.hash])
                     return
                 }
                 currObjectData = nextValue
@@ -81,80 +88,11 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
         }
 
     })
-    console.log('after', args)
     const variableDefs = varDefs.join('')
     const compiledFunctions = argumentPrimitives.map(buildFunction)
     return {hashes:compiledFunctions, arguments:args, variableDefs}
 }
-const primitives = { //these should fold constants //move to new file?
-	//numbers
-	addition: {
-		func: (args) => {
-            console.log(args)
-            return { string: `${args[0].string} + ${args[1].string}`, args: combineArgs(args) }
-        },
-		args: ['op1', 'op2'],
-		ret: ['result']
-	},
-	subtraction: {
-		func: (args) => (`${args[0]} - ${args[1]}`),
-		args: ['op1', 'op2'],
-		ret: ['result']
-	},
-    multiplication: {
-		func: (args) => (`${args[0]} * ${args[1]}`),
-		args: ['op1', 'op2'],
-		ret: ['result']
-	},
-    division: {
-		func: (args) => (`${args[0]} / ${args[1]}`),
-		args: ['op1', 'op2'],
-		ret: ['result']
-	},
-	//strings
-	concat: (args) => (args.join("")),
-    //bool
-    or:{
-        func:(args) => (`${args[0]} || ${args[1]}`),
-        args: ['op1', 'op2'],
-		ret: ['result']
-    },
-    and:{
-        func:(args) => (`${args[0]} && ${args[1]}`),
-        args: ['op1', 'op2'],
-		ret: ['result']
-    },
-    equal:{
-        func:(args) => (`${args[0]} == ${args[1]}`),
-        args: ['op1', 'op2'],
-		ret: ['result']
-    },
-    lessThan:{
-        func:(args) => (`${args[0]} \< ${args[1]}`),
-        args: ['op1', 'op2'],
-		ret: ['result']
-    },
-    greaterThan:{
-        func:(args) => (`${args[0]} \> ${args[1]}`),
-        args: ['op1', 'op2'],
-		ret: ['result']
-    },
-	//sets
-	union: {
-		func: (args) => ([].concat(args[0], args[1])),
-		args: ['set1', 'set2'],
-		ret: ['result']
-	},
-    setToArray: {
-		func: (args) => {
-            console.log('setToArray', args[0])
-            return []
-        },
-		args: ['op1'],
-		ret: ['result']
-	}
 
-}
 let functionTable = {}//only js
 let stateTable = {}
 let objectTable = {}
@@ -162,7 +100,6 @@ let objectTable = {}
 export const compile = (state) => {
     const appData = getObject(state, 'app')
     const display = getValue(state, 'app', 'jsPrimitive', appData)
-    console.log(display.string)
     const renderMonad = new Function('functionTable', `${display.string}`)//returns a thunk with all of render information enclosed
     return { renderMonad, functionTable }
 }
@@ -202,13 +139,6 @@ export const getId = (state, name, prop, valueDef) => {
 	}
 	return objectData.props.id
 }
-/*
-sample function for checkbox
-checkbox(){
-    return (){
-        checkmark(20, "green")}
-}
-*/
 
 export const objectLib = {
 	id: (id) => ({
@@ -386,7 +316,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		console.log('object data undefined for ', name, prop, 'ObjectData: ', objectData)
 		throw new Error()
 	}
-
 	if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
 		if (objectData.props.hasOwnProperty('attributes')){
 			const attributeData = objectLib.union(valueData, objectLib)
@@ -408,7 +337,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
             case 'input':{
                 const hash = objectData.props.hash
                 const name = eval(getJSValue(state, 'placeholder', 'name', objectData).string)
-                console.log('input', hash, name)
                 return {
                     hash,
                     string:'inputs.'+name,
@@ -433,10 +361,13 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			}
 			case 'bool': {
 				if (valueData.hasOwnProperty('value')) {
-					return JSON.stringify(valueData.value)
-				} else if (valueData.hasOwnProperty('input')) {
-					return false //inputs[def.input]
-				} else {
+					return {
+                        hash:objectData.props.hash,
+                        string:JSON.stringify(valueData.value),
+                        args:{},
+                        inline:true
+                    }
+                } else {
 					//make this so it can search between objects in a set if multiple things are equivalent
 					const equivObjectData = getValue(state, 'placeholder', 'logicalEquiv', objectData)
 					const equivValue = getValue(state, 'equivObject', 'jsPrimitive', equivObjectData)
@@ -458,34 +389,75 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					return equivValue
 				}
 			}
-            case 'addition':{ //change this to a generic builtin function
-                return {hash:objectData.props.hash, string:"+", args:{}, inline:true}
-            }
-			case 'function': {
-                const name = getJSValue(state, 'placeholder', 'name', objectData)//get rid of this eval
-                console.log('name', name)
-                if (!functionTable.hasOwnProperty(name)){
-                    const result = getJSValue(state, 'placeholder', 'result', objectData)
-                    console.log('result', result, objectData)
-                    functionTable[name] = `function ${eval(name)}(op1){${result}}`
+            case 'addition':
+            case 'subtraction':
+            case 'multiplication':
+            case 'equal':
+            case 'lessThan':{ //change this to a generic builtin function
+                const symbol = {addition:"+", equal:"===", subtraction:"-", multiplication:"*", lessThan:"<"}
+                return {
+                    hash:objectData.props.hash,
+                    string:symbol[valueData.type],
+                    args:{},
+                    inline:true
                 }
-				return name
-			}
-			case 'apply': {
-                const paramNames = ['op1','function', 'op2']//add support for binary op
+            }
+			case 'function': { //can this be combined with apply
+                limiter(2000, 5)
+                const paramNames = ["result"]
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
+                parameters[0].inline = false //refactor
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 const childFunctions = foldedPrimitives.hashes
                 const variables = foldedPrimitives.variableDefs
-                const programText = childFunctions.join("")
-				return {
-                    hash:objectData.props.hash,
-                    string:programText,
-                    args:combineArgs(parameters),
-                    inline:true
+                return parameters[0]
+                //monad for requiring that function is in table or for placing function in table
+			}
+			case 'apply': {
+                const paramNames = ['op1','function', 'op2']//add support for binary op
+                const functionName = objectData.props.function
+                let parameters = paramNames.map((paramName) => (
+                        getJSValue(state, 'placeholder', paramName, objectData)
+                    )).filter((param)=>(param !== undefined))
+                /*if (!functionTable.hasOwnProperty(functionName)){//if function is already added to functionTable
+                    functionTable[functionName] = 'pending'
+                    parameters = paramNames.map((paramName) => (
+                        getJSValue(state, 'placeholder', paramName, objectData)
+                    )).filter((param)=>(param !== undefined))
+                    console.log('adding '+functionName)
+                    functionTable[functionName] = parameters[1]//add to functionTable so functionTable[name] = hash
+                } else {
+                    const op1 = getJSValue(state, 'placeholder', 'op1', objectData)
+                    const op2 = getJSValue(state, 'placeholder', 'op2', objectData)
+                    const func = functionTable[functionName]
+                    console.log('func', func)
+                    parameters = [op1,func]
+                }*/
+
+                const foldedPrimitives = foldPrimitive(state, parameters, objectData)
+                const childFunctions = foldedPrimitives.hashes
+                const variables = foldedPrimitives.variableDefs
+                if (parameters.length === 3){//binop
+                    const programText = childFunctions.join("")
+                    return {
+                        hash:objectData.props.hash,
+                        string:programText,
+                        args:foldedPrimitives.arguments,
+                        inline:true
+                    }
+                } else {//unop
+                    const functionHash = parameters[1].hash
+                    const argString = parameters[0].string
+                    return {
+                        hash:objectData.props.hash,
+                        string:`functionTable.${functionHash}(${argString}, functionTable)`,
+                        args:{},
+                        inline:true
+                    }
                 }
+
                 /*
 				const functionName = eval(getJSValue(state, 'placeholder', 'function', objectData)) //get js primitive of function
 				if (primitives.hasOwnProperty(functionName.type)){
@@ -559,11 +531,26 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const hash = objectData.props.hash
                 return { hash, string: hash, args: {search:{query, getStack:[]}} }
 			}
+            case 'recurse':{
+                //eventually combine this with search -- local and global?
+                const name = eval(getJSValue(state, 'placeholder', 'query', objectData).string)
+                const resultHash = getValue(state, 'placeholder', 'result',state.sim.object[name]).props.hash
+                return {hash:resultHash, string:resultHash, args:{}}
+            }
             case 'ternary': {
-                const condition = getJSValue(state, 'placeholder', 'condition', objectData)
-                const then = getJSValue(state, 'placeholder', 'then', objectData)
-                const alt = getJSValue(state, 'placeholder', 'alt', objectData)
-                return {string:`if(${condition}){${then}} else {${alt}}`, args:{}}
+                const paramNames = ["condition", "then", "alt"]
+                const parameters = paramNames.map((paramName) => (
+                    getJSValue(state, 'placeholder', paramName, objectData)
+                ))
+                const foldedPrimitives = foldPrimitive(state, parameters, objectData)
+                const [condition, then, alt] = foldedPrimitives.hashes
+                const variables = foldedPrimitives.variableDefs
+                return {
+                    hash:objectData.props.hash,
+                    string:`(${condition}) ? ${then} : ${alt}`,
+                    args:foldedPrimitives.arguments,
+                    inline:true
+                }
             }
             case 'new': {
                 return def.id
@@ -595,16 +582,15 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
-                console.log('params', parameters[0])
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-                console.log(foldedPrimitives)
                 const childFunctions = foldedPrimitives.hashes
                 const variables = foldedPrimitives.variableDefs
-                const programText = childFunctions.join(",")
+
+                const programText = childFunctions.join(",\n\t")
 				return {
                     hash:objectData.props.hash,
-                    string:`${variables} return function(prim){prim.text(${programText} );}`,//this is the rendering function
-                    args:foldedPrimitives.arguments //combine args of x,y,text
+                    string:` function(prim){//text\n${variables} prim.text(${programText} );}`,//this is the rendering function
+                    args:Object.assign(foldedPrimitives.arguments,{prim:true}) //combine args of x,y,text
                 }
 			}
 			case 'group':{
@@ -617,7 +603,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const programText = childFunctions.join(";\n\t")
 				return {
                     hash:objectData.props.hash,
-                    string:`${variables} return function(prim){${programText}}`,
+                    string:` function(prim){//group\n${variables} ${programText}}`,
                     args:foldedPrimitives.arguments
                 }
 			}
@@ -627,9 +613,8 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const childFunctions = foldedPrimitives.hashes
                 const variables = foldedPrimitives.variableDefs
                 const programText = childFunctions[0]
-                console.log(variables)
                 return {
-                    string:`return function(prim, inputs){${variables} ${programText}}`, //this needs to be changed for more inputs/outputs
+                    string:`return function(prim, inputs){//app\n${variables} ${programText}}`,
                     args: foldedPrimitives.arguments
                 }
             }

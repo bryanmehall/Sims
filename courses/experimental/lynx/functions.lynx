@@ -5,37 +5,67 @@ window = new group
             name:"text"
             x:text.pos.x
             y:text.pos.y
-            r:0
-            g:0
+            r:app.mouse.pos.x
+            g:app.mouse.pos.y
             b:0
-            pos:app.mouse.pos
-            innerText:"abc"
+            pos:new coordinatePosition
+                x:20
+                y:20
+            innerText:new apply
+                function:fac
+                op1:app.mouse.pos.x
 
 addition = new func
     name:"addition"
     caller:addition.parentValue
     jsPrimitive:{addition}
 
+subtraction = new func
+    name:"subtraction"
+    caller:subtraction.parentValue
+    jsPrimitive:{subtraction}
+
+multiplication = new func
+    name:"multiplication"
+    caller:multiplication.parentValue
+    jsPrimitive:{multiplication}
+
+equal = new func
+    name:"equal"
+    caller:equal.parentValue
+    jsPrimitive:{equal}
+
+lessThan = new func
+    name:"lessThan"
+    caller:lessThan.parentValue
+    jsPrimitive:{lessThan}
+
 func = new object
     jsPrimitive:{function}
 
 sq = new func
     name:"sq"
-    op1:sq.caller.op1
-    numericalEquiv:sq.op1*sq.op1
+    op1:sq.parentObject.op1
+    numericalEquiv:sq.op1+sq.op1
 
-factorial = new func
-    name:"factorial"
-    op1:factorial.caller.op1
-    result: new ternary
-        condition: 1 == 1
-        then: 1
-        alt: new apply
-            function:factorial
-            op1:1
+fac = new func
+    name:"fac"
+    op1:fac.caller.op1
+    result:new ternary
+        condition:fac.op1<1
+        then:1
+        alt:new apply
+            function:multiplication
+            op1:fac.op1
+            op2:new apply
+                function:new search
+                    query:"fac"
+                    jsPrimitive:{recurse}
+                op1:fac.op1-1
 
 apply = new object
     jsPrimitive:{apply}
+
 op1 = new attribute
 op2 = new attribute
 result = new attribute

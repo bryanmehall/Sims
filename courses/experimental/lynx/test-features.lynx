@@ -1,5 +1,6 @@
 app = new object
     name:"app"
+    jsPrimitive:{app}
     activeObject:window
     graphicalRepresentation:window
 
