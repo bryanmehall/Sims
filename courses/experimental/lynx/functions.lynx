@@ -5,43 +5,21 @@ window = new group
             name:"text"
             x:text.pos.x
             y:text.pos.y
-            r:app.mouse.pos.x
-            g:app.mouse.pos.y
+            r:0
+            g:new ternary
+                condition:app.mouse.pos.x > text.pos.x
+                then:128
+                alt:0
             b:0
             pos:new coordinatePosition
                 x:20
                 y:20
+            width:100
+            height:15
             innerText:new apply
                 function:fac
                 op1:app.mouse.pos.x
-
-addition = new func
-    name:"addition"
-    caller:addition.parentValue
-    jsPrimitive:{addition}
-
-subtraction = new func
-    name:"subtraction"
-    caller:subtraction.parentValue
-    jsPrimitive:{subtraction}
-
-multiplication = new func
-    name:"multiplication"
-    caller:multiplication.parentValue
-    jsPrimitive:{multiplication}
-
-equal = new func
-    name:"equal"
-    caller:equal.parentValue
-    jsPrimitive:{equal}
-
-lessThan = new func
-    name:"lessThan"
-    caller:lessThan.parentValue
-    jsPrimitive:{lessThan}
-
-func = new object
-    jsPrimitive:{function}
+        subset2: app.accordianRep
 
 sq = new func
     name:"sq"
@@ -62,12 +40,3 @@ fac = new func
                     query:"fac"
                     jsPrimitive:{recurse}
                 op1:fac.op1-1
-
-apply = new object
-    jsPrimitive:{apply}
-
-op1 = new attribute
-op2 = new attribute
-result = new attribute
-caller = new attribute
-function = new attribute

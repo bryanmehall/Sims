@@ -10,6 +10,7 @@ import Circle from './Circle'
 import Group from './Group'
 import Expression from './Expression'
 import Tracker from './Tracker'
+import Debug from './Debug'
 import { cardStyle } from './styles'
 import Link from 'redux-first-router-link'
 
@@ -18,6 +19,7 @@ class Sim extends React.Component {
 		super(props)
 		this.loadSim = this.loadSim.bind(this)
 		this.closeSim = this.closeSim.bind(this)
+        this.state = {offset:{x:300, y:0}}
 	}
 
 	componentDidMount(){
@@ -85,7 +87,6 @@ class Sim extends React.Component {
 
 	}
 	render(){
-
 		const { contentBlockId, partId, courseId, setProp } = this.props
 		const active = this.props.contentBlockId !== null
 		const imageUrl = `/content/courses/${this.props.courseId}/${this.props.partId}/thumbnail.png`
@@ -133,6 +134,13 @@ class Sim extends React.Component {
         const tableVis = this.props.loadState !=='loading' ? Object.keys(functionTable).map((func)=>(
             <pre key={func}>{func}:{functionTable[func].toString()}</pre>
         )): 'loading'
+        const codeVis = (
+            <pre style={{...cardStyle, backgroundColor:"white", position:'absolute', top:300}}>
+                {this.props.loadState !=='loading' ? this.props.renderMonad.toString() : "loading"}
+                {tableVis}
+            </pre>
+        )
+        const treeVis = this.props.loadState !=='loading' ? <Debug trace={this.props.trace}></Debug> : null
 		return (
             <div>
                 <canvas
@@ -143,11 +151,7 @@ class Sim extends React.Component {
                     onMouseMove = {setMousePos}
                 >
                 </canvas>
-                <pre style={{...cardStyle, backgroundColor:"white", position:'absolute', top:300}}>
-                    {this.props.loadState !=='loading' ? this.props.renderMonad.toString() : "loading"}
-
-                    {tableVis}
-                </pre>
+                {codeVis}
             </div>
         )
         /*(
@@ -172,11 +176,12 @@ function mapStateToProps(state) {
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
         console.time('draw')
-		const {renderMonad, functionTable} = compile(state)
+		const {renderMonad, functionTable, trace} = compile(state)
         console.timeEnd('draw')
 		return {
 			renderMonad,
             functionTable,
+            trace,
 			loadState
 		}
 	}

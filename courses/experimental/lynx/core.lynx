@@ -1,4 +1,16 @@
 object = new object
+    name:"object"
+    accordianRep:new group
+        name:"accordianRep"
+        pos: new coordinatePosition
+            x:200
+            y:50
+        childElements: new set
+            subset1: new text
+                pos:accordianRep.pos
+                innerText:accordianRep.parentValue.name
+            subset2:div
+
 attribute = new object
 
 app = new object
@@ -15,19 +27,54 @@ app = new object
                 jsPrimitive:{input}
 
 group = new object
+    name:"group"
     jsPrimitive:{group}
+
+div = new group
+    name:"div"
+    childElements: new set
+        subset1:div.firstElement
+        subset2:div.firstElement.nextElement
+    firstElement:new text
+        innerText:"abc"
+        pos:new coordinatePosition
+            x:20
+            y:100
+        nextElement: new text
+            innerText:"xyz"
+            pos: new coordinatePosition
+                x:20
+                y:125
+
+firstElement = new attribute
+    name:"firstElement"
+nextElement = new attribute
+    name:"nextElement"
 
 window = new group
     childElements:new set
 
 graphicalRepresentation = new attribute
+accordianRep = new attribute
 
+attributes = new attribute
+    name:"attributes"
 jsPrimitive = new attribute
+    name:"jsPrimitive"
 childElements = new attribute
+    name:"a"
 name = new attribute
+    name:"a"
 parentValue = new attribute
+    name:"a"
 inverseAttribute = new attribute
+    name:"a"
 instanceOf = new attribute
+    name:"a"
+prevVal = new attribute
+    name:"prevVal"
+type = new attribute
+    name:"type"
 
 mouse = new attribute
 set = new object
@@ -38,6 +85,15 @@ subset2 = new attribute
 
 text = new object
     jsPrimitive:{text}
+    name:"text"
+    r:0
+    g:0
+    b:0
+    x:text.pos.x
+    y:text.pos.y
+    pos: new coordinatePosition
+        x:app.mouse.pos.x
+        y:app.mouse.pos.y
 
 pos = new attribute
 x = new attribute
@@ -47,6 +103,8 @@ innerText = new attribute
 r = new attribute
 g = new attribute
 b = new attribute
+width = new attribute
+height = new attribute
 
 get = new object
 rootObject = new attribute
@@ -61,3 +119,60 @@ alt = new attribute
 down = new attribute
 query = new attribute
 search = new object
+
+func = new object
+    jsPrimitive:{function}
+
+addition = new func
+    name:"addition"
+    caller:addition.parentValue
+    jsPrimitive:{addition}
+
+subtraction = new func
+    name:"subtraction"
+    caller:subtraction.parentValue
+    jsPrimitive:{subtraction}
+
+multiplication = new func
+    name:"multiplication"
+    caller:multiplication.parentValue
+    jsPrimitive:{multiplication}
+
+division = new func
+    name:"division"
+    caller:division.parentValue
+    jsPrimitive:{division}
+
+equal = new func
+    name:"equal"
+    caller:equal.parentValue
+    jsPrimitive:{equal}
+
+lessThan = new func
+    name:"lessThan"
+    caller:lessThan.parentValue
+    jsPrimitive:{lessThan}
+
+greaterThan = new func
+    name:"greaterThan"
+    caller:greaterThan.parentValue
+    jsPrimitive:{greaterThan}
+
+and = new func
+    name:"and"
+    caller:and.parentValue
+    jsPrimitive:{and}
+
+or = new func
+    name:"or"
+    caller:or.parentValue
+    jsPrimitive:{or}
+
+apply = new object
+    jsPrimitive:{apply}
+
+op1 = new attribute
+op2 = new attribute
+result = new attribute
+caller = new attribute
+function = new attribute
