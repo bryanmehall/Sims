@@ -59,9 +59,9 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
         const argKey = searchArg[0] //key of arg
         const query = searchArg[1].query
         const getStack = searchArg[1].getStack
-
         if (query === objectName){ //get is entirely contained within higher level function
-            let currObjectData = objectData//this uses for loop instead of reduce for breaking on a get
+            // state, objectData, getStack
+            let currObjectData = objectData //this uses for loop instead of reduce for breaking on a get
             for (var i=0; i<getStack.length; i++){
                 const getObject = getStack[i] //get first 'get' object off the stack
                 const attr = getObject.props.attribute //attribute to go to
@@ -76,6 +76,7 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
                     //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
                     const leftoverGetStack = getStack.slice(i+1)
                     const newGetStack = nextArgs.getStack.concat(leftoverGetStack)
+                    //console.log(newGetStack)//resolve here if we can
                     args[argKey] = Object.assign({}, nextArgs, {getStack:newGetStack})
                     return
                 }
@@ -83,6 +84,7 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
             }
             const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currObjectData)
             args = Object.assign({}, args, jsResult.args) //add args for variable defs to args for whole function
+            //console.log('args', query, argKey, args)
             delete args[argKey] //remove resolved get from args
             varDefs.push(`var ${argKey} = ${jsResult.string};\n`)//be able to handle js result being another get
         } else {
@@ -122,7 +124,7 @@ export const getJSValue = (state, name, prop, objData) => {
 	}
 }
 
-const getHash = (objectData) => {
+const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
 	const hashData = Object.assign({}, objectData.props, { parentValue: "parent", hash: "hash" })
     const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))//hash(hashData)
     objectTable[digest] = objectData
@@ -188,7 +190,6 @@ export const objectLib = {
 				}
 			}
 		}
-
 	},
 	constructSearch: (query) => ({ //add support for searching different databases
 		type: 'search',
@@ -286,27 +287,28 @@ const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
 	if (objectData.type === 'app'){ //special case for root in this case app
         objectData = objectLib.undef
     }
-    const parentHash = getHash(objectData)
-    const hash = getHash(valueData)
     const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
-    const inverse = hasInverse ? { [attrData.props.inverseAttribute]: parentHash }: {} //get inverse value (parent)
-    const inverseAttrs = Object.assign({ parentValue: parentHash, hash }, inverse)
-	const propsWithoutPrevious = Object.assign({}, valueData.props, { prevVal: valueData })
-	const valueWithoutPrevious = Object.assign({}, valueData, { props: propsWithoutPrevious })
+    const inverseAttr = attrData.props.inverseAttribute
+    const parentHash = getHash(objectData)
+
+    const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
+
+    const inverseAttrs = Object.assign({ parentValue: parentHash}, inverse)
+    const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
+    const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash })
+    const hash = getHash(objectDataWithoutHash)
+    const newProps = Object.assign({},newPropsWithoutHash, {hash})
 	const prevVal = null//addState(key, valueWithoutPrevious)
-    //console.log(JSON.stringify(objectData).length, attr, parentHash)
 	if (prevVal === null){
-		const newProps = Object.assign(Object.assign({}, valueData.props, inverseAttrs))
-		return Object.assign(Object.assign({}, valueData, { props: newProps }))
+		return Object.assign({}, valueData, { props: newProps })
 	} else {
-		const newProps = Object.assign(Object.assign({}, valueData.props, inverseAttrs))
 		//if (valueData.props.id === "textRepresentation"){console.log('&&&&&&&&&abc', attr, objectData, valueData)}
-		return Object.assign(Object.assign({}, valueData, { props: newProps }))
+		return Object.assign({}, valueData, { props: newProps })
 	}
 }
+
 let timer = performance.now()
 let counter = 0
-
 const limiter = (timeLimit, countLimit)=>{
     const dt = performance.now()-timer
     counter+=1
@@ -318,14 +320,16 @@ const limiter = (timeLimit, countLimit)=>{
 }
 
 export const getValue = (state, name, prop, objectData) => { //get Value should be called eval and will need to support async actions eventually
+    //check that hash matches objectData...remove in production
     if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
-        console.log(objectData)
+        console.log(objectData, getHash(objectData), objectData.props.hash)
         throw new Error("hashes not equal")
     }
-    //console.log('getting', dt, prop)
+
     if (objectData === undefined){
 		throw new Error('must have object def for '+prop) //"get rid of this when everything is switched"
-	} else if (typeof objectData === "string" && isHash(objectData)){
+	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
+        console.log('stringObjectData')
         objectData = objectFromHash(objectData)
     }
 	let def = objectData.props[prop]
@@ -335,7 +339,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
 	//console.log(def, prop)
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values
-
 		let inheritedData
 		/*if (objectData.type === 'object'){
 			return objectLib.undef

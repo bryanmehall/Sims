@@ -41,15 +41,21 @@ div = new group
             x:20
             y:100
         nextElement: new text
+            name:"text"
             innerText:"xyz"
-            pos: new coordinatePosition
-                x:20
-                y:125
+            x:text.previousElement.pos.x
+            y:text.previousElement.pos.y+20
 
 firstElement = new attribute
     name:"firstElement"
+
 nextElement = new attribute
     name:"nextElement"
+    inverseAttribute:previousElement
+
+previousElement = new attribute
+    name:"previousElement"
+
 
 window = new group
     childElements:new set

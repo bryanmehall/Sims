@@ -60,12 +60,19 @@ class Trace extends React.Component {
                 </g>
             )
         })
-
-        const getStack = trace.hasOwnProperty('args') ? (
-            <text x={x} y={y+15} textAnchor="middle">
-                {Object.entries(trace.args)[0][1].query}
+        const renderGetObject = (getObject) => (
+            getObject.props.attribute
+        )
+        let getStack
+        if (trace.hasOwnProperty('args')){
+            const getData = Object.entries(trace.args)[0][1]
+            getStack = <text x={x} y={y+15} textAnchor="middle">
+                {getData.query}.{getData.getStack.map(renderGetObject).join(".")}
             </text>
-        ) : "abc"
+        } else {
+            getStack = "abc"
+        }
+
 		return (
             <g>
                 <text
