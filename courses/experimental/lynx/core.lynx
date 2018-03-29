@@ -32,19 +32,26 @@ group = new object
 
 div = new group
     name:"div"
+    textRepresentation:new text
+        innerText:"bear"
+        x:0
+        y:20
     childElements: new set
         subset1:div.firstElement
         subset2:div.firstElement.nextElement
     firstElement:new text
-        innerText:"abc"
+        innerText:"zbc"
         pos:new coordinatePosition
             x:20
             y:100
         nextElement: new text
             name:"text"
-            innerText:"xyz"
+            innerText:text.previousElement.innerText
             x:text.previousElement.pos.x
             y:text.previousElement.pos.y+20
+            pos:new coordinatePosition
+                x:20
+                y:130
 
 firstElement = new attribute
     name:"firstElement"

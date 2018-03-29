@@ -46,21 +46,22 @@ const buildFunction = (primitive) => {
 const addToFunctionTable = (hash, func) => {//adding functions to table should become a monad
     functionTable[hash] = func
 }
-const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dependent objects in the form [{string:..., args:...}]
+//convert object of arguments to object of unresolved args and list of variable defs
+const argsToVarDefs = (state, objectData, oldArgs)=>{
+    //get name of object
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
     const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
-    let args = combineArgs(argumentPrimitives)//combine arguments of sub functions
-    const searchArgs = Object.entries(args).filter((arg) => (arg[1].hasOwnProperty('query'))) //separate arguments that are searches
+    //get args that are searches into list of pairs [argKey, argValue]
+    const searchArgs = Object.entries(oldArgs).filter((arg) => (arg[1].hasOwnProperty('query')))
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-
-    let varDefs = [] //place to put variable defs for resolved searches
-    searchArgs.forEach((searchArg) => {
+    const initalFunctionData = {args:oldArgs, varDefs:[]}//search args moves resolved defs from args to varDefs
+    const resolveGetStack = (functionData, searchArg) => {
         const argKey = searchArg[0] //key of arg
         const query = searchArg[1].query
         const getStack = searchArg[1].getStack
+        //query, getStack
         if (query === objectName){ //get is entirely contained within higher level function
-            // state, objectData, getStack
             let currObjectData = objectData //this uses for loop instead of reduce for breaking on a get
             for (var i=0; i<getStack.length; i++){
                 const getObject = getStack[i] //get first 'get' object off the stack
@@ -69,29 +70,40 @@ const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dep
                 if (nextValue.type === 'get'){
                     //get the jsPrimitive of the get that is pointed to
                     const jsGet = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-                    //append remaining args on getstack to the end of jsGet's getStack
+                    //append remaining args on getStack to the end of jsGet's getStack
                     //get arguments of that get primitive
                     const nextArgs = jsGet.args[jsGet.hash]
                     //get the leftover path from the first get
                     //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
                     const leftoverGetStack = getStack.slice(i+1)
                     const newGetStack = nextArgs.getStack.concat(leftoverGetStack)
-                    //console.log(newGetStack)//resolve here if we can
-                    args[argKey] = Object.assign({}, nextArgs, {getStack:newGetStack})
-                    return
+                    console.log(nextArgs)//resolve here if we can
+                    console.log(objectName, query)
+                    const unresolvedArg = Object.assign({}, nextArgs, { getStack: newGetStack })
+                    const args = Object.assign({}, functionData.args, { [argKey]: unresolvedArg })
+                    return { args, varDefs: functionData.varDefs }
                 }
                 currObjectData = nextValue
             }
             const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currObjectData)
-            args = Object.assign({}, args, jsResult.args) //add args for variable defs to args for whole function
-            //console.log('args', query, argKey, args)
+            const args = Object.assign({}, functionData.args, jsResult.args) //add args for variable defs to args for whole function
             delete args[argKey] //remove resolved get from args
-            varDefs.push(`var ${argKey} = ${jsResult.string};\n`)//be able to handle js result being another get
+            const varDefs = functionData.varDefs.concat(`\tvar ${argKey} = ${jsResult.string};//${objectName}\n`)
+            return {args, varDefs}
         } else {
-             if (objectName === 'app'){throw 'no match found'}
+            if (objectName === 'app'){throw 'no match found'}
+            return functionData
         }
 
-    })
+    }
+    const resolvedFunctionData = searchArgs.reduce(resolveGetStack, initalFunctionData)
+    return resolvedFunctionData
+}
+const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dependent objects in the form [{string:..., args:...}]
+    const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
+    const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
+    const oldArgs = combineArgs(argumentPrimitives)//combine arguments of sub functions
+    const {args, varDefs} = argsToVarDefs(state, objectData, oldArgs)
     const variableDefs = varDefs.join('')
     const compiledFunctions = argumentPrimitives.map(buildFunction)
     const trace = argumentPrimitives.map((argPrim)=>(
