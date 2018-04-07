@@ -1,7 +1,7 @@
 import { getValue } from './ducks/object/selectors'
 
 /*********lynx core tests*********
-    -inheritance
+    -inheritance --is this a primitive or implemented when an object is created?
     -get
     -nested get
     -inverse attributes

@@ -1,15 +1,17 @@
 object = new object
     name:"object"
-    accordianRep:new group
-        name:"accordianRep"
-        pos: new coordinatePosition
-            x:200
-            y:50
-        childElements: new set
-            subset1: new text
-                pos:accordianRep.pos
-                innerText:accordianRep.parentValue.name
-            subset2:div
+    accordianRep:accordianRepresentation
+
+accordianRepresentation = new group
+    name:"accordianRep"
+    pos: new coordinatePosition
+        x:100
+        y:100
+    childElements: new set
+        subset1: new text
+            pos:accordianRep.pos
+            innerText:accordianRep.parentConcept.name
+        subset2:div
 
 attribute = new object
 
@@ -33,25 +35,20 @@ group = new object
 div = new group
     name:"div"
     textRepresentation:new text
-        innerText:"bear"
-        x:0
-        y:20
+        name:"bear"
+        innerText:bear.parentConcept.name
+        x:bear.previousElement.y
+        y:130
     childElements: new set
         subset1:div.firstElement
         subset2:div.firstElement.nextElement
     firstElement:new text
-        innerText:"zbc"
+        innerText:"abc"
+        y:50
         pos:new coordinatePosition
             x:20
             y:100
-        nextElement: new text
-            name:"text"
-            innerText:text.previousElement.innerText
-            x:text.previousElement.pos.x
-            y:text.previousElement.pos.y+20
-            pos:new coordinatePosition
-                x:20
-                y:130
+        nextElement: div.textRepresentation
 
 firstElement = new attribute
     name:"firstElement"
@@ -63,12 +60,16 @@ nextElement = new attribute
 previousElement = new attribute
     name:"previousElement"
 
-
 window = new group
     childElements:new set
 
+parentConcept = new attribute
+textRepresentation = new attribute
+    inverseAttribute:parentConcept
 graphicalRepresentation = new attribute
+    inverseAttribute:parentConcept
 accordianRep = new attribute
+    inverseAttribute:parentConcept
 
 attributes = new attribute
     name:"attributes"

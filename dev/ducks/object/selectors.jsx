@@ -43,73 +43,97 @@ const buildFunction = (primitive) => {
 
     return `functionTable.${primitive.hash}(${argsList.join(",")})${primString}`
 }
-const addToFunctionTable = (hash, func) => {//adding functions to table should become a monad
+const addToFunctionTable = (hash, func) => { //adding functions to table should become a monad
     functionTable[hash] = func
 }
 //convert object of arguments to object of unresolved args and list of variable defs
-const argsToVarDefs = (state, objectData, oldArgs)=>{
+const argsToVarDefs = (state, objectData, oldArgs) => {
     //get name of object
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
     const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
     //get args that are searches into list of pairs [argKey, argValue]
-    const searchArgs = Object.entries(oldArgs).filter((arg) => (arg[1].hasOwnProperty('query')))
+    const searchArgs = Object.entries(oldArgs)
+        .filter((arg) => (arg[1].hasOwnProperty('query')))
+        .map((searchArg) => ({
+            argKey: searchArg[0],
+            query: searchArg[1].query,
+            getStack: searchArg[1].getStack
+        }))
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    const initalFunctionData = {args:oldArgs, varDefs:[]}//search args moves resolved defs from args to varDefs
-    const resolveGetStack = (functionData, searchArg) => {
-        const argKey = searchArg[0] //key of arg
-        const query = searchArg[1].query
-        const getStack = searchArg[1].getStack
-        //query, getStack
-        if (query === objectName){ //get is entirely contained within higher level function
-            let currObjectData = objectData //this uses for loop instead of reduce for breaking on a get
-            for (var i=0; i<getStack.length; i++){
-                const getObject = getStack[i] //get first 'get' object off the stack
-                const attr = getObject.props.attribute //attribute to go to
-                const nextValue = getValue(state, 'placeholder', attr, currObjectData) //evaluate attr of currentobject
+    const initalFunctionData = { args: oldArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
+    const resolveGetStack = (functionData, searchArgData) => {
+        const { argKey, query, getStack } = searchArgData
+        const reduceGetStack = (currentObject, getStack) => {
+            //iteratively get the getStack[0] attribute of current object to find the end of the stack
+            if (getStack.length === 0){
+                const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
+                const args = Object.assign({}, functionData.args, jsResult.args) //add args for variable defs to args for whole function
+                delete args[argKey] //remove resolved get from args
+                const varComment = `//${objectName}`
+                const varDefs = functionData.varDefs.concat(`\tvar ${argKey} = ${jsResult.string};${varComment}\n`)
+                return { args, varDefs }
+            } else {
+                const getObject = getStack[0]
+                const newGetStack = getStack.slice(1)
+                const attr = getObject.props.attribute//attribute to go to
+                //if getObject has any attributes other than those listed
+                //then get inverses to add to nextValue
+                const inverseAttributes = Object.assign({}, getObject.props)
+                const extraAttrs = ['jsPrimitive', 'rootObject', 'attribute', 'parentValue', 'hash']
+                extraAttrs.forEach((extraAttr) => {
+                    delete inverseAttributes[extraAttr]
+                })
+                const hasInverses = Object.keys(inverseAttributes).length !== 0
+                const replacement = hasInverses ? inverseAttributes : 'placeholder'
+                const nextValue = getValue(state, replacement, attr, currentObject) //evaluate attr of currentobject
+
+                /*if (attr === 'textRepresentation'){
+                    console.log('prev', currentObject, getObject, nextValue)
+                    nextValue.props.previousElement = getObject.props.previousElement
+                }*/
                 if (nextValue.type === 'get'){
-                    //get the jsPrimitive of the get that is pointed to
-                    const jsGet = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-                    //append remaining args on getStack to the end of jsGet's getStack
-                    //get arguments of that get primitive
-                    const nextArgs = jsGet.args[jsGet.hash]
                     //get the leftover path from the first get
                     //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
-                    const leftoverGetStack = getStack.slice(i+1)
-                    const newGetStack = nextArgs.getStack.concat(leftoverGetStack)
-                    console.log(nextArgs)//resolve here if we can
-                    console.log(objectName, query)
-                    const unresolvedArg = Object.assign({}, nextArgs, { getStack: newGetStack })
+                    const pathPrimitive = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+                    const nextArgs = pathPrimitive.args[pathPrimitive.hash]
+                    const joinedGetStack = nextArgs.getStack.concat(newGetStack)
+                    if (objectName === nextArgs.query){
+                        //this if block solves the case where the leftover git is rooted exactly at objectData
+                        //what happens if it is rooted below?
+                        return reduceGetStack(objectData, joinedGetStack)
+                    }
+                    const unresolvedArg = Object.assign({}, nextArgs, { getStack: joinedGetStack })
                     const args = Object.assign({}, functionData.args, { [argKey]: unresolvedArg })
                     return { args, varDefs: functionData.varDefs }
+                } else {
+                    return reduceGetStack(nextValue, newGetStack)
                 }
-                currObjectData = nextValue
             }
-            const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currObjectData)
-            const args = Object.assign({}, functionData.args, jsResult.args) //add args for variable defs to args for whole function
-            delete args[argKey] //remove resolved get from args
-            const varDefs = functionData.varDefs.concat(`\tvar ${argKey} = ${jsResult.string};//${objectName}\n`)
-            return {args, varDefs}
+        }
+        if (query === objectName){ //get is entirely contained within higher level function
+            const reduced = reduceGetStack(objectData, getStack)
+            return reduced
         } else {
-            if (objectName === 'app'){throw 'no match found'}
+            if (objectName === 'app'){ throw 'no match found' }
             return functionData
         }
-
     }
     const resolvedFunctionData = searchArgs.reduce(resolveGetStack, initalFunctionData)
     return resolvedFunctionData
 }
+
 const foldPrimitive = (state, argumentPrimitives, objectData) => { //list of dependent objects in the form [{string:..., args:...}]
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
     const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
     const oldArgs = combineArgs(argumentPrimitives)//combine arguments of sub functions
-    const {args, varDefs} = argsToVarDefs(state, objectData, oldArgs)
+    const { args, varDefs } = argsToVarDefs(state, objectData, oldArgs)
     const variableDefs = varDefs.join('')
     const compiledFunctions = argumentPrimitives.map(buildFunction)
-    const trace = argumentPrimitives.map((argPrim)=>(
-        Object.assign({}, argPrim.trace, {name:objectName})
+    const trace = argumentPrimitives.map((argPrim) => (
+        Object.assign({}, argPrim.trace, { name: objectName })
     ))
-    return {hashes:compiledFunctions, arguments:args, variableDefs, trace}
+    return { hashes: compiledFunctions, arguments: args, variableDefs, trace }
 }
 
 let functionTable = {}//only js
@@ -161,8 +185,8 @@ export const getId = (state, name, prop, valueDef) => {
 export const objectLib = {
 	id: (id) => ({
 		type: 'id',
-		props:{
-			jsPrimitive:{type:'id', id}
+		props: {
+			jsPrimitive: { type: 'id', id }
 		}
 	}),
 	undef: {
@@ -207,7 +231,7 @@ export const objectLib = {
 		type: 'search',
 		props: {
 			query,
-			id:'search'+query,
+			id: 'search'+query,
 			jsPrimitive: { type: 'search', id: query }
 		}
 	}),
@@ -219,22 +243,22 @@ export const objectLib = {
             }
         }
     },
-    constructArray:function(elements){
+    constructArray: function(elements){
         const constructLinkedList = (elements) => {
             const length = elements.length
             if (length === 1){
                 return {
-                    type:'array',
-                    props:{
+                    type: 'array',
+                    props: {
                         value: elements[0]
                     }
                 }
             } else {
                 return {
-                    type:'array',
-                    props:{
+                    type: 'array',
+                    props: {
                         value: elements[0],
-                        nextValue:objectLib.constructArray(elements.slice(1))
+                        nextValue: objectLib.constructArray(elements.slice(1))
                     }
                 }
             }
@@ -295,21 +319,18 @@ const getPrevValue = (key) => { //get previous
 
 const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
     //adds previous value and parent value to props and reflexive attributes
-    const key = name+attr
 	if (objectData.type === 'app'){ //special case for root in this case app
         objectData = objectLib.undef
     }
     const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
     const inverseAttr = attrData.props.inverseAttribute
     const parentHash = getHash(objectData)
-
     const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
-
-    const inverseAttrs = Object.assign({ parentValue: parentHash}, inverse)
+    const inverseAttrs = Object.assign({ parentValue: parentHash }, inverse)
     const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash })
     const hash = getHash(objectDataWithoutHash)
-    const newProps = Object.assign({},newPropsWithoutHash, {hash})
+    const newProps = Object.assign({}, newPropsWithoutHash, { hash })
 	const prevVal = null//addState(key, valueWithoutPrevious)
 	if (prevVal === null){
 		return Object.assign({}, valueData, { props: newProps })
@@ -332,25 +353,29 @@ const limiter = (timeLimit, countLimit)=>{
 }
 
 export const getValue = (state, name, prop, objectData) => { //get Value should be called eval and will need to support async actions eventually
+    //sanity checks for objects
     //check that hash matches objectData...remove in production
     if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
         console.log(objectData, getHash(objectData), objectData.props.hash)
         throw new Error("hashes not equal")
-    }
-
-    if (objectData === undefined){
-		throw new Error('must have object def for '+prop) //"get rid of this when everything is switched"
+    } else if (objectData === undefined){
+		throw new Error('must have object def for '+prop)
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
+        throw 'string hash'
         console.log('stringObjectData')
         objectData = objectFromHash(objectData)
     }
+
 	let def = objectData.props[prop]
+    if (name !== 'placeholder'){
+        const newProps = Object.assign({},def.props, name)
+        def = Object.assign(def, {props:newProps})
+    }
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(def)
     }
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
-	//console.log(def, prop)
-	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values
+	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		let inheritedData
 		/*if (objectData.type === 'object'){
 			return objectLib.undef
@@ -367,8 +392,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 	if (objectData === undefined) {
 		console.log('object data undefined for ', name, prop, 'ObjectData: ', objectData)
 		throw new Error()
-	}
-	if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
+	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
 		if (objectData.props.hasOwnProperty('attributes')){
 			const attributeData = objectLib.union(valueData, objectLib)
 			return returnWithPrevValue(name, prop,attrData, valueData, objectData)
@@ -379,8 +403,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			const attrSet = objectLib.constructSet(`${objectData.props.id}Attrs`,attrs)
 			return returnWithPrevValue(name, prop,attrData, attrSet, objectData)
 		}
-	}
-	if (def === undefined) {
+	} else if (def === undefined) {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
