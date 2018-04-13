@@ -2,16 +2,27 @@ object = new object
     name:"object"
     accordianRep:accordianRepresentation
 
+
 accordianRepresentation = new group
     name:"accordianRep"
     pos: new coordinatePosition
         x:100
         y:100
+    r: new array
+        firstElement:new text
+            innerText:"abc"
+            nextElement:new text
+                innerText:"def"
     childElements: new set
         subset1: new text
             pos:accordianRep.pos
             innerText:accordianRep.parentConcept.name
-        subset2:div
+        subset2:new group
+            name:"attrList"
+            childElements: new set
+                subset1:attrList.firstElement
+            firstElement:accordianRep.parentConcept.attributes.nextElement.value.textRepresentation
+
 
 attribute = new object
 
@@ -59,20 +70,27 @@ nextElement = new attribute
 
 previousElement = new attribute
     name:"previousElement"
-
+value = new attribute
+    name:"value"
 window = new group
     childElements:new set
 
+
 parentConcept = new attribute
+    name:"a"
 textRepresentation = new attribute
+    name:"textRepresentation"
     inverseAttribute:parentConcept
 graphicalRepresentation = new attribute
+    name:"graphicalRepresentation"
     inverseAttribute:parentConcept
 accordianRep = new attribute
+    name:"accordianRep"
     inverseAttribute:parentConcept
 
 attributes = new attribute
     name:"attributes"
+
 jsPrimitive = new attribute
     name:"jsPrimitive"
 childElements = new attribute
@@ -87,15 +105,28 @@ instanceOf = new attribute
     name:"a"
 prevVal = new attribute
     name:"prevVal"
+    textRepresentation:new text
+        name:"textRep"
+        innerText:"abc"
+        x:10
+        y:10
+
 type = new attribute
     name:"type"
 
 mouse = new attribute
+    name:"a"
 set = new object
+    name:"set"
     jsPrimitive:{set}
+array = new object
+    name:"array"
 setEquiv = new attribute
+    name:"a"
 subset1 = new attribute
+    name:"a"
 subset2 = new attribute
+    name:"a"
 
 text = new object
     jsPrimitive:{text}
@@ -110,29 +141,46 @@ text = new object
         y:app.mouse.pos.y
 
 pos = new attribute
+    name:"a"
 x = new attribute
+    name:"a"
 y = new attribute
+    name:"a"
 coordinatePosition = new object
 innerText = new attribute
+    name:"a"
 r = new attribute
+    name:"a"
 g = new attribute
+    name:"a"
 b = new attribute
+    name:"a"
 width = new attribute
+    name:"a"
 height = new attribute
+    name:"a"
 
 get = new object
 rootObject = new attribute
+    name:"a"
 forEach = new attribute
+    name:"a"
 
 ternary = new object
     jsPrimitive:{ternary}
 condition = new attribute
+    name:"a"
 then = new attribute
+    name:"a"
 alt = new attribute
+    name:"a"
 
 down = new attribute
+    name:"a"
 query = new attribute
+    name:"a"
 search = new object
+    name:"a"
 
 func = new object
     jsPrimitive:{function}
