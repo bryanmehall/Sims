@@ -68,12 +68,21 @@ const argsToVarDefs = (state, objectData, combinedArgs) => {
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
     const initalFunctionData = { args: combinedArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
-    const resolvedFunctionData = searchArgs.reduce(resolveGetStack, initalFunctionData)
+    const resolvedFunctionData = searchArgs.map(resolveGetStack)
+        .reduce((functionData, newFunctionData) => {
+            const varDefs = functionData.varDefs.concat(newFunctionData.varDef)
+            const args = Object.assign({}, functionData.args, newFunctionData.args)
+            const newVarDef = newFunctionData.varDef
+            if (newVarDef.hasOwnProperty('key')){
+                delete args[newVarDef.key]
+            }
+            return {args, varDefs}
+        }, initalFunctionData)
     //convert variableDefs to strings
     const stringVarDefs = resolvedFunctionData.varDefs.map((varDef)=>(`\tvar ${varDef.key} = ${varDef.string};${varDef.comment}\n`))
     return Object.assign({}, resolvedFunctionData, {varDefs:stringVarDefs})
 
-    function resolveGetStack(functionData, searchArgData){
+    function resolveGetStack(searchArgData){
         const { argKey, query, getStack } = searchArgData
         console.log('query', query, objectName, objectData)
         if (query === objectName){ //get is entirely contained within higher level function
@@ -81,24 +90,21 @@ const argsToVarDefs = (state, objectData, combinedArgs) => {
             return reduced
         } else {
             if (objectName === 'app'){
-                console.log(functionData, searchArgData)
+                console.log(searchArgData)
                 throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
             }
-            return functionData
+            return {args:{}, varDef:[]}
         }
         function reduceGetStack(currentObject, getStack){
             //iteratively get the getStack[0] attribute of current object to find the end of the stack
             if (getStack.length === 0){
                 const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
-                const args = Object.assign({}, functionData.args, jsResult.args) //add args for variable defs to args for whole function
-                delete args[argKey] //remove resolved get from args
                 const variableDefinition = {
                     key:argKey,
                     string:jsResult.string,
                     comment:`//${objectName}`
                 }
-                const varDefs = functionData.varDefs.concat(variableDefinition)
-                return { args, varDefs }
+                return { args:jsResult.args, varDef:variableDefinition }
             } else {
                 const getObject = getStack[0]
                 const newGetStack = getStack.slice(1)
@@ -145,8 +151,8 @@ const argsToVarDefs = (state, objectData, combinedArgs) => {
                         return reduceGetStack(currentObject, joinedGetStack)
                     }
                     const unresolvedArg = Object.assign({}, nextArgs, { getStack: joinedGetStack })
-                    const args = Object.assign({}, functionData.args, { [argKey]: unresolvedArg })
-                    return { args, varDefs: functionData.varDefs }
+                    const args = { [argKey]: unresolvedArg }
+                    return { args, varDef: [] }
                 } else {
                     return reduceGetStack(nextValue, newGetStack)
                 }
