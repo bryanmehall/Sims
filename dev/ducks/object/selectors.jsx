@@ -52,11 +52,13 @@ const getName = (state, objectData) => {
 }
 
 //convert object of arguments to object of unresolved args and list of variable defs
-const argsToVarDefs = (state, objectData, oldArgs) => {
+//if an an argument is defined entirely under the current object in the tree then it is considered
+//resolved and is added to variableDefs
+const argsToVarDefs = (state, objectData, combinedArgs) => {
     //get name of object
     const objectName = getName(state, objectData)
     //get args that are searches into list of pairs [argKey, argValue]
-    const searchArgs = Object.entries(oldArgs)
+    const searchArgs = Object.entries(combinedArgs)
         .filter((arg) => (arg[1].hasOwnProperty('query')))
         .map((searchArg) => ({
             argKey: searchArg[0],
@@ -65,17 +67,37 @@ const argsToVarDefs = (state, objectData, oldArgs) => {
         }))
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    const initalFunctionData = { args: oldArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
-    const resolveGetStack = (functionData, searchArgData) => {
+    const initalFunctionData = { args: combinedArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
+    const resolvedFunctionData = searchArgs.reduce(resolveGetStack, initalFunctionData)
+    //convert variableDefs to strings
+    const stringVarDefs = resolvedFunctionData.varDefs.map((varDef)=>(`\tvar ${varDef.key} = ${varDef.string};${varDef.comment}\n`))
+    return Object.assign({}, resolvedFunctionData, {varDefs:stringVarDefs})
+
+    function resolveGetStack(functionData, searchArgData){
         const { argKey, query, getStack } = searchArgData
-        const reduceGetStack = (currentObject, getStack) => {
+        console.log('query', query, objectName, objectData)
+        if (query === objectName){ //get is entirely contained within higher level function
+            const reduced = reduceGetStack(objectData, getStack)
+            return reduced
+        } else {
+            if (objectName === 'app'){
+                console.log(functionData, searchArgData)
+                throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
+            }
+            return functionData
+        }
+        function reduceGetStack(currentObject, getStack){
             //iteratively get the getStack[0] attribute of current object to find the end of the stack
             if (getStack.length === 0){
                 const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
                 const args = Object.assign({}, functionData.args, jsResult.args) //add args for variable defs to args for whole function
                 delete args[argKey] //remove resolved get from args
-                const varComment = `//${objectName}`
-                const varDefs = functionData.varDefs.concat(`\tvar ${argKey} = ${jsResult.string};${varComment}\n`)
+                const variableDefinition = {
+                    key:argKey,
+                    string:jsResult.string,
+                    comment:`//${objectName}`
+                }
+                const varDefs = functionData.varDefs.concat(variableDefinition)
                 return { args, varDefs }
             } else {
                 const getObject = getStack[0]
@@ -90,10 +112,25 @@ const argsToVarDefs = (state, objectData, oldArgs) => {
                     delete inverseAttributes[extraAttr]
                 })
                 const hasInverses = Object.keys(inverseAttributes).length !== 0
-                const replacement = hasInverses ? inverseAttributes : 'placeholder'
+                const inverses = hasInverses ? inverseAttributes : 'placeholder'
                 //get the next value with inverses from cross edge attached
-                const nextValue = getValue(state, replacement, attr, currentObject) //evaluate attr of currentobject
+                const nextValue = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
+                /*const jsNextValue = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+                const nextArgs = jsNextValue.type === 'undef' ? [] : Object.entries(jsNextValue.args)
+                // get the first arg and test if the length is more thn one
+                if (nextArgs.length > 1) {throw 'more than one next args'} //if object has more than one argument
+                //eventually do a forEach arg here
+                const currentName = getName(state, currentObject)
 
+                nextArgs.forEach((argKeyValue)=>{
+                    const aKey = argKeyValue[0]
+                    const arg = argKeyValue[1]
+                    const joinedGetStack = arg.getStack.concat(newGetStack)
+                    console.log('next', currentName, jsNextValue, arg)
+                    if (currentName === arg.query){
+                        console.log('match')
+                    }
+                })*/
                 if (nextValue.type === 'get'){
                     //get the leftover path from the first get
                     //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
@@ -101,7 +138,7 @@ const argsToVarDefs = (state, objectData, oldArgs) => {
                     const nextArgs = pathPrimitive.args[pathPrimitive.hash]
                     const joinedGetStack = nextArgs.getStack.concat(newGetStack)
                     const currentName = getName(state, currentObject)
-                    console.log(currentName, query)
+                    //console.log(currentName, query)
                     if (currentName === nextArgs.query){
                         //this if block solves the case where the leftover git is rooted exactly at objectData
                         //what happens if it is rooted below?
@@ -115,29 +152,14 @@ const argsToVarDefs = (state, objectData, oldArgs) => {
                 }
             }
         }
-        console.log('query', query, objectName, objectData)
-        if (query === objectName){ //get is entirely contained within higher level function
-            const reduced = reduceGetStack(objectData, getStack)
-            return reduced
-        } else {
-            if (objectName === 'app'){
-                console.log(functionData, searchArgData)
-                throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
-            }
-            console.log(functionData)
-            return functionData
-        }
     }
-    const resolvedFunctionData = searchArgs.reduce(resolveGetStack, initalFunctionData)
-    return resolvedFunctionData
 }
 
 const foldPrimitive = (state, childPrimitives, objectData) => { //list of child objects in the form [{string:..., args:...}]
-    const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
-    const objectName = namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
-    const oldArgs = combineArgs(childPrimitives)//combine arguments of sub functions
-    const { args, varDefs } = argsToVarDefs(state, objectData, oldArgs)
-    const variableDefs = varDefs.join('')
+    const objectName = getName(state, objectData)
+    const combinedArgs = combineArgs(childPrimitives)//combine arguments of sub functions
+    const { args, varDefs } = argsToVarDefs(state, objectData, combinedArgs)
+    const variableDefs = varDefsToString(varDefs)
     const compiledFunctions = childPrimitives.map(buildFunction)
     const trace = childPrimitives.map((argPrim) => (
         Object.assign({}, argPrim.trace, { name: objectName })
@@ -145,6 +167,9 @@ const foldPrimitive = (state, childPrimitives, objectData) => { //list of child 
     return { childFunctions: compiledFunctions, arguments: args, variableDefs, trace }
 }
 
+const varDefsToString = (varDefs) => {
+    return varDefs.join('')
+}
 let functionTable = {}//only js
 let stateTable = {}
 let objectTable = {}
@@ -588,7 +613,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const rootObject = getJSValue(state, 'placeholder',"rootObject", objectData)
                 const searchArgs = Object.entries(rootObject.args)
 
-                if (searchArgs.length>1){throw 'search args lengthe longer than one'}
+                if (searchArgs.length>1){throw 'search args length longer than one'}
                 const query = searchArgs[0][1].query
                 const getStack = searchArgs[0][1].getStack//this only works for one search. is more than one ever needed in args?
                 const hash = objectData.props.hash
@@ -601,12 +626,12 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     trace:{type:'get', args, subTraces:[]}
                 }
 			}
-			case 'search': {//replace this with a call to database?(closer to concept of new)
+			case 'search': { //replace this with a call to database?(closer to concept of new)
                 const query = def.query
                 const hash = objectData.props.hash
                 return { hash, string: hash, args: {search:{query, getStack:[]}} }
 			}
-            case 'recurse':{
+            case 'recurse': {
                 //eventually combine this with search -- local and global?
                 const name = eval(getJSValue(state, 'placeholder', 'query', objectData).string)
                 const resultHash = getValue(state, 'placeholder', 'result',state.sim.object[name]).props.hash
@@ -619,7 +644,6 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 ))
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 const [condition, then, alt] = foldedPrimitives.childFunctions
-                const variables = foldedPrimitives.variableDefs
                 const subTraces = foldedPrimitives.trace
                 return {
                     hash:objectData.props.hash,
@@ -661,10 +685,10 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 ))
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 const childFunctions = foldedPrimitives.childFunctions
-                const variables = foldedPrimitives.variableDefs
+                const variableDefs = foldedPrimitives.variableDefs
                 const subTraces = foldedPrimitives.trace
                 const programText = childFunctions.join(",\n\t")
-                const string = ` function(prim){//text\n${variables} prim.text(${programText} );}`
+                const string = ` function(prim){//text\n${variableDefs} prim.text(${programText} );}`
 				return {
                     hash:objectData.props.hash,
                     string,//this is the rendering function
@@ -679,14 +703,14 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 const childFunctions = foldedPrimitives.childFunctions
-                const variables = foldedPrimitives.variableDefs
+                const variableDefs = foldedPrimitives.variableDefs
                 const subTraces = foldedPrimitives.trace
 
                 //need to sort by z-order
                 const programText = childFunctions.map((func)=>(func+'(prim)')).join(";\n\t")
 				return {
                     hash:objectData.props.hash,
-                    string:` function(prim){//group\n${variables} ${programText}}`,
+                    string:` function(prim){//group\n${variableDefs} ${programText}}`,
                     args:foldedPrimitives.arguments,
                     trace:{subTraces, type:'group', vars:["1","2"]}
                 }
@@ -695,11 +719,11 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 const graphicalRep = getJSValue(state, 'placeholder', 'graphicalRepresentation', objectData)
                 const foldedPrimitives = foldPrimitive(state, [graphicalRep], objectData)
                 const childFunctions = foldedPrimitives.childFunctions
-                const variables = foldedPrimitives.variableDefs
+                const variableDefs = foldedPrimitives.variableDefs
                 const subTraces = foldedPrimitives.trace
                 const programText = childFunctions[0]
                 return {
-                    string:`return function(prim, inputs){//app\n${variables} ${programText}(prim)}`,
+                    string:`return function(prim, inputs){//app\n${variableDefs} ${programText}(prim)}`,
                     args: foldedPrimitives.arguments,
                     trace:{subTraces, type:'app', vars:['']}
                 }
