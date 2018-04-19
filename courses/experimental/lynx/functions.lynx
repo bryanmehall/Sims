@@ -17,8 +17,9 @@ window = new group
                 name:"apply"
                 equalTo:apply.function.result
                 function:contains
-            innerText:text.equalTo.equalTo
-
+            innerText:new apply
+                function:fac
+                op1:20
 sq = new func
     name:"sq"
     op1:sq.parentObject.op1

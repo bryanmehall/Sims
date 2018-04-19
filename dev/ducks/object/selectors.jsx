@@ -43,68 +43,31 @@ const buildFunction = (primitive) => {
 
     return `functionTable.${primitive.hash}(${argsList.join(",")})${primString}`
 }
+
 const addToFunctionTable = (hash, func) => { //adding functions to table should become a monad
     functionTable[hash] = func
 }
+
 const getName = (state, objectData) => {
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
     return namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
 }
 
-//convert object of arguments to object of unresolved args and list of variable defs
-//if an an argument is defined entirely under the current object in the tree then it is considered
-//resolved and is added to variableDefs
-const argsToVarDefs = (state, objectData, combinedArgs) => {
-    //get name of object
-    const objectName = getName(state, objectData)
-    //get args that are searches into list of pairs [argKey, argValue]
-    const searchArgs = Object.entries(combinedArgs)
-        .filter((arg) => (arg[1].hasOwnProperty('query')))
-        .map((searchArg) => ({
-            argKey: searchArg[0],
-            query: searchArg[1].query,
-            getStack: searchArg[1].getStack
-        }))
-    //for each searchArg, test if the query matches the name of the current object
-    //if it does, the search is resolved, if not, pass it up the tree
-    const initalFunctionData = { args: combinedArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
-    const resolvedFunctionData = searchArgs.map(resolveGetStack)
-        .reduce((functionData, newFunctionData) => {
-            const varDefs = functionData.varDefs.concat(newFunctionData.varDef)
-            const args = Object.assign({}, functionData.args, newFunctionData.args)
-            const newVarDef = newFunctionData.varDef
-            if (newVarDef.hasOwnProperty('key')){
-                delete args[newVarDef.key]
-            }
-            return {args, varDefs}
-        }, initalFunctionData)
-    //convert variableDefs to strings
-    const stringVarDefs = resolvedFunctionData.varDefs.map((varDef)=>(`\tvar ${varDef.key} = ${varDef.string};${varDef.comment}\n`))
-    return Object.assign({}, resolvedFunctionData, {varDefs:stringVarDefs})
-
-    function resolveGetStack(searchArgData){
+function resolveGetStack(state, currentObject, searchArgData){
+    const objectName = getName(state, currentObject)
+    return reduceGetStack(state, currentObject, searchArgData)
+    function reduceGetStack(state, currentObject, searchArgData){
+        //iteratively get the getStack[0] attribute of current object to find the end of the stack
         const { argKey, query, getStack } = searchArgData
-        console.log('query', query, objectName, objectData)
-        if (query === objectName){ //get is entirely contained within higher level function
-            const reduced = reduceGetStack(objectData, getStack)
-            return reduced
-        } else {
-            if (objectName === 'app'){
-                console.log(searchArgData)
-                throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
-            }
-            return {args:{}, varDef:[]}
-        }
-        function reduceGetStack(currentObject, getStack){
-            //iteratively get the getStack[0] attribute of current object to find the end of the stack
+        if (objectName === query){
             if (getStack.length === 0){
                 const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
                 const variableDefinition = {
-                    key:argKey,
-                    string:jsResult.string,
-                    comment:`//${objectName}`
+                    key: argKey,
+                    string: jsResult.string,
+                    comment: `//${objectName}`
                 }
-                return { args:jsResult.args, varDef:variableDefinition }
+                return { args: jsResult.args, varDef: variableDefinition }
             } else {
                 const getObject = getStack[0]
                 const newGetStack = getStack.slice(1)
@@ -121,22 +84,8 @@ const argsToVarDefs = (state, objectData, combinedArgs) => {
                 const inverses = hasInverses ? inverseAttributes : 'placeholder'
                 //get the next value with inverses from cross edge attached
                 const nextValue = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
-                /*const jsNextValue = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-                const nextArgs = jsNextValue.type === 'undef' ? [] : Object.entries(jsNextValue.args)
-                // get the first arg and test if the length is more thn one
-                if (nextArgs.length > 1) {throw 'more than one next args'} //if object has more than one argument
-                //eventually do a forEach arg here
-                const currentName = getName(state, currentObject)
-
-                nextArgs.forEach((argKeyValue)=>{
-                    const aKey = argKeyValue[0]
-                    const arg = argKeyValue[1]
-                    const joinedGetStack = arg.getStack.concat(newGetStack)
-                    console.log('next', currentName, jsNextValue, arg)
-                    if (currentName === arg.query){
-                        console.log('match')
-                    }
-                })*/
+                //const nextJSValue = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+                //console.log(nextValue, nextJSValue)
                 if (nextValue.type === 'get'){
                     //get the leftover path from the first get
                     //ie. if we are getting a.b.c and a.b is x.y.z then the get stack is x.y.z.c
@@ -144,21 +93,55 @@ const argsToVarDefs = (state, objectData, combinedArgs) => {
                     const nextArgs = pathPrimitive.args[pathPrimitive.hash]
                     const joinedGetStack = nextArgs.getStack.concat(newGetStack)
                     const currentName = getName(state, currentObject)
-                    //console.log(currentName, query)
                     if (currentName === nextArgs.query){
                         //this if block solves the case where the leftover git is rooted exactly at objectData
                         //what happens if it is rooted below?
-                        return reduceGetStack(currentObject, joinedGetStack)
+                        const joinedSearchArgs = {argKey, query, getStack:joinedGetStack}
+                        return reduceGetStack(state, currentObject, joinedSearchArgs)
                     }
                     const unresolvedArg = Object.assign({}, nextArgs, { getStack: joinedGetStack })
                     const args = { [argKey]: unresolvedArg }
                     return { args, varDef: [] }
                 } else {
-                    return reduceGetStack(nextValue, newGetStack)
+                    const newSearchArgs = {argKey, query, getStack:newGetStack}
+                    return reduceGetStack(state, nextValue, newSearchArgs)
                 }
             }
+        } else {
+            if (objectName === 'app'){
+                console.log(searchArgData)
+                throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
+            }
+            return { args: {}, varDef: [] }
         }
     }
+}
+//convert object of arguments to object of unresolved args and list of variable defs
+//if an an argument is defined entirely under the current object in the tree then it is considered
+//resolved and is added to variableDefs
+const argsToVarDefs = (state, objectData, combinedArgs) => {
+    //get args that are searches into list of pairs [argKey, argValue]
+    const initalFunctionData = { args: combinedArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
+    //for each searchArg, test if the query matches the name of the current object
+    //if it does, the search is resolved, if not, pass it up the tree
+    const resolvedFunctionData = Object.entries(combinedArgs)
+        .filter((arg) => (arg[1].hasOwnProperty('query'))) //is a get js primitive
+        .map((searchArg) => ({ //unpack from object.entries form
+            argKey: searchArg[0],
+            query: searchArg[1].query,
+            getStack: searchArg[1].getStack
+        }))
+        .map((searchArgData) => (resolveGetStack(state, objectData, searchArgData)))
+        .reduce((functionData, newFunctionData) => {
+            const varDefs = functionData.varDefs.concat(newFunctionData.varDef)
+            const args = Object.assign({}, functionData.args, newFunctionData.args)
+            const newVarDef = newFunctionData.varDef
+            if (newVarDef.hasOwnProperty('key')){
+                delete args[newVarDef.key]
+            }
+            return { args, varDefs }
+        }, initalFunctionData)
+    return resolvedFunctionData
 }
 
 const foldPrimitive = (state, childPrimitives, objectData) => { //list of child objects in the form [{string:..., args:...}]
@@ -173,9 +156,10 @@ const foldPrimitive = (state, childPrimitives, objectData) => { //list of child 
     return { childFunctions: compiledFunctions, arguments: args, variableDefs, trace }
 }
 
-const varDefsToString = (varDefs) => {
-    return varDefs.join('')
-}
+const varDefsToString = (varDefs) => (
+    varDefs.map((varDef) => (`\tvar ${varDef.key} = ${varDef.string};${varDef.comment}\n`)).join('')
+)
+
 let functionTable = {}//only js
 let stateTable = {}
 let objectTable = {}
@@ -210,7 +194,6 @@ const getHash = (objectData) => { //this should check that all children are hash
 const objectFromHash = (hash) => (objectTable[hash])
 
 const isHash = (str) => (str.includes("$hash"))
-
 
 export const getId = (state, name, prop, valueDef) => {
 	const objectData = valueDef === undefined ? getValue(state, 'placeholder', prop, getObject(state, name)) : valueDef
@@ -359,9 +342,6 @@ const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
 	if (objectData.type === 'app'){ //special case for root in this case app
         objectData = objectLib.undef
     }
-    /*if (valueData.type === 'ternary'){
-        console.log('pre', valueData, objectData)
-    }*/
     const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
     const inverseAttr = attrData.props.inverseAttribute
     const parentHash = getHash(objectData)
@@ -371,9 +351,6 @@ const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash })
     const hash = getHash(objectDataWithoutHash)
     const newProps = Object.assign({}, newPropsWithoutHash, { hash })
-    /*if (valueData.type === 'ternary'){
-        console.log('parent', newProps)
-    }*/
 
 	const prevVal = null//addState(key, valueWithoutPrevious)
 	if (prevVal === null){

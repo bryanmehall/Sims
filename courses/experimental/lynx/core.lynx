@@ -30,6 +30,7 @@ app = new object
     jsPrimitive:{app}
     name:"app"
     graphicalRepresentation:window
+    x:20
     mouse: new object
         pos: new coordinatePosition
             x:new input
