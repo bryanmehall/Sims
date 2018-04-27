@@ -1,0 +1,14 @@
+window = new group
+    x:30
+    childElements: new set
+        x:25
+        subset1: new text
+            name:"txt"
+            x:txt.parentValue.x
+            y:20
+            innerText:"test"
+
+subset1 = new attribute
+    inverseAttribute:parentSet
+
+parentSet = new attribute

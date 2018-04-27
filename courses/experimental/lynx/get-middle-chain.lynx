@@ -1,0 +1,11 @@
+window = new group
+    name:"group"
+    childElements: new set
+        subset1: new text
+            name:"txt"
+            x:txt.op1.x
+            op2:new object
+                x:30
+            op1:txt.op2
+            y:20
+            innerText:"test"

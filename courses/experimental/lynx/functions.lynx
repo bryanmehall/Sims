@@ -13,13 +13,24 @@ window = new group
                 y:20
             width:100
             height:15
-            equalTo:new object
+            op1:new object
                 name:"apply"
                 equalTo:apply.function.result
-                function:contains
-            innerText:new apply
-                function:fac
-                op1:20
+                function:new funct
+                    name:"contains"
+                    x:false
+                    list:new object
+                        x:"abc"
+                        nextElement:new object
+                            name:"b"
+                    result:new ternary
+                        name:"tern"
+                        x:"abc"
+                        condition:contains.x
+                        then:"tre"
+                        alt:"abc"
+            innerText:text.op1.equalTo
+
 sq = new func
     name:"sq"
     op1:sq.parentObject.op1
@@ -30,18 +41,6 @@ funct = new object
 equalTo = new attribute
 appl = new object
 
-contains = new funct
-    name:"contains"
-    x:"xy"
-    list:new object
-        name:"a"
-        nextElement:new object
-            name:"b"
-    result:new ternary
-        name:"tern"
-        condition:true
-        then:"a"
-        alt:"b"
 
 fac = new func
     name:"fac"

@@ -11,17 +11,15 @@ accordianRepresentation = new group
     r: new array
         firstElement:new text
             innerText:"abc"
+            x:20
+            y:20
             nextElement:new text
                 innerText:"def"
     childElements: new set
         subset1: new text
-            pos:accordianRep.pos
-            innerText:accordianRep.parentConcept.name
-        subset2:new group
-            name:"attrList"
-            childElements: new set
-                subset1:attrList.firstElement
-            firstElement:accordianRep.parentConcept.attributes.nextElement.value.textRepresentation
+            x:accordianRep.pos.x
+            y:accordianRep.pos.y
+            innerText:"abc"
 
 
 attribute = new object

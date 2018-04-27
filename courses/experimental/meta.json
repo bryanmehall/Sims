@@ -8,9 +8,44 @@
 			"title":"Lynx",
 			"contentBlocks":[
 				{
-					"id": "upper-ontology",
-					"title":"Upper Ontology",
-					"text":"Upper Ontology",
+					"id": "simple-get",
+					"title":"Simple Get Test",
+					"text":"test for directly getiitng a value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "multiple-get",
+					"title":"Multiple Get",
+					"text":"test for getting attribute of an attribute",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "get-end-chain",
+					"title":"Get End Chain",
+					"text":"test for when the end of a get chain is another get object",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "get-middle-chain",
+					"title":"Get Middle Chain",
+					"text":"test for when the a get chain is inserted in the middle of another one",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "non-local-root",
+					"title":"Non-local Root",
+					"text":"test for when the root node is more than one attribute above the definition",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "parent-path",
+					"title":"Parent Path",
+					"text":"test for parentValue of get root",
 					"type":"anim",
 					"length":10
 				},
