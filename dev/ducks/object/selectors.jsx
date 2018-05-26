@@ -1,4 +1,7 @@
+/* eslint pure/pure: 2 */
 import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
+import {primitives} from './primitives'
+console.log(primitives)
 /*
 refactor todo:
     -make adding to function table a monad
@@ -16,7 +19,6 @@ export const getObject = function (state, id) {
 		throw new Error("could not find object named "+JSON.stringify(id))
 	}
 }
-
 export const getActive = function (state, name) {
     const objectData = getObject(state, name)
 	return objectData.props.active
@@ -34,6 +36,7 @@ const combineArgs = (args) => {
 //build string of function from {string:" ", args:[]} object and add that function to the function table
 const buildFunction = (primitive) => {
     if (primitive.inline){
+        console.log('inline', primitive)
         return primitive.string
     }
     const argsList = Object.keys(primitive.args).concat('functionTable')
@@ -56,27 +59,35 @@ const getName = (state, objectData) => {
 function reduceGetStack(state, currentObject, searchArgData, searchName){
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
     const { argKey, query, getStack } = searchArgData
-    limiter(2000000, 100)
-    console.log('name:', searchName, 'query:',query)
+    limiter(2000000, 400)
+    console.log('name:', searchName, 'query:',query, currentObject)
 
     if (searchName === query || query === "$this"){ //this is a shim for objects that always match $ is to prevent accidental matches
         if (getStack.length === 0){
             const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
-            const variableDefinition = {
-                key: argKey,
-                string: jsResult.string,
-                comment: `//${searchName}`
+            /*convertToSearchArgs(jsResult.args).map((searchArgData) => {
+                console.log('search', searchArgData, currentObject)
+                console.log('compiling', searchArgData, reduceGetStack(state, currentObject, searchArgData, searchName ))
+            })*/
+            if (jsResult.type === 'undef'){
+                console.log('adding recursive function', currentObject, searchName)
+                return { args: { recursive: searchArgData.argKey }, varDefs: [] }
+            } else {
+                const variableDefinition = {
+                    key: argKey,
+                    string: jsResult.string,
+                    comment: `//${searchName}`
+                }
+                return { args: jsResult.args, varDefs: [variableDefinition] }
             }
-            return { args: jsResult.args, varDefs: [variableDefinition] }
         } else {
             const getObject = getStack[0]
             const newGetStack = getStack.slice(1)
             const attr = getObject.props.attribute//attribute to go to
-            console.log(attr)
             const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
             if (isInverseAttr){
                 //return args to show that this is not a resolved attribute
-                return {args:{[argKey]:{query:"$this", getStack:newGetStack}}, varDefs:[]}
+                return { args: { [argKey]: { query: "$this", getStack: newGetStack } }, varDefs: [] }
             }
             //the next section is for allowing objects referenced by a get to have inverse attributes
             //if getObject has any attributes other than those listed
@@ -91,40 +102,32 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             //get the next value with inverses from cross edge attached
             const nextValue = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
             const nextJSValue = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-            console.log('jsValue', nextJSValue)
             const nextName = getName(state, nextValue)
-            if (nextJSValue.type === 'undef'){ //next value does not have primitive
-                //refactor --- this is basically args to varDefs
-                const newSearchArgs = { argKey, query, getStack:newGetStack}
-                console.log('undef', argKey, query)
-                console.log(nextName)
-                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs,searchName)
-                //handle case where nextName === query returned...need to move arg to varDef
-                const childArgs = convertToSearchArgs(nextValueFunctionData.args)
-                    .map((searchArg) => (reduceGetStack(state, nextValue, searchArg, nextName)))
-                    .reduce(reduceFunctionData, {args:nextValueFunctionData.args, varDefs:nextValueFunctionData.varDefs})
 
-                console.log('childArgs', childArgs, nextValueFunctionData)
+            if (nextJSValue.type === 'undef'){ //next value does not have primitive
+                const newSearchArgs = { argKey, query, getStack: newGetStack }
+                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs, searchName)
+                //handle case where nextName === query returned...need to move arg to varDef
+                const childArgs = argsToVarDefs(state, nextValue, nextValueFunctionData, nextValueFunctionData.args, nextName)
                 return childArgs
-            } else { //next value has primitive
-                const arg = Object.values(nextJSValue.args).filter((ag)=>(ag.hasOwnProperty('query')))
+            } else if (nextValue.type === 'get') {
+                const arg = Object.values(nextJSValue.args).filter((ag) => (ag.hasOwnProperty('query')))
+
+                //debug
                 if (arg.length > 1) { //this would mean that a child has more than one argument
                     console.log('args for ',searchName, arg)
                     throw 'arg length greater than one'
                 }
-                if (nextValue.type === 'get'){
-                    const childQuery = arg.length === 0 ? searchName: arg[0].query
-                    const childGetStack = arg.length === 0 ? [] : arg[0].getStack
-
-                    const combinedGetStack = childGetStack.concat(newGetStack)
-                    console.log('combining', childGetStack, newGetStack)
-                    const newSearchArgs = { argKey, query: childQuery, getStack: combinedGetStack }
-                    const currentName = getName(state, currentObject)
-                    return reduceGetStack(state, currentObject, newSearchArgs, currentName)
-                } else {
-                    const newSearchArgs = { argKey, query, getStack: newGetStack }
-                    return reduceGetStack(state, nextValue, newSearchArgs, searchName)
-                }
+                //end-debug
+                const childQuery = arg.length === 0 ? searchName: arg[0].query
+                const childGetStack = arg.length === 0 ? [] : arg[0].getStack
+                const combinedGetStack = childGetStack.concat(newGetStack)
+                const newSearchArgs = { argKey, query: childQuery, getStack: combinedGetStack }
+                const currentName = getName(state, currentObject)
+                return reduceGetStack(state, currentObject, newSearchArgs, currentName)
+            } else {
+                const newSearchArgs = { argKey, query, getStack: newGetStack }
+                return reduceGetStack(state, nextValue, newSearchArgs, searchName)
             }
         }
     } else {
@@ -133,7 +136,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             console.log(objectTable)
             throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
         }
-        return { args: {}, varDefs: [] }//this just doens't move any args, it doesn't mean that there are not any
+        return { args: {}, varDefs: [] }//this just doesn't move any args, it doesn't mean that there are not any
     }
 }
 
@@ -141,15 +144,15 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
 convert args in the form {argKey:{query:"query" getStack:[]}}
 to searchArgs in the form:[{argKey, query, getStack}]
 */
-const convertToSearchArgs = (args) => (
-    Object.entries(args)
+const convertToSearchArgs = (args) => {
+    return Object.entries(args)
         .filter((arg) => (arg[1].hasOwnProperty('query')))
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
             query: searchArg[1].query,
             getStack: searchArg[1].getStack
         }))
-)
+}
 
 /*
 combine arg and varDef movements to create the final args and varDefs
@@ -159,8 +162,6 @@ const reduceFunctionData = (functionData, newFunctionData) => {
     const varDefs = functionData.varDefs.concat(newFunctionData.varDefs)
     const args = Object.assign({}, functionData.args, newFunctionData.args)
     const newVarDefs = newFunctionData.varDefs
-    console.log(varDefs, args)
-    console.log('newVarDefs', newVarDefs)
     newVarDefs.forEach((newVarDef) => {
         if (newVarDef.hasOwnProperty('key')){
             delete args[newVarDef.key]
@@ -172,25 +173,28 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 //convert object of arguments to object of unresolved args and list of variable defs
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to variableDefs
-const argsToVarDefs = (state, objectData, combinedArgs, searchName) => {
+const argsToVarDefs = (state, objectData, functionData, combinedArgs, searchName) => {
     //get args that are searches into list of pairs [argKey, argValue]
-    const initalFunctionData = { args: combinedArgs, varDefs: [] }//search args moves resolved defs from args to varDefs
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
     const resolvedFunctionData = convertToSearchArgs(combinedArgs)
         .map((searchArgData) => {
             const reduced = reduceGetStack(state, objectData, searchArgData, searchName)
+            if (reduced.args.hasOwnProperty('recursive')){ //handle struct primitives
+                console.log('recursive', combinedArgs, searchName, getName(state, objectData))
+                //throw 'recursive'
+            }
             return reduced
         })
-        .reduce(reduceFunctionData, initalFunctionData)
+        .reduce(reduceFunctionData, functionData)
     return resolvedFunctionData
 }
 
 const foldPrimitive = (state, childPrimitives, objectData) => { //list of child objects in the form [{string:..., args:...}]
     const objectName = getName(state, objectData)
     const combinedArgs = combineArgs(childPrimitives)//combine arguments of sub functions
-
-    const { args, varDefs } = argsToVarDefs(state, objectData, combinedArgs, objectName)
+    const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
+    const { args, varDefs } = argsToVarDefs(state, objectData, initialFunctionData, combinedArgs, objectName)
     const variableDefs = varDefsToString(varDefs)
     const compiledFunctions = childPrimitives.map(buildFunction)
     const trace = childPrimitives.map((argPrim) => (
@@ -200,7 +204,11 @@ const foldPrimitive = (state, childPrimitives, objectData) => { //list of child 
 }
 
 const varDefsToString = (varDefs) => (
-    varDefs.reverse().map((varDef) => (`\tvar ${varDef.key} = ${varDef.string}; ${varDef.comment}\n`)).join('')
+    varDefs.reverse()
+        .map((varDef) => (
+            `\tvar ${varDef.key} = ${varDef.string}; ${varDef.comment}\n`
+        ))
+        .join('')
 )
 
 let functionTable = {}//only js
@@ -212,9 +220,10 @@ export const compile = (state) => {
     const display = getValue(state, 'app', 'jsPrimitive', appData)
     const trace = display.trace
     const renderMonad = new Function('functionTable', `${display.string}`)//returns a thunk with all of render information enclosed
-    return { renderMonad, functionTable, trace }
-}
 
+    return { renderMonad, functionTable, trace, objectTable }
+}
+//getJSValue should be called compile and interpret should be a seperate function
 export const getJSValue = (state, name, prop, objData) => {
 	//const objectData = objData === undefined ? getObject(state, name) : objData
 	const valueData = getValue(state, 'placeholder', prop, objData)
@@ -343,7 +352,7 @@ export const objectLib = {
                     type: objectLib.constructString('set'),
 					subset1: set1,
 					subset2: set2,
-                    name:objectLib.constructString('set'),
+                    name: objectLib.constructString('set'),
 					id: id
 				}
 			}
@@ -398,16 +407,16 @@ const returnWithPrevValue = (name, attr, attrData, valueData, objectData) => {
 
 	const prevVal = null//addState(key, valueWithoutPrevious)
 	if (prevVal === null){
-		return Object.assign({}, valueData, { props: newProps, inverses:objectInverses })
+		return Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
 	} else {
 		//if (valueData.props.id === "textRepresentation"){console.log('&&&&&&&&&abc', attr, objectData, valueData)}
-		return Object.assign({}, valueData, { props: newProps, inverses:objectInverses })
+		return Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
 	}
 }
 
 let timer = performance.now()
 let counter = 0
-const limiter = (timeLimit, countLimit)=>{
+const limiter = (timeLimit, countLimit) => {
     const dt = performance.now()-timer
     counter+=1
     if (counter>countLimit){
@@ -430,13 +439,14 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
         console.log('stringObjectData')
         objectData = objectFromHash(objectData)
     }
-
 	let def = objectData.props[prop]
     if (name !== 'placeholder'){
         const newProps = Object.assign({},def.props, name)
-        def = Object.assign(def, {props:newProps})
-    }
-    if (typeof def === "string" && isHash(def)){
+        def = Object.assign(def, { props: newProps })
+    } else if (def !== undefined && def.type === 'dbSearch'){
+        const query = eval(getJSValue(state, 'placeholder', 'query', def).string)
+        def = getObject(state, query)
+    } else if (typeof def === "string" && isHash(def)){
         def = objectFromHash(def)
     }
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
@@ -465,7 +475,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 			let attrs = Object.keys(objectData.props)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
-			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)//use array for now because linked list is simpler than rb-tree
+			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)//use array for now because linked list is simpler than rb-tree or c-trie
             if (name === 'app'){console.log(attrSet)}
 			return returnWithPrevValue(name, prop,attrData, attrSet, objectData)
 		}
@@ -475,7 +485,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 		return objectLib.undef
 	} else if (prop === 'jsPrimitive') { // primitive objects
 		switch (valueData.type) {
-            case 'input':{
+            case 'input':{//state, objectData
                 const hash = objectData.props.hash
                 const name = eval(getJSValue(state, 'placeholder', 'name', objectData).string)
                 return {
@@ -485,7 +495,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     inline:true
                 }
             }
-			case 'number': {
+			case 'number': {//state, objectData, valueData
 				if (valueData.hasOwnProperty('value')) {
 					return {
                         hash:objectData.props.hash,
@@ -501,7 +511,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					return {string:equivValue, args:{}}
 				}
 			}
-			case 'bool': {
+			case 'bool': {//state, objectData, valueData
 				if (valueData.hasOwnProperty('value')) {
 					return {
                         hash:objectData.props.hash,
@@ -517,7 +527,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 					return equivValue
 				}
 			}
-			case 'string': {
+			case 'string': {//state, objectData, valueData
 				if (valueData.hasOwnProperty('value')) {
 					return  {
                         hash:objectData.props.hash,
@@ -541,7 +551,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
             case 'lessThan':
             case 'greaterThan':
             case 'and':
-            case 'or': {
+            case 'or': {//objectData, valueData
                 const symbol = {
                     addition: "+",
                     subtraction: "-",
@@ -560,7 +570,8 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     inline: true
                 }
             }
-			case 'function': { //can this be combined with apply
+			case 'function': { //state, objectData,
+                //can this be combined with apply?
                 const paramNames = ["result"]
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
@@ -572,7 +583,7 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 return parameters[0]
                 //monad for requiring that function is in table or for placing function in table
 			}
-			case 'apply': {
+			case 'apply': { //state, objectData
                 const paramNames = ['op1','function', 'op2']//add support for binary op
                 const functionName = objectData.props.function
                 let parameters = paramNames.map((paramName) => (
@@ -585,25 +596,25 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                 if (parameters.length === 3){//binop
                     const programText = childFunctions.join("")
                     return {
-                        hash:objectData.props.hash,
-                        string:programText,
-                        args:foldedPrimitives.arguments,
-                        inline:true,
-                        trace:{subTraces, type:'apply', vars:['1', 'f', '2']}
+                        hash: objectData.props.hash,
+                        string: programText,
+                        args: foldedPrimitives.arguments,
+                        inline: true,
+                        trace: { subTraces, type: 'apply', vars: ['1', 'f', '2'] }
                     }
-                } else {//unop
+                } else { //unop
                     const functionHash = parameters[1].hash
                     const argString = parameters[0].string
                     return {
-                        hash:objectData.props.hash,
-                        string:`functionTable.${functionHash}(${argString}, functionTable)`,
-                        args:{},
-                        inline:true,
-                        trace:{subTraces, type:'apply', vars:['1', 'f']}
+                        hash: objectData.props.hash,
+                        string: `functionTable.${functionHash}(${argString}, functionTable)`,
+                        args: {},
+                        inline: true,
+                        trace: { subTraces, type: 'apply', vars: ['1', 'f'] }
                     }
                 }
 			}
-			case 'set': {//there shouldn't be js primitive for sets?
+			case 'set': { //there shouldn't be js primitive for sets?
 				const equivObjectData = getValue(state, 'placeholder', 'setEquiv', objectData)
                 //console.log(equivObjectData)
 				if (equivObjectData.type === "undef"){
@@ -636,33 +647,49 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     return []
                 }
             }
-            case 'get': {
-                const rootObject = getJSValue(state, 'placeholder',"rootObject", objectData)
-                const searchArgs = Object.entries(rootObject.args)
-
-                if (searchArgs.length>1){throw 'search args length longer than one'}
-                const query = searchArgs[0][1].query
-                const getStack = searchArgs[0][1].getStack//this only works for one search. is more than one ever needed in args?
+            case 'get': {// state, objectData
+                const root = getValue(state, 'placeholder', "rootObject", objectData)
+                const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
+                let query
+                let getStack
+                if (root.type === 'undef'){ //set query to '$this' if root is left undefined
+                    query = '$this'
+                    getStack = []
+                } else if (rootObject.type === 'undef'){//
+                    //does this only work for one level deep?
+                    const attribute = getValue(state, 'placeholder', 'attribute', objectData).id
+                    const next = getJSValue(state, 'placeholder', attribute, root)
+                    return next
+                } else {
+                    const searchArgs = Object.entries(rootObject.args)
+                    if (searchArgs.length>1){ throw 'search args length longer than one' }
+                    query = searchArgs[0][1].query
+                    getStack = searchArgs[0][1].getStack//this only works for one search. is more than one ever needed in args?
+                }
                 const hash = objectData.props.hash
-                const args = {[hash]:{query, getStack:[...getStack, objectData]}}
+                const args = { [hash]: { query, getStack: [...getStack, objectData] } }
                 return {
                     hash,
-                    string:hash,
+                    string: hash,
                     args,
-                    inline:true,
-                    trace:{type:'get', args, subTraces:[]}
+                    inline: true,
+                    trace: { type: 'get', args, subTraces: [] }
                 }
 			}
 			case 'search': { //replace this with a call to database?(closer to concept of new)
                 const query = def.query
                 const hash = objectData.props.hash
-                return { hash, string: hash, args: {search:{query, getStack:[]}} }
+                return {
+                    hash,
+                    string: hash,
+                    args: { search: { query, getStack: [] }}
+                }
 			}
             case 'recurse': {
                 //eventually combine this with search -- local and global?
                 const name = eval(getJSValue(state, 'placeholder', 'query', objectData).string)
                 const resultHash = getValue(state, 'placeholder', 'result',state.sim.object[name]).props.hash
-                return {hash:resultHash, string:resultHash, args:{}}
+                return { type: 'recurse', hash: resultHash, string: resultHash, args: {} }
             }
             case 'ternary': {
                 const paramNames = ["condition", "then", "alt"]
@@ -670,22 +697,22 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-                if (foldedPrimitives.variableDefs !== ""){throw new Error('ternary should not have variable definition')}
+                if (foldedPrimitives.variableDefs !== ""){ throw new Error('ternary should not have variable definition') }
                 const [condition, then, alt] = foldedPrimitives.childFunctions
-                console.log(condition, then, alt)
                 const subTraces = foldedPrimitives.trace
+                console.log('ternary',  objectData.props.hash, foldedPrimitives.arguments)
                 return {
-                    hash:objectData.props.hash,
-                    string:`(${condition}) ? ${then} : ${alt}`,
-                    args:foldedPrimitives.arguments,
-                    trace:{subTraces, type:'ternary', vars:['c', 't', 'e']},
-                    inline:true
+                    hash: objectData.props.hash,
+                    string: `(${condition}) ? ${then} : ${alt}`,
+                    args: foldedPrimitives.arguments,
+                    trace: { subTraces, type: 'ternary', vars: ['c', 't', 'e'] },
+                    inline: false
                 }
             }
             case 'new': {
                 return def.id
             }
-			case 'id':{
+			case 'id': {
 				return def.id
 			}
             //output primitives
@@ -695,38 +722,39 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
 				const cy = getJSValue(state, 'placeholder', 'y', centerPoint)
 				const r = getJSValue(state, 'placeholder', 'radius', objectData)
 
-				return {type:"Circle", cx, cy, r}//`display.circle(${cx},${cy},${r})`
+				return { type: "Circle", cx, cy, r }//`display.circle(${cx},${cy},${r})`
 			}
-            case 'rectangle':{
+            case 'rectangle': {
                 const pos = getValue(state, 'placeholder', 'pos', objectData)
 				const x= getJSValue(state, 'placeholder', 'x', pos)
 				const y = getJSValue(state, 'placeholder', 'y', pos)
 				const width = getJSValue(state, 'placeholder', 'width', objectData)
                 const height = getJSValue(state, 'argsplaceholder', 'height', objectData)
                 const color = getJSValue(state, 'placeholder', 'color', objectData)
-				return {type:"Rectangle", x, y, width, height, color}
+				return { type: "Rectangle", x, y, width, height, color }
             }
 			case 'text': {
                 const paramNames = ["x", "y", "innerText", "r", "g", "b"]
-
                 const parameters = paramNames.map((paramName) => (
                     getJSValue(state, 'placeholder', paramName, objectData)
                 ))
+                console.log(parameters)
                 const foldedPrimitives = foldPrimitive(state, parameters, objectData)
                 const childFunctions = foldedPrimitives.childFunctions
                 const variableDefs = foldedPrimitives.variableDefs
+                console.log(variableDefs)
                 const subTraces = foldedPrimitives.trace
                 const programText = childFunctions.join(",\n\t")
                 const string = ` function(prim) { //text\n${variableDefs} prim.text(${programText} );\n}`
 				return {
-                    hash:objectData.props.hash,
-                    string,//this is the rendering function
-                    args:Object.assign(foldedPrimitives.arguments,{prim:true}), //combine args of x,y,text
-                    inline:false,
-                    trace:{subTraces, type:'text', vars:["x", "y", "t", "r", "g", "b"]}
+                    hash: objectData.props.hash,
+                    string, //this is the rendering function
+                    args: Object.assign(foldedPrimitives.arguments, { prim: true }), //combine args of x,y,text
+                    inline: false,
+                    trace: { subTraces, type: 'text', vars: ["x", "y", "t", "r", "g", "b"] }
                 }
 			}
-			case 'group':{
+			case 'group': {
 				const children = getJSValue(state, 'placeholder', 'childElements', objectData)
 				const parameters = children.filter((child) => (child !== undefined))
 

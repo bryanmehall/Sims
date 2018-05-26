@@ -50,6 +50,13 @@
 					"length":10
 				},
                 {
+					"id": "get-new-object",
+					"title":"Get New Object",
+					"text":"test for getting atttribute of new object",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "test-features",
 					"title":"Test Features",
 					"text":"Test Features",
@@ -60,6 +67,13 @@
 					"id": "functions",
 					"title":"Functions",
 					"text":"Functions",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "checkbox",
+					"title":"Checkbox",
+					"text":"Checkbox",
 					"type":"anim",
 					"length":10
 				}

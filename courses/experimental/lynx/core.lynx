@@ -230,6 +230,7 @@ or = new func
     jsPrimitive:{or}
 
 apply = new object
+    name:"apply"
     jsPrimitive:{apply}
 
 op1 = new attribute
@@ -237,3 +238,4 @@ op2 = new attribute
 result = new attribute
 caller = new attribute
 function = new attribute
+    inverseAttribute:caller

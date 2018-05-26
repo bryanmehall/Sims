@@ -2140,6 +2140,7 @@ module.exports = /*
         	type:"apply",
             props:{
                 jsPrimitive:{type:"apply"},
+                name:createString("apply"),
                 op1:left,
                 op2:right,
                 function:symbolTable[op]

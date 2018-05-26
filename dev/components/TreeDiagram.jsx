@@ -2,18 +2,23 @@ import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
 import { InteractiveForceGraph, ForceGraphNode, ForceGraphLink } from 'react-vis-force';
-import { getValue, getId, getSetData, getObject } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import TreeNode from './TreeDiagram'
 
-
-class TreeDiagram extends React.Component {
+export default class TreeDiagram extends React.Component {
 	constructor(props){
 		super(props)
+        console.log(props.objectTable)
 		this.state = {filters:{object:true, primitive:true}}
 	}
 
 	render() {
+        const objectTable = this.props.objectTable || {}
+        if (Object.keys(objectTable).length === 0 && objectTable.constructor === Object){
+            console.log('!!!!!!!!!!!!!!!')
+            return <div>loading graph</div>
+        }
+        console.log('#################')
 		const nodes = this.props.nodes.map((node) => {
 			const type = node.type
 			const color =
@@ -53,6 +58,7 @@ class TreeDiagram extends React.Component {
 		)
 	}
 }
+/*
 const mapStateToProps = (state) => {
 	let nodes = [{ id: 'app', label: 'app', type: 'root' }]
 	let links = []
@@ -112,4 +118,4 @@ const mapDispatchToProps = (dispatch) => (
 	}
 )
 
-export default connect(mapStateToProps, mapDispatchToProps)(TreeDiagram)
+export default connect(mapStateToProps, mapDispatchToProps)(TreeDiagram)*/

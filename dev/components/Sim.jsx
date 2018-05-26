@@ -13,13 +13,14 @@ import Tracker from './Tracker'
 import Debug from './Debug'
 import { cardStyle } from './styles'
 import Link from 'redux-first-router-link'
+import TreeDiagram from './TreeDiagram'
 
 class Sim extends React.Component {
 	constructor(props){
 		super(props)
 		this.loadSim = this.loadSim.bind(this)
 		this.closeSim = this.closeSim.bind(this)
-        this.state = {offset:{x:300, y:0}}
+        this.state = {offset:{x:300, y:0}, objectTable: props.objectTable}
 	}
 
 	componentDidMount(){
@@ -141,6 +142,8 @@ class Sim extends React.Component {
             </pre>
         )
         const treeVis = this.props.loadState !=='loading' ? <Debug trace={this.props.trace}></Debug> : null
+
+        //const graphVis = <TreeDiagram objectTable={this.props.objectTable}></TreeDiagram>
 		return (
             <div>
                 <canvas
@@ -151,6 +154,7 @@ class Sim extends React.Component {
                     onMouseMove = {setMousePos}
                 >
                 </canvas>
+
                 {codeVis}
             </div>
         )
@@ -176,13 +180,14 @@ function mapStateToProps(state) {
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
         console.time('draw')
-		const {renderMonad, functionTable, trace} = compile(state)
+		const {renderMonad, functionTable, trace, objectTable} = compile(state)
         console.timeEnd('draw')
 		return {
 			renderMonad,
             functionTable,
             trace,
-			loadState
+			loadState,
+            objectTable
 		}
 	}
 }

@@ -16,20 +16,38 @@ window = new group
             op1:new object
                 name:"apply"
                 equalTo:apply.function.result
-                function:new funct
-                    name:"contains"
-                    x:false
-                    list:new object
-                        x:"abc"
-                        nextElement:new object
-                            name:"b"
-                    result:new ternary
-                        name:"tern"
-                        x:"abc"
-                        condition:contains.x
-                        then:"tre"
-                        alt:"abc"
+                op1:"a"
+                list:new object
+                    value:"b"
+                    nextElement:new object
+                        name:"b"
+                function:new dbSearch
+                    jsPrimitive:{dbSearch}
+                    query:"contains"
             innerText:text.op1.equalTo
+
+dbSearch = new object
+
+contains = new funct
+    name:"contains"
+    list:contains.caller.list
+    op1:contains.caller.op1
+    result:new ternary
+        name:"tern"
+        condition:contains.list.value == contains.op1
+        then:true
+        alt:new get
+            attribute:equalTo
+            jsPrimitive:{get}
+            rootObject: new object
+                name:"appl"
+                function:new search
+                    query:"contains"
+                    jsPrimitive:{search}
+                list:contains.list.nextElement
+                op1:contains.op1
+                equalTo:appl.function.result
+
 
 sq = new func
     name:"sq"

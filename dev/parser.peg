@@ -24,9 +24,10 @@ function createBinOp(left, right, op){
     	type:"apply",
         props:{
             jsPrimitive:{type:"apply"},
+            name:createString("apply"),
             op1:left,
             op2:right,
-            function:createFunction(symbolTable[op])
+            function:symbolTable[op]
         }
     } 
 }
@@ -36,7 +37,7 @@ function createApply(arg, op){
         props:{
             jsPrimitive:{type:"apply"},
             op1:arg,
-            function:createFunction(op)
+            function:op
         }
     }
 }

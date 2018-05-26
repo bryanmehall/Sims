@@ -1,0 +1,15 @@
+//in this example, the goal is for one object to have multiple definitions and force tehm all to be consistent
+for example, a slider and a text representation of a number
+window = new group
+    childElements = new set
+        subset1:number.textRep
+
+num = new number
+    textRep: new textNumber
+    sliderRep: new slider
+
+slider = new circle
+    
+
+textNumber = new text
+    innerText = toStirng

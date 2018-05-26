@@ -1,0 +1,37 @@
+window = new group
+    childElements: new set
+        name:"set"
+        subset1:new text
+            name:"txt"
+            x:20
+            y:30
+            op1:txt.x+20//using get operator within expression is a bug
+            innerText: txt.op1
+
+check = new group
+    name:"group"
+    childElements: new set
+        name:"set"
+        subset1:new text
+            name:"checkbox"
+            checked:false
+            left:checkbox.x
+            right:checkbox.x+20
+            width:50
+            height:50
+            mouseOver:app.mouse.pos.x > 20
+            innerText:new ternary
+                condition:checkbox.checked
+                then:"x"
+                alt:checkbox.right
+            x:20
+            y:20
+            g:new ternary
+                condition:checkbox.mouseOver
+                then:255
+                alt:0
+
+checked = new attribute
+mouseOver = new attribute
+left = new attribute
+right = new attribute

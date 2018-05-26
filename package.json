@@ -78,6 +78,7 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "eslint": "^4.7.2",
+    "eslint-plugin-pure": "github:purely-functional/eslint-plugin-pure",
     "eslint-plugin-react": "^7.3.0",
     "html-webpack-plugin": "^2.29.0",
     "jest": "^20.0.4",
