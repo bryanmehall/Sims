@@ -6,7 +6,7 @@ object = new object
 accordianRepresentation = new group
     name:"accordianRep"
     pos: new coordinatePosition
-        x:100
+        x:50+10
         y:100
     r: new array
         firstElement:new text

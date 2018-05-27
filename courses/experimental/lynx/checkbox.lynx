@@ -5,8 +5,8 @@ window = new group
             name:"txt"
             x:20
             y:30
-            op1:txt.x+20//using get operator within expression is a bug
-            innerText: txt.op1
+            innerText: "abc"
+        subset2: check
 
 check = new group
     name:"group"
