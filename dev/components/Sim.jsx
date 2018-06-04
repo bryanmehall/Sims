@@ -147,7 +147,7 @@ class Sim extends React.Component {
 		return (
             <div>
                 <div style = {{backgroundColor:"white"}}>
-                    <span onclick={()=>{self.setState({debugView:"code"})}}>Tree</span>
+                    <span onClick={()=>{this.setState({debugView:"code"})}}>Tree</span>
                     <span>code</span>
                 </div>
                 <canvas
@@ -159,7 +159,7 @@ class Sim extends React.Component {
                 >
                 </canvas>
 
-                {this.state.debugView === "tre" ? treeVis : codeVis}
+                {this.state.debugView === "tree" ? treeVis : codeVis}
             </div>
         )
         /*(

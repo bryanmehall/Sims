@@ -35,29 +35,31 @@ const combineArgs = (args) => {
 }
 
 //build string of function from {string:" ", args:{}} object and add that function to the function table
-export const buildFunction = (primitive) => {
-    if (primitive.inline){
-        return primitive.string
+export const buildFunction = (ast) => {
+    const string = jsCompilers[ast.type](ast)
+    if (ast.inline){
+        return string
+    } else {
+        const argsList = Object.keys(ast.args).concat('functionTable')
+        try {
+            const func = new Function(argsList, '\t return '+string)
+            addToFunctionTable(ast.hash, func)
+            return `\tfunctionTable.${ast.hash}(${argsList.join(",")})`
+        } catch (e) {
+            console.log(string, ast)
+            throw e
+        }
     }
 
-    const argsList = Object.keys(primitive.args).concat('functionTable')
-    if (jsCompilers.hasOwnProperty(primitive.type)){
-         console.log(jsCompilers[primitive.type](primitive) , primitive.string)
-    }
-    const string = jsCompilers.hasOwnProperty(primitive.type) ? jsCompilers[primitive.type](primitive) : primitive.string
-    const func = new Function(argsList, '\t return '+string)
-    addToFunctionTable(primitive.hash, func)
-    return `\tfunctionTable.${primitive.hash}(${argsList.join(",")})`
 }
 
 const addToFunctionTable = (hash, func) => { //adding functions to table should become a monad
-    console.log(hash, functionTable)
     functionTable[hash] = func
 }
 
-const getName = (state, objectData) => {
+export const getName = (state, objectData) => {
     const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
-    return namePrimitive === undefined ? null : eval(namePrimitive.string)//switch to comparing hashes?
+    return namePrimitive === undefined ? null : namePrimitive.value//switch to comparing hashes?
 }
 
 function reduceGetStack(state, currentObject, searchArgData, searchName){
@@ -140,7 +142,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
         if (searchName === 'app'){
             console.log(searchArgData)
             console.log(objectTable)
-            console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
+            throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
         }
         return { args: {}, varDefs: [] }//this just doesn't move any args, it doesn't mean that there are not any
     }

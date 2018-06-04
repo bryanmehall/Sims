@@ -76,6 +76,13 @@
 					"text":"Checkbox",
 					"type":"anim",
 					"length":10
+				},
+                {
+					"id": "ternary",
+					"title":"Ternary",
+					"text":"Ternary",
+					"type":"anim",
+					"length":10
 				}
 			]
 		}
