@@ -1,7 +1,8 @@
 /* eslint pure/pure: 2 */
 import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
-import {primitives} from './primitives'
-console.log(primitives)
+import { primitives } from './primitives'
+import { jsCompilers } from './jsCompiler'
+
 /*
 refactor todo:
     -make adding to function table a monad
@@ -33,21 +34,24 @@ const combineArgs = (args) => {
     return reduced
 }
 
-//build string of function from {string:" ", args:[]} object and add that function to the function table
-const buildFunction = (primitive) => {
+//build string of function from {string:" ", args:{}} object and add that function to the function table
+export const buildFunction = (primitive) => {
     if (primitive.inline){
-        console.log('inline', primitive)
         return primitive.string
     }
-    const argsList = Object.keys(primitive.args).concat('functionTable')
-    const func = new Function(argsList, '\t return '+primitive.string)
-    addToFunctionTable(primitive.hash, func)
-    const primString = ""//primitive.args.prim ? "(prim)":""//hack to add(prim) to the end if it depends on prim--refactor
 
-    return `\tfunctionTable.${primitive.hash}(${argsList.join(",")})${primString}`
+    const argsList = Object.keys(primitive.args).concat('functionTable')
+    if (jsCompilers.hasOwnProperty(primitive.type)){
+         console.log(jsCompilers[primitive.type](primitive) , primitive.string)
+    }
+    const string = jsCompilers.hasOwnProperty(primitive.type) ? jsCompilers[primitive.type](primitive) : primitive.string
+    const func = new Function(argsList, '\t return '+string)
+    addToFunctionTable(primitive.hash, func)
+    return `\tfunctionTable.${primitive.hash}(${argsList.join(",")})`
 }
 
 const addToFunctionTable = (hash, func) => { //adding functions to table should become a monad
+    console.log(hash, functionTable)
     functionTable[hash] = func
 }
 
@@ -60,21 +64,22 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
     const { argKey, query, getStack } = searchArgData
     limiter(2000000, 400)
-    console.log('name:', searchName, 'query:',query, currentObject)
+    //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
 
-    if (searchName === query || query === "$this"){ //this is a shim for objects that always match $ is to prevent accidental matches
+    if (searchName === query || query === "$this"){ //this is a shim for objects that always match. $ is to prevent accidental matches
         if (getStack.length === 0){
             const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             /*convertToSearchArgs(jsResult.args).map((searchArgData) => {
                 console.log('search', searchArgData, currentObject)
                 console.log('compiling', searchArgData, reduceGetStack(state, currentObject, searchArgData, searchName ))
             })*/
-            if (jsResult.type === 'undef'){
+            if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
                 return { args: { recursive: searchArgData.argKey }, varDefs: [] }
             } else {
                 const variableDefinition = {
                     key: argKey,
+                    ast: jsResult,
                     string: jsResult.string,
                     comment: `//${searchName}`
                 }
@@ -110,9 +115,10 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                 //handle case where nextName === query returned...need to move arg to varDef
                 const childArgs = argsToVarDefs(state, nextValue, nextValueFunctionData, nextValueFunctionData.args, nextName)
                 return childArgs
+            } else if (nextValue.type === 'dbSearch') {
+                return {args:{search: nextValue}, varDefs:[]}
             } else if (nextValue.type === 'get') {
                 const arg = Object.values(nextJSValue.args).filter((ag) => (ag.hasOwnProperty('query')))
-
                 //debug
                 if (arg.length > 1) { //this would mean that a child has more than one argument
                     console.log('args for ',searchName, arg)
@@ -134,7 +140,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
         if (searchName === 'app'){
             console.log(searchArgData)
             console.log(objectTable)
-            throw new Error(`LynxError: no match found for query "${query}"\n Traceback:`)
+            console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
         }
         return { args: {}, varDefs: [] }//this just doesn't move any args, it doesn't mean that there are not any
     }
@@ -195,21 +201,13 @@ export const foldPrimitive = (state, childPrimitives, objectData) => { //list of
     const combinedArgs = combineArgs(childPrimitives)//combine arguments of sub functions
     const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
     const { args, varDefs } = argsToVarDefs(state, objectData, initialFunctionData, combinedArgs, objectName)
-    const variableDefs = varDefsToString(varDefs)
+    const variableDefs = varDefs
     const compiledFunctions = childPrimitives.map(buildFunction)
-    const trace = childPrimitives.map((argPrim) => (
+    const subTraces = childPrimitives.map((argPrim) => (
         Object.assign({}, argPrim.trace, { name: objectName })
     ))
-    return { childFunctions: compiledFunctions, arguments: args, variableDefs, trace }
+    return { childFunctions: compiledFunctions, args, variableDefs, subTraces }
 }
-
-const varDefsToString = (varDefs) => (
-    varDefs.reverse()
-        .map((varDef) => (
-            `\tvar ${varDef.key} = ${varDef.string}; ${varDef.comment}\n`
-        ))
-        .join('')
-)
 
 let functionTable = {}//only js
 let stateTable = {}
@@ -218,13 +216,12 @@ let objectTable = {}
 export const compile = (state) => {
     const appData = getObject(state, 'app')
     const display = getValue(state, 'app', 'jsPrimitive', appData)
-    const trace = display.trace
-    const renderMonad = new Function('functionTable', `${display.string}`)//returns a thunk with all of render information enclosed
-
-    return { renderMonad, functionTable, trace, objectTable }
+    const appString = jsCompilers.app(display)
+    const renderMonad = new Function('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
+    return { renderMonad, functionTable, ast: display, objectTable }
 }
 
-//getJSValue should be called compile and interpret should be a seperate function
+//getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objData) => {
 	//const objectData = objData === undefined ? getObject(state, name) : objData
 	const valueData = getValue(state, 'placeholder', prop, objData)
@@ -329,9 +326,9 @@ export const getValue = (state, name, prop, objectData) => { //get Value should 
     if (name !== 'placeholder'){
         const newProps = Object.assign({},def.props, name)
         def = Object.assign(def, { props: newProps })
-    } else if (def !== undefined && def.type === 'dbSearch'){
+    /*} else if (def !== undefined && def.type === 'dbSearch'){
         const query = eval(getJSValue(state, 'placeholder', 'query', def).string)
-        def = getObject(state, query)
+        def = getObject(state, query)*/
     } else if (typeof def === "string" && isHash(def)){
         def = objectFromHash(def)
     }

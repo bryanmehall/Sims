@@ -1,6 +1,8 @@
 //this is to demonstrate live modification of code
 app = new object
-    accordianRepresentation
+    accordianRepresentation: new group
+        subset1:
+
 window = new group
     checkbox:children.subset1
     childElements = new set
@@ -10,5 +12,3 @@ window = new group
             condition window.checkbox.isChecked
             then:app.accordianRep //this needs to be lazily compiled and there needs to be a mechanism to do it --this mechanism could then be used to generate fast machine code for ie iterating through a list
             else: null
-            
-            

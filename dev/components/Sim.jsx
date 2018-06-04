@@ -20,7 +20,7 @@ class Sim extends React.Component {
 		super(props)
 		this.loadSim = this.loadSim.bind(this)
 		this.closeSim = this.closeSim.bind(this)
-        this.state = {offset:{x:300, y:0}, objectTable: props.objectTable}
+        this.state = {offset:{x:300, y:0}, objectTable: props.objectTable, ast: props.ast, debugView:'tree'}
 	}
 
 	componentDidMount(){
@@ -31,7 +31,6 @@ class Sim extends React.Component {
         this.height = canvas.getBoundingClientRect().height
         canvas.width = this.width
         canvas.height = this.height
-
         this.ctx = canvas.getContext('2d')
 	}
     componentDidUpdate(nextProps){
@@ -45,7 +44,7 @@ class Sim extends React.Component {
             })
         }
         this.prim = {
-            rect:(x,y,width, height,r,g,b)=>{
+            rect: (x,y,width, height,r,g,b) => {
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.fillRect(x, y, width, height)
             },
@@ -61,6 +60,7 @@ class Sim extends React.Component {
             }
         }
         const functionTable = this.props.functionTable
+        //this.setState({ast:this.props.ast})
         this.render = this.props.renderMonad(functionTable)//returns compiled program
         this.render(this.prim, {mouseX:0, mouseY:0, mouseDown:false})
 		const contentBlockId = nextProps.contentBlockId
@@ -141,11 +141,15 @@ class Sim extends React.Component {
                 {tableVis}
             </pre>
         )
-        const treeVis = this.props.loadState !=='loading' ? <Debug trace={this.props.trace}></Debug> : null
+        const treeVis = this.props.loadState !=='loading' ? <Debug ast={this.props.ast}></Debug> : null
 
         //const graphVis = <TreeDiagram objectTable={this.props.objectTable}></TreeDiagram>
 		return (
             <div>
+                <div style = {{backgroundColor:"white"}}>
+                    <span onclick={()=>{self.setState({debugView:"code"})}}>Tree</span>
+                    <span>code</span>
+                </div>
                 <canvas
                     id="canvas"
                     width="600"
@@ -155,7 +159,7 @@ class Sim extends React.Component {
                 >
                 </canvas>
 
-                {codeVis}
+                {this.state.debugView === "tre" ? treeVis : codeVis}
             </div>
         )
         /*(
@@ -180,12 +184,12 @@ function mapStateToProps(state) {
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
         console.time('draw')
-		const {renderMonad, functionTable, trace, objectTable} = compile(state)
+		const { renderMonad, functionTable, ast, objectTable } = compile(state)
         console.timeEnd('draw')
 		return {
 			renderMonad,
             functionTable,
-            trace,
+            ast,
 			loadState,
             objectTable
 		}

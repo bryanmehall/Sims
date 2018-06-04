@@ -40,13 +40,13 @@ contains = new funct
             attribute:equalTo
             jsPrimitive:{get}
             rootObject: new object
-                name:"appl"
-                function:new search
+                name:"apl"
+                function:new dbSearch
                     query:"contains"
-                    jsPrimitive:{search}
+                    jsPrimitive:{dbSearch}
                 list:contains.list.nextElement
                 op1:contains.op1
-                equalTo:appl.function.result
+                equalTo:apl.function.result
 
 
 sq = new func

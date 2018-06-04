@@ -3,13 +3,23 @@ for example, a slider and a text representation of a number
 window = new group
     childElements = new set
         subset1:number.textRep
+        subset2: number.sliderRep
+
+//problem with non-invertable functions? ie rounding text or rounding pixels
 
 num = new number
+    name:"number"
     textRep: new textNumber
     sliderRep: new slider
+    value:if number.textRep.changed {parseInt(number.textRep.innerText)}
+        else if number.slider.changed {slider.pos.x}
+        else number.value.previousValue
 
 slider = new circle
-    
+    name:"slider"
+    x:slider.parentConcept.value
 
 textNumber = new text
-    innerText = toStirng
+    innerText = toString()
+    x:20
+    y:20

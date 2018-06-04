@@ -35,8 +35,8 @@ class Debug extends React.Component {
                 >
                 <Trace
                     setCenter = {setCenter}
-                    trace={this.props.trace}
-                    x={550}
+                    ast={this.props.ast}
+                    x={0}
                     y={20}
                     ></Trace>
             </svg>

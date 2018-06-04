@@ -1,13 +1,22 @@
 import { getValue, getJSValue, foldPrimitive } from './selectors'
 
+export const varDefsToString = (varDefs) => (
+    varDefs.reverse()
+        .map((varDef) => (
+            `\tvar ${varDef.key} = ${varDef.string}; ${varDef.comment}\n`
+        ))
+        .join('')
+)
+
 const input = (state, objectData) => {
     const hash = objectData.props.hash
     const name = eval(getJSValue(state, 'placeholder', 'name', objectData).string)
     return {
         hash,
-        string:'inputs.'+name,
-        args:{name},
-        inline:true
+        type:'input',
+        string: 'inputs.'+name,
+        args: { name },
+        inline: true
     }
 }
 //data primitives
@@ -19,6 +28,8 @@ const primitive = (state, objectData, valueData) => ({
     hash: objectData.props.hash,
     string: JSON.stringify(valueData.value),
     args: {},
+    children:{},
+    type: typeof valueData.value,
     inline: true,
     trace: { type: valueData.value, subTraces: [] }
 })
@@ -50,6 +61,8 @@ const binOp = (state, objectData, valueData) => {
     return {
         hash: objectData.props.hash,
         string: symbol[valueData.type],
+        type:valueData.type,
+        variableDefs:[],
         args: {},
         inline: true
     }
@@ -63,10 +76,15 @@ const get = (state, objectData) => {
     if (root.type === 'undef'){ //set query to '$this' if root is left undefined
         query = '$this'
         getStack = []
-    } else if (rootObject.type === 'undef'){//
+    } else if (rootObject.type === 'undef'){
         //does this only work for one level deep?
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).id
         const next = getJSValue(state, 'placeholder', attribute, root)
+        console.log('!!!!!!!!!!!')
+
+        console.log(foldPrimitive(state, [next], root), root, objectData)
+
+
         return next
     } else {
         const searchArgs = Object.entries(rootObject.args)
@@ -81,6 +99,8 @@ const get = (state, objectData) => {
         string: hash,
         args,
         inline: true,
+        type: 'get',
+        children: {},
         trace: { type: 'get', args, subTraces: [] }
     }
 }
@@ -108,28 +128,25 @@ const func = (state, objectData) => {
     ))
     parameters[0].inline = false //refactor
     const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-    const childFunctions = foldedPrimitives.childFunctions
-    const variables = foldedPrimitives.variableDefs
     return parameters[0]
     //monad for requiring that function is in table or for placing function in table
 }
 
 const apply = (state, objectData) => {
     const paramNames = ['op1','function', 'op2']//add support for binary op
-    const functionName = objectData.props.function
     let parameters = paramNames.map((paramName) => (
             getJSValue(state, 'placeholder', paramName, objectData)
-        )).filter((param)=>(param !== undefined))
-    const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-    const childFunctions = foldedPrimitives.childFunctions
-    const variables = foldedPrimitives.variableDefs
-    const subTraces = foldedPrimitives.trace
-    if (parameters.length === 3){//binop
-        const programText = childFunctions.join("")
+        ))
+        .filter((param) => (param !== undefined))
+    const { variableDefs, subTraces, childFunctions, args } = foldPrimitive(state, parameters, objectData)
+
+    if (parameters.length === 3){ //binop
+        const programText = childFunctions.join("") //op1+op2
         return {
             hash: objectData.props.hash,
             string: programText,
-            args: foldedPrimitives.arguments,
+            args,
+            variableDefs,
             inline: true,
             trace: { subTraces, type: 'apply', vars: ['1', 'f', '2'] }
         }
@@ -151,14 +168,16 @@ const ternary = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-    if (foldedPrimitives.variableDefs !== ""){ throw new Error('ternary should not have variable definition') }
-    const [condition, then, alt] = foldedPrimitives.childFunctions
-    const subTraces = foldedPrimitives.trace
+    const { variableDefs, subTraces, childFunctions, args } = foldPrimitive(state, parameters, objectData)
+    if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
+    const [condition, then, alt] = childFunctions
     return {
         hash: objectData.props.hash,
+        type: 'ternary',
+        children:{parameters},
         string: `(${condition}) ? ${then} : ${alt}`,
-        args: foldedPrimitives.arguments,
+        args,
+        variableDefs,
         trace: { subTraces, type: 'ternary', vars: ['c', 't', 'e'] },
         inline: false
     }
@@ -169,16 +188,16 @@ const text = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-    const childFunctions = foldedPrimitives.childFunctions
-    const variableDefs = foldedPrimitives.variableDefs
-    const subTraces = foldedPrimitives.trace
+    const { variableDefs, subTraces, childFunctions, args } = foldPrimitive(state, parameters, objectData)
     const programText = childFunctions.join(",\n\t")
-    const string = ` function(prim) { //text\n${variableDefs} prim.text(${programText} );\n}`
+    const string = ` function(prim) { //text\n${varDefsToString(variableDefs)} prim.text(${programText} );\n}`
     return {
         hash: objectData.props.hash,
         string, //this is the rendering function
-        args: Object.assign(foldedPrimitives.arguments, { prim: true }), //combine args of x,y,text
+        args: Object.assign(args, { prim: true }), //combine args of x,y,text
+        children: { x: parameters[0], y: parameters[1], innerText: parameters[2] },
+        type: 'text',
+        variableDefs,
         inline: false,
         trace: { subTraces, type: 'text', vars: ["x", "y", "t", "r", "g", "b"] }
     }
@@ -188,32 +207,36 @@ const group = (state, objectData) => {
     const children = getJSValue(state, 'placeholder', 'childElements', objectData)
     const parameters = children.filter((child) => (child !== undefined))
 
-    const foldedPrimitives = foldPrimitive(state, parameters, objectData)
-    const childFunctions = foldedPrimitives.childFunctions
-    const variableDefs = foldedPrimitives.variableDefs
-    const subTraces = foldedPrimitives.trace
-
+    const { variableDefs, subTraces, childFunctions, args } = foldPrimitive(state, parameters, objectData)
     //need to sort by z-order
     const programText = childFunctions.map((func) => (func+'(prim)')).join(";\n\t")
     return {
         hash: objectData.props.hash,
-        string: ` function(prim) { //group\n${variableDefs} ${programText}\n}`,
-        args: foldedPrimitives.arguments,
+        type: 'group',
+        string: ` function(prim) { //group\n${varDefsToString(variableDefs)} ${programText}\n}`,
+        children: { childElement1: parameters[0] },
+        args,
+        variableDefs,
         trace: { subTraces, type: 'group', vars: ["1","2"] }
     }
 }
 
 const app = (state, objectData) => {
-    const graphicalRep = getJSValue(state, 'placeholder', 'graphicalRepresentation', objectData)
-    const foldedPrimitives = foldPrimitive(state, [graphicalRep], objectData)
-    const childFunctions = foldedPrimitives.childFunctions
-    const variableDefs = foldedPrimitives.variableDefs
-    const subTraces = foldedPrimitives.trace
+    const paramNames = ["graphicalRepresentation"]
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+    ))
+    const { childFunctions, variableDefs, args } = foldPrimitive(state, parameters, objectData)
     const programText = childFunctions[0]
+    console.log(objectData.props)
     return {
-        string:`return function(prim, inputs) { //app\n${variableDefs} ${programText}(prim)\n}`,
-        args: foldedPrimitives.arguments,
-        trace:{subTraces, type:'app', vars:['']}
+        //string: `return function(prim, inputs) { //app\n${varDefsToString(variableDefs)} ${programText}(prim)\n}`,
+        hash: 'apphash',//change this to actual hash...whiy isn't it there?
+        children: { graphicalRep: parameters[0] },
+        args,
+        type: 'app',
+        variableDefs,
+        //trace: { subTraces, type: 'app', vars: [''] }
     }
 }
 
