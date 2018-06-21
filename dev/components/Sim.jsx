@@ -141,7 +141,12 @@ class Sim extends React.Component {
                 {tableVis}
             </pre>
         )
-        const treeVis = this.props.loadState !=='loading' ? <Debug ast={this.props.ast}></Debug> : null
+        const treeVis = this.props.loadState !=='loading' ?
+              <Debug
+                  functionTable={functionTable}
+                  ast={this.props.ast}
+                  appString={this.props.renderMonad.toString()}
+                ></Debug> : null
 
         //const graphVis = <TreeDiagram objectTable={this.props.objectTable}></TreeDiagram>
 		return (

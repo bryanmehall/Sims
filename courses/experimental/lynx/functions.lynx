@@ -1,32 +1,14 @@
 window = new group
-    name:"gro"
+    name:"group"
     childElements: new set
         subset1: new text
-            name:"text"
-            x:text.pos.x
-            y:text.pos.y
-            r:0
-            g:0
-            b:0
-            pos:new coordinatePosition
-                x:20
-                y:20
-            width:100
-            height:15
-            op1:new object
-                name:"apply"
-                equalTo:apply.function.result
-                op1:"a"
-                list:new object
-                    value:"b"
-                    nextElement:new object
-                        name:"b"
-                function:new dbSearch
-                    jsPrimitive:{dbSearch}
-                    query:"contains"
-            innerText:text.op1.equalTo
-
-dbSearch = new object
+            name:"txt"
+            x:20
+            y:20
+            innerText:new ternary
+				condition:true
+				then:"abc"
+				alt:"xyz"
 
 contains = new funct
     name:"contains"
@@ -46,7 +28,7 @@ contains = new funct
                     jsPrimitive:{dbSearch}
                 list:contains.list.nextElement
                 op1:contains.op1
-                equalTo:apl.function.result
+                equalTo:true
 
 
 sq = new func
@@ -60,19 +42,20 @@ equalTo = new attribute
 appl = new object
 
 
-fac = new func
-    name:"fac"
-    op1:fac.caller.op1
-    result:new ternary
-        condition:fac.op1<1
-        then:1
-        alt:new apply
+factorial = new func
+    name:"factorial"
+	op1:factorial.caller.op1
+    result:new apply
+		function:ternary
+		op1:fac.op1<1
+        op2:1
+        op3: new apply
             function:multiplication
             op1:fac.op1
-            op2:new apply
+			op2:new apply
                 function:new search
                     query:"fac"
-                    jsPrimitive:{recurse}
+                    jsPrimitive:{dbSearch}
                 op1:fac.op1-1
 sum = new func
     name:"sum"

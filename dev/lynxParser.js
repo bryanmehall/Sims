@@ -6,7 +6,10 @@ export const lynxParser = (lynxString) => {
     let outString = ""
     let indentLevel = 0
     lines.forEach((line) => {
-        const indents = Math.floor(Math.abs(line.split("").findIndex((char) => (char !== " "))/4))
+		const indentPos = line.replace("\t", "    ")
+			.split("")
+			.findIndex((char) => (char !== " "))/4
+        const indents = Math.floor(Math.abs(indentPos))
         const change = indents-indentLevel
         indentLevel = indents
         if (change === 0){
@@ -22,7 +25,7 @@ export const lynxParser = (lynxString) => {
         const out = parser.parse(outString+"}}")
 
         return out
-    } catch(e) {
-        console.warn("parsing failed", e.message, e.location.start, e.location.end)
+    } catch (e) {
+        console.warn("parsing failed for" , e.message, e.location.start, e.location.end)
     }
 }

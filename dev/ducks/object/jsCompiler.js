@@ -3,6 +3,7 @@ import { buildFunction } from './selectors'
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
         .map((childAst) => (buildFunction(childAst)))
+
     return (delimiter === undefined) ? childList : childList.join(delimiter)
 }
 
@@ -10,7 +11,10 @@ const varDefsToString = (varDefs) => (
     varDefs.reverse()
         .map((varDef) => {
             const type = varDef.ast.type
-            const string =  jsCompilers[type](varDef.ast)
+            let string =  buildFunction(varDef.ast)//jsCompilers[type](varDef.ast)
+            if (string.hasOwnProperty('returnStatement')){
+                string = string.returnStatement
+            }
             return `\tvar ${varDef.key} = ${string}; ${varDef.comment}\n`
         })
         .join('')
@@ -36,10 +40,30 @@ const text = (ast) => {
     return ` function(prim) { //text\n${varDefsToString(ast.variableDefs)} prim.text(${programText}, 0, 0, 0 );\n}`
 }
 
-const get = (ast) => (ast.hash)
-const search = (ast) => (ast.hash)
+const get = (ast) => {
+    if (ast.inline){
+        return ast.hash
+    } else {
+        const programText = buildChildren(ast, "")
+        const varDef = varDefsToString(ast.variableDefs)
+        return { varDefs: varDef, returnStatement: programText }
+    }
 
-const apply = (ast) => (buildChildren(ast, ''))
+}
+const search = (ast) => (ast.hash)
+const dbSearch = (ast) => {
+    const children = buildChildren(ast)
+    return `${ast.hash}()`
+}
+
+const apply = (ast) => {
+    const children = buildChildren(ast)
+    if (children.length === 2){
+        return `${children[1]}(${children[0]})`
+    } else {
+        return `( ${children.join(' ')})`
+    }
+}
 const ternary = (ast) => {
     const [condition, then, alt] = buildChildren(ast)
     return `(${condition}) ? ${then} : ${alt}`
@@ -68,6 +92,7 @@ export const jsCompilers = {
     ternary,
     get,
     search,
+    dbSearch,
     apply,
     addition,
     subtraction,

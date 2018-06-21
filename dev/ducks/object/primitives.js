@@ -1,4 +1,4 @@
-import { getValue, getJSValue, foldPrimitive, getName } from './selectors'
+import { getValue, getJSValue, foldPrimitive, getName, getObject, getHash } from './selectors'
 
 const input = (state, objectData) => {
     const hash = objectData.props.hash
@@ -41,6 +41,7 @@ const binOp = (state, objectData, valueData) => ({
         hash: objectData.props.hash,
         type: valueData.type,
         variableDefs: [],
+		children: {},
         args: {},
         inline: true
 })
@@ -54,17 +55,27 @@ const get = (state, objectData) => {
         //set query to '$this' if root is left undefined
         query = '$this'
         getStack = []
-    } else if (rootObject.type === 'undef'){ //for new root objects --as opposed to searches
+    } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).id
         const next = getJSValue(state, 'placeholder', attribute, root)
-        return next
+        const foldedPrimitives = foldPrimitive(state, [next], root)
+        const varDefs = foldedPrimitives.variableDefs
+        return {
+            hash: objectData.props.hash,
+            //value: next.hash,
+            inline: false,
+            args: foldedPrimitives.args,
+            type: 'get',
+            children: { value: next },
+            variableDefs: varDefs
+        }
     } else {
         const searchArgs = Object.entries(rootObject.args)
         if (searchArgs.length>1){ throw 'search args length longer than one' }
         query = searchArgs[0][1].query
-        getStack = searchArgs[0][1].getStack//this only works for one search. is more than one ever needed in args?
+        getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
     const hash = objectData.props.hash
     const args = { [hash]: { query, getStack: [...getStack, objectData] } }
@@ -83,13 +94,29 @@ const search = (state, objectData, valueData) => {
     const hash = objectData.props.hash
     return {
         hash,
+        type: "search",
         variableDefs: [],
         children: {},
         args: { search: { query, getStack: [] } }
     }
 } //replace this with a call to database?(closer to concept of new)
 
+const dbSearch = (state, objectData, valueData) => {
+    const query = objectData.props.query.props.jsPrimitive.value //refactor
+    const hash = objectData.props.hash
+    return {
+        type: 'dbSearch',
+        query,
+        hash,
+        variableDefs: [],
+        inline: true,
+        children: {}, //{ result: resultPrimitive },
+        args: {} //resultPrimitive.args
+    }
+}
+
 const func = (state, objectData) => {
+	console.log('#######################here')
     const paramNames = ["result"]
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
@@ -102,14 +129,19 @@ const func = (state, objectData) => {
 
 const apply = (state, objectData) => {
     const paramNames = ['op1','function', 'op2']//add support for binary op
-    let parameters = paramNames.map((paramName) => (
+    const parameters = paramNames.map((paramName) => (
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
+        .filter((param) => (param !== undefined))
+
     const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const children = parameters[2] === undefined ?
+        { op1: parameters[0], function: parameters[1] }
+         : { op1: parameters[0], function: parameters[1], op2: parameters[2] }
     return {
         hash: objectData.props.hash,
         args,
-        children: { op1: parameters[0], function: parameters[1], op2: parameters[2] },
+        children,
         variableDefs,
         inline: true,
         type: "apply",
@@ -153,7 +185,6 @@ const text = (state, objectData) => {
 const group = (state, objectData) => {
     const children = getJSValue(state, 'placeholder', 'childElements', objectData)
     const parameters = children.filter((child) => (child !== undefined))
-
     const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
     //need to sort by z-order
     return {
@@ -179,11 +210,10 @@ const app = (state, objectData) => {
         variableDefs,
     }
 }
-const evaluate = () => (
-    {
-        type: 'evaluate'
-    }
-)
+
+const evaluate = () => ({
+	type: 'evaluate'
+})
 
 const set = (state, objectData) => {
     const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
@@ -208,6 +238,7 @@ export const primitives = {
     or,
     get,
     search,
+    dbSearch,
     function: func,
     apply,
     ternary,

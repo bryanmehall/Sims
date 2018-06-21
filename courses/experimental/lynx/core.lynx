@@ -2,7 +2,6 @@ object = new object
     name:"object"
     accordianRep:accordianRepresentation
 
-
 accordianRepresentation = new group
     name:"accordianRep"
     pos: new coordinatePosition

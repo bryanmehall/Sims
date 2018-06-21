@@ -31,11 +31,11 @@ function* fetchSimData(action) {
             const coreData = lynxParser(lynxCore.data)
             console.log(Object.assign(coreData, fileData))
             response = {
-                keyframes:[],
-                quantity:{},
-                initialState:{object:Object.assign(coreData, fileData)}
+                keyframes: [],
+                quantity: {},
+                initialState: { object: Object.assign(coreData, fileData) }
             }
-        } catch(e) {
+        } catch (e) {
             console.warn('could not find lynx file at ', action.payload.path, e)
             const jsonFile = yield call(fetchJson, action.payload.path)
             response = jsonFile.data

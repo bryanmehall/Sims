@@ -63,6 +63,13 @@
 					"type":"anim",
 					"length":10
 				},
+				{
+					"id": "factorial",
+					"title":"Factorial",
+					"text":"example of the factorial function",
+					"type":"anim",
+					"length":10
+				},
                 {
 					"id": "functions",
 					"title":"Functions",

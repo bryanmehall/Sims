@@ -1,0 +1,25 @@
+window = new group
+    name:"group"
+    childElements: new set
+        subset1: new text
+            name:"txt"
+            x:20
+            y:20
+            innerText:new get
+                jsPrimitive:{get}
+                attribute:equalTo
+                rootObject: new object
+                    name:"apply"
+                    equalTo:apply.function.result
+                    function: new dbSearch
+                        jsPrimitive:{dbSearch}
+                        query:"factorial"
+                    op1:12
+
+dbSearch = new object
+equalTo = new attribute
+funct = new object
+factorial = new funct
+    name:"factorial"
+    op1:22
+    result:factorial.caller.op1

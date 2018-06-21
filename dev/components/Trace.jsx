@@ -21,6 +21,12 @@ const getWidth = (astNode) => {
         return childWidths.reduce(sum,0)
     }
 }
+const combineChildrenAndVarDefs = (ast) => {
+	const childList = Object.entries(ast.children)
+		.map((child) => ({ name: child[0], ast:child[1], type:"child"}))
+	const varDefList = ast.variableDefs.map((varDef) => ({...varDef, type:"varDef"}))
+	return childList.concat(varDefList)
+}
 
 class Trace extends React.Component {
     constructor(props){
@@ -34,11 +40,13 @@ class Trace extends React.Component {
         if (ast === undefined){
             return <text x={x} y={y} textAnchor="middle">undef</text>
         }
+		const childNodes = combineChildrenAndVarDefs(ast)
         const children = Object.keys(ast.children || {}) || []
         const width = getWidth(ast)
+
         let cumulativeWidth = 0
-        const traceChildren = children.map((childName, index) => {
-            const childAst = ast.children[childName]
+        const traceChildren = childNodes.map((child, index) => {
+            const childAst = child.ast
             const subTraceWidth = getWidth(childAst)
             cumulativeWidth += subTraceWidth
             const childX = x+cumulativeWidth-width
@@ -47,7 +55,7 @@ class Trace extends React.Component {
                 <text
                     x={(childX+x)/2}
                     y={(childY+y)/2}>
-                    {children[index]}
+                    { child.name}
                 </text>
             )
             return (
@@ -59,8 +67,8 @@ class Trace extends React.Component {
                         x2={childX}
                         y1={y+3}
                         y2= {childY-15}
-                        stroke="black"
-                        strokeWidth={active ? 0.1:1.2}
+                        stroke={child.type === "child" ? "black": "#006cff"}
+                        strokeWidth={active ? 0.1:1.6}
                         >
                     </line>
                     {active ? varLabel : null}
@@ -68,6 +76,7 @@ class Trace extends React.Component {
                         x={childX}
                         y={childY}
                         ast={childAst}
+                        setActive={this.props.setActive}
                     ></Trace>
                 </g>
             )
@@ -84,24 +93,24 @@ class Trace extends React.Component {
         } else {
             getStack = "abc"
         }*/
-
+		const nodeLabel = ast.hasOwnProperty('value') ? ast.value : ast.type
 		return (
             <g>
                 <text
                     onMouseOver={function(){
-                        self.setState({active:true})
+                        self.setState({ active: true })
+                        self.props.setActive(ast)
                     }}
                     onMouseLeave={function(){
-                        self.setState({active:false})
+                        self.setState({ active: false })
                     }}
                     textAnchor="middle"
                     fontWeight={self.state.active ? 600 : 400}
                     x={x}
                     y={y}
                     >
-                    {ast.type+(active ? displayArgs(ast) : "")}
+                    {nodeLabel+(active ? displayArgs(ast) : "")}
                 </text>
-                {displayVarDefs(ast, x, y)}
                 {getStack}
                 {traceChildren}
             </g>
@@ -111,7 +120,13 @@ class Trace extends React.Component {
 
 const displayVarDefs = (ast , x, y) => {
     const varDefMap = (varDef, i) => (
-        <Trace x={x} y={y+20*(i+1)} ast={varDef.ast} key={i}></Trace>
+        <Trace
+            x={x}
+            y={y+20*(i+1)}
+            ast={varDef.ast}
+            key={i}
+            setActive={this.props.setActive}
+            ></Trace>
     )
     const astList = ast.hasOwnProperty('variableDefs') ? ast.variableDefs.map(varDefMap) : []
     return (
