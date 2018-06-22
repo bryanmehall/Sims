@@ -64,7 +64,7 @@ Module
         return objects
     }
 Declaration
-	= "\n"*id:Name " "*"="" "*object:Object {return Object.assign({}, object, {id:id})}
+	= "\n"*id:Name _ "="_ object:Object {return Object.assign({}, object, {id:id})}
 
 Object "object"
 	= value:New "{{"?attributes:("\n""    "*Attribute)*"}}"? {
@@ -80,7 +80,7 @@ Object "object"
     }
 
 Attribute 
-    = name:Name":"" "?value:(Expression) {
+    = name:Name":"" "?value:(Expression) _ Comment? {
         return {
         	name:name,
             value:value
@@ -114,7 +114,7 @@ Product "product"
 Name "name"
 	= name:[a-zA-Z0-9]+ {return name.join("")}
     
-New = "new "name:Name {return name}
+New = "new "name:Name _ Comment? {return name}
 Search = query:Name {
 	return {
 		type:"search",
@@ -192,4 +192,7 @@ Bool "bool"
 Primitive "static primitive"
     ="{"type:Name"}" {return {type:type}}
 //whitespace
-_ = " "?
+_ = " "*
+//comment
+Comment "comment"
+	="//"[^\n]*
