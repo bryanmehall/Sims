@@ -1,4 +1,5 @@
 import { getValue, getJSValue, foldPrimitive, getName, getObject, getHash } from './selectors'
+import { isUndefined } from './utils'
 
 const input = (state, objectData) => {
     const hash = objectData.props.hash
@@ -58,18 +59,26 @@ const get = (state, objectData) => {
     } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
+
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).id
         const next = getJSValue(state, 'placeholder', attribute, root)
-        const foldedPrimitives = foldPrimitive(state, [next], root)
-        const varDefs = foldedPrimitives.variableDefs
+        const { args, variableDefs } = foldPrimitive(state, [next], root)
+        if (isUndefined(next)){ throw new Error('next is undef') }
+
+        /*const resultVariableDef = {
+            key: next.hash,
+            ast: next,
+            string: "",
+            comment: ""
+        }*/
         return {
             hash: objectData.props.hash,
             //value: next.hash,
             inline: false,
-            args: foldedPrimitives.args,
+            args,
             type: 'get',
             children: { value: next },
-            variableDefs: varDefs
+            variableDefs: variableDefs
         }
     } else {
         const searchArgs = Object.entries(rootObject.args)
@@ -104,6 +113,13 @@ const search = (state, objectData, valueData) => {
 const dbSearch = (state, objectData, valueData) => {
     const query = objectData.props.query.props.jsPrimitive.value //refactor
     const hash = objectData.props.hash
+    const searchResult = getObject(state, query)
+    const context = objectData.inverses //switch to context
+    const searchResultProps = Object.assign({}, searchResult.props, context)
+    const result = Object.assign({}, searchResult, {props: searchResultProps, inverses:context})
+
+
+
     return {
         type: 'dbSearch',
         query,
@@ -153,9 +169,8 @@ const ternary = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, subTraces, childFunctions, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
     if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
-    const [condition, then, alt] = childFunctions
     return {
         hash: objectData.props.hash,
         type: 'ternary',

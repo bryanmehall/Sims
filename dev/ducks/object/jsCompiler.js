@@ -3,7 +3,6 @@ import { buildFunction } from './selectors'
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
         .map((childAst) => (buildFunction(childAst)))
-
     return (delimiter === undefined) ? childList : childList.join(delimiter)
 }
 
@@ -46,11 +45,13 @@ const get = (ast) => {
     } else {
         const programText = buildChildren(ast, "")
         const varDef = varDefsToString(ast.variableDefs)
-        return { varDefs: varDef, returnStatement: programText }
+        //console.log('programText',programText, 'varDef',varDef)
+        return { varDefs: varDef, returnStatement: programText } //is this structure needed or can this just return a string?
     }
 
 }
 const search = (ast) => (ast.hash)
+
 const dbSearch = (ast) => {
     const children = buildChildren(ast)
     return `${ast.hash}()`

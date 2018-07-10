@@ -13,9 +13,9 @@ window = new group
                     equalTo:apply.function.result
                     function: new funct
                         name:"factorial"
-                        op1:25
+                        op1:"failedtest"
                         result:factorial.caller.op1
-                    op1:2
+                    op1:"test"
 
 dbSearch = new object
 equalTo = new attribute

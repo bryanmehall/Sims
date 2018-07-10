@@ -1,35 +1,29 @@
 window = new group
     childElements: new set
-        name:"set"
-        subset1:new text
-            name:"txt"
-            x:20
-            y:30
-            innerText: "abc"
-        subset2: check
+        subset1: checkBox.graphicalRepresentation
 
-check = new group
-    name:"group"
-    childElements: new set
-        name:"set"
-        subset1:new text
-            name:"checkbox"
-            checked:false
-            left:checkbox.x
-            right:checkbox.x+20
-            width:50
-            height:50
-            mouseOver:app.mouse.pos.x > 20
-            innerText:new ternary
-                condition:checkbox.checked
-                then:"x"
-                alt:checkbox.right
+
+checkBox = new object
+    name:"checkBox"
+    isChecked:new ternary
+        condition:checkbox.graphicalRepresentation.isChanged
+        then: not(checkbox.isChecked.previousState)
+        else: checkbox.isChecked.previousState
+    graphicalRepresentation: new group
+        name:"box"
+        pos: new coordinatePosition
             x:20
             y:20
-            g:new ternary
-                condition:checkbox.mouseOver
-                then:255
-                alt:0
+        width:20
+        height:20
+        mouseOver:app.mouse.pos.x > box.pos.x && app.mouse.pos.x < box.pos.x + box.width
+        isChanged:checkRectangle.mouseOver && app.mouse.clicked
+        childElements: new set
+            subset1:new rectangle
+                color:new ternary
+                    condition: checkbox.isChecked
+                    then: green
+                    else: red
 
 checked = new attribute
 mouseOver = new attribute

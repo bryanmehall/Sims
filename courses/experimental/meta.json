@@ -50,6 +50,13 @@
 					"length":10
 				},
                 {
+					"id": "inverse-no-prim",
+					"title":"Inverse Without Primitive",
+					"text":"test where inverse object does not have a primitive",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "get-new-object",
 					"title":"Get New Object",
 					"text":"test for getting atttribute of new object",

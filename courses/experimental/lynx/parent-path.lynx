@@ -4,7 +4,7 @@ window = new group
         x:25
         subset1: new text
             name:"txt"
-            x:txt.parentValue.x
+            x:txt.parentSet.x
             y:20
             innerText:"test"
 
