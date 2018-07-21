@@ -48,7 +48,7 @@ const binOp = (state, objectData, valueData) => ({
 })
 
 const get = (state, objectData) => {
-    const root = getValue(state, 'placeholder', "rootObject", objectData)
+    const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
     let query
     let getStack
@@ -60,7 +60,7 @@ const get = (state, objectData) => {
         //does this only work for one level deep?
         //change to rootObject.type == new?
 
-        const attribute = getValue(state, 'placeholder', 'attribute', objectData).id
+        const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
         const next = getJSValue(state, 'placeholder', attribute, root)
         const { args, variableDefs } = foldPrimitive(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }

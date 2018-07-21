@@ -97,7 +97,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
     //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
     if (searchName === query || query === "$this"){ //this is a shim for objects that always match. $ is to prevent accidental matches
         if (getStack.length === 0){
-            const jsResult = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
+            const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
                 //throw new Error('recursive')
@@ -119,7 +119,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
             if (isInverseAttr){
                 //return args to show that this is not a resolved attribute
-                const inverseObject = getValue(state, 'placeholder', attr, currentObject)
+                const { value: inverseObject } = getValue(state, 'placeholder', attr, currentObject)
                 console.log(`${currentName}.${attr} is an inverse. returning: ${formatGetLog('this', newGetStack)}`)
                 //commenting the below part breaks parent get path
                 return {
@@ -141,8 +141,8 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             const hasInverses = Object.keys(inverseAttributes).length !== 0
             const inverses = hasInverses ? inverseAttributes : 'placeholder'
             //get the next value with inverses from cross edge attached
-            const nextValue = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
-            const nextJSValue = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+            const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
+            const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
             const nextName = getName(state, nextValue)
             if (nextJSValue.type === 'undef'){ //next value does not have primitive
                 const newSearchArgs = { argKey, query, getStack: newGetStack }
@@ -303,7 +303,7 @@ let objectTable = {}
 
 export const compile = (state) => {
     const appData = getObject(state, 'app')
-    const display = getValue(state, 'app', 'jsPrimitive', appData)
+    const { value: display } = getValue(state, 'app', 'jsPrimitive', appData)
     const appString = jsCompilers.app(display)
     const renderMonad = new Function('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
     return { renderMonad, functionTable, ast: display, objectTable }
@@ -346,13 +346,14 @@ const resolveDBSearches = (state, combinedArgs) => { //move db searches at app t
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objData) => {
 	//const objectData = objData === undefined ? getObject(state, name) : objData
-	const valueData = getValue(state, 'placeholder', prop, objData)
+	const { value: valueData } = getValue(state, 'placeholder', prop, objData)
     //if (prop === 'subset2'){console.log('gettingJS', name, prop, objData, valueData)}
 	//const objectData = getObject(state, value) //replace eval: modify here
 	if (valueData.type === 'undef'){
 		return undefined
 	} else {
-		return getValue(state, 'placeholder' , 'jsPrimitive', valueData) //get Value of jsPrimitive works
+		const { value: primitive } = getValue(state, 'placeholder' , 'jsPrimitive', valueData) //get Value of jsPrimitive works
+        return primitive
 	}
 }
 
@@ -360,7 +361,7 @@ export const getHash = (state, objectData) => { //this should check that all chi
 	const hashData = Object.assign({}, objectData.props, { parentValue: "parent", hash: "hash" })
     const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))//hash(hashData)
     objectTable[digest] = objectData
-	return digest
+	return { state, hash: digest }
 }
 
 const objectFromHash = (hash) => (objectTable[hash])
@@ -368,7 +369,7 @@ const objectFromHash = (hash) => (objectTable[hash])
 const isHash = (str) => (str.includes("$hash"))
 
 export const getId = (state, name, prop, valueDef) => {
-	const objectData = valueDef === undefined ? getValue(state, 'placeholder', prop, getObject(state, name)) : valueDef
+	const objectData = valueDef === undefined ? getValue(state, 'placeholder', prop, getObject(state, name)).value : valueDef
 	if (objectData.props === undefined) {
 		return 'undef'
 	} else if (!objectData.props.hasOwnProperty('id')){
@@ -412,18 +413,21 @@ const returnWithContext = (state, name, attr, attrData, valueData, objectData) =
     }
     const hasInverse = attrData.props.hasOwnProperty('inverseAttribute') //if prop has inverse
     const inverseAttr = attrData.props.inverseAttribute
-    const parentHash = getHash(state, objectData)
+    const { hash: parentHash, state: state1 } = getHash(state, objectData)
     const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
     const inverseAttrs = Object.assign({ parentValue: parentHash }, inverse)
     const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
     const objectInverses = Object.assign({}, valueData.inverses, inverseAttrs)
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash, inverses: objectInverses })
-    const hash = getHash(state, objectDataWithoutHash)
+    const { hash, state: state2 } = getHash(state1, objectDataWithoutHash)
     const newProps = Object.assign({}, newPropsWithoutHash, { hash })
 
 	const prevVal = null//addState(key, valueWithoutPrevious)
 	if (prevVal === null){
-		return Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
+		return {
+            state: state2,
+            value: Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
+        }
 	} else {
 		//if (valueData.props.id === "textRepresentation"){console.log('&&&&&&&&&abc', attr, objectData, valueData)}
 		return Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
@@ -448,7 +452,7 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 		if (!objectData.props.hasOwnProperty('instanceOf')) {
 			inheritedData = getObject(state, 'object')
 		} else {
-			inheritedData = getValue(state, 'placeholder', 'instanceOf', objectData) //parent is passed in?
+			inheritedData = getValue(state, 'placeholder', 'instanceOf', objectData).value //parent is passed in?
 		}
         def = inheritedData.props[prop]
 	}
@@ -472,14 +476,14 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 	} else if (def === undefined) {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
-		return objectLib.undef
+		return { state, value: objectLib.undef }
 	} else if (prop === 'jsPrimitive') { // primitive objects
         if (primitives.hasOwnProperty(valueData.type)){
-            return primitives[valueData.type](state, objectData, valueData)
+            return {state, value:primitives[valueData.type](state, objectData, valueData)}
         } else {
             if (def.hasOwnProperty('type')){
                 console.log(def)
-                return def
+                return { state, value: def }
             } else {
                 throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
             }
@@ -493,7 +497,7 @@ const checkObjectData = (state, objectData, prop) => {
     /*if (state !== getHash(state, objectData).state){
         throw new Error('checking hash modified state')
     }*/
-    if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData)){
+    if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData).hash){
         console.log(objectData, getHash(state, objectData), objectData.props.hash)
         throw new Error("hashes not equal")
     } else if (objectData === undefined){
@@ -610,8 +614,8 @@ export const objectLib = {
 export const getSetData = (state, objectData) => {
 	const type = objectData.type
 	if (type === 'set'){
-		const subset1 = getValue(state, 'placeholder', 'subset1', objectData)
-		const subset2 = getValue(state, 'placeholder', 'subset2', objectData)
+		const { value: subset1 } = getValue(state, 'placeholder', 'subset1', objectData)
+		const { value: subset2 } = getValue(state, 'placeholder', 'subset2', objectData)
 		const set1Array = getSetData(state, subset1)
 		const set2Array = getSetData(state, subset2)
 		if (set1Array.type === 'undef'){

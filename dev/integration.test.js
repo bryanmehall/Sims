@@ -60,14 +60,13 @@ const loadAndRunTest = (testName, done) => {
 const testNames = [
     'simple-get',
     'multiple-get',
-    //'get-end-chain',
-    //'non-local-root',
-    //'parent-path'
-
+    'get-end-chain',
+    'non-local-root',
+    'parent-path'
 ]
-const testString = testNames.map((name) => (
+const testString = testNames.map((name, index) => (
         `it('${name}', (done) => {`+
-        `loadAndRunTest('${name}', done)`+
+            `setTimeout(() => {loadAndRunTest('${name}', done)}, ${index}*2000)`+
         `})`
     )).join('\n')
 
