@@ -1,0 +1,16 @@
+window = new group
+    name:"group"
+    childElements: new set
+        subset1: new text
+            name:"txt"
+            x:txt.op1.x
+            y:20
+            op1:new dbSearch
+                jsPrimitive:{dbSearch}
+                query:"dbobject"
+            innerText:"test"
+
+dbSearch = new object
+
+dbobject = new object
+    x:20

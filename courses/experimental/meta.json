@@ -99,6 +99,26 @@
 					"length":10
 				}
 			]
-		}
+		},
+        {
+			"id":"dbsearch",
+			"title":"DbSearch",
+			"contentBlocks":[
+                {
+					"id": "simple-get",
+					"title":"Simple Get Test for db search",
+					"text":"test for directly getiitng a value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "parent-path",
+					"title":"Parent Path",
+					"text":"test for getting parent of a dbSearch",
+					"type":"anim",
+					"length":10
+				}
+            ]
+        }
 	]
 }

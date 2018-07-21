@@ -54,6 +54,7 @@ const search = (ast) => (ast.hash)
 
 const dbSearch = (ast) => {
     const children = buildChildren(ast)
+    console.log(ast)
     return `${ast.hash}()`
 }
 

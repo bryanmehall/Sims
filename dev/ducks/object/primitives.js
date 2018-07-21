@@ -113,13 +113,6 @@ const search = (state, objectData, valueData) => {
 const dbSearch = (state, objectData, valueData) => {
     const query = objectData.props.query.props.jsPrimitive.value //refactor
     const hash = objectData.props.hash
-    const searchResult = getObject(state, query)
-    const context = objectData.inverses //switch to context
-    const searchResultProps = Object.assign({}, searchResult.props, context)
-    const result = Object.assign({}, searchResult, {props: searchResultProps, inverses:context})
-
-
-
     return {
         type: 'dbSearch',
         query,

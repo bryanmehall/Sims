@@ -20,7 +20,6 @@ export const lynxParser = (lynxString) => {
             outString += ("}}".repeat(Math.abs(change))+"\n"+line)
         }
     })
-    console.log(outString)
     try {
         const out = parser.parse(outString+"}}")
 

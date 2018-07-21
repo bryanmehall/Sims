@@ -30,7 +30,6 @@ contains = new funct
                 op1:contains.op1
                 equalTo:true
 
-
 sq = new func
     name:"sq"
     op1:sq.parentObject.op1

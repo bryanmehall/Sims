@@ -138,6 +138,7 @@ const displayVarDefs = (ast , x, y) => {
 
 
 const displayArgs = (ast) => {
+    console.log(ast)
     const display = Object.keys(ast.args)
         .map((argKey) => (displayArg(ast.args[argKey])))
         .join(', ')
