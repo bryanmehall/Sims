@@ -1,0 +1,26 @@
+//this is an example of getting the previous state of a point
+//add a stateUpdatesIf attribute to each object. This would be built ino the mouse move but for something like checkboxes it would be if clicked and mouseover
+app = new app
+    inputs: new object
+        mouse: new object
+            pos: new coordinatePosition
+                x: {io.mouseX}
+                y: {io.mouseY}
+    graphicalRepresentation: new window
+        childElements: new set
+            subset1: new line
+                p1: app.inputs.mouse.pos
+                p2: app.inputs.mouse.pos.previousValue
+                
+app
+    varDefs: 
+    args:
+    graphicalRep: window
+        varDefs:
+        args:
+        childElements: line
+            varDefs:
+            args:
+            x1:
+        
+                    

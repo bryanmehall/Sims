@@ -6,7 +6,7 @@ window = new group
             name:"txt"
             x:txt.parentSet.x
             y:20
-            innerText:"test"
+            innerText:"test"//implied: parentSet:
 
 subset1 = new attribute
     inverseAttribute:parentSet

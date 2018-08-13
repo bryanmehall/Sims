@@ -8,11 +8,12 @@ const getAST = (testName, callback) =>{
 }
 const runTest = (testName, objects, done) => {
     const state = {sim:{object:objects}}
+    console.log('compileStart', testName)
     const {renderMonad, functionTable} = compile(state)
+    console.log('compileEnd', testName)
     let pass = false
     Object.entries(functionTable).forEach((func) => {
         const st = func.toString()
-        console.log("#####", st)
         if (st.includes('20')&&st.includes('test') && !st.includes('undefined')){
             pass = true
         }
@@ -61,18 +62,19 @@ const testNames = [
     'simple-get',
     'multiple-get',
     'get-end-chain',
-    'non-local-root',
-    'parent-path'
+    'non-local-root'
 ]
 const testString = testNames.map((name, index) => (
+    `describe('${name}', () => {`+
         `it('${name}', (done) => {`+
-            `setTimeout(() => {loadAndRunTest('${name}', done)}, ${index}*2000)`+
-        `})`
+            `loadAndRunTest('${name}', done)`+
+        `})`+
+    `})`
     )).join('\n')
 
 
 
-describe('simple-get', () => {
-    eval(testString)
+
+eval(testString)
     //terrible hack because jest doesn't have programatic test generation
-})
+

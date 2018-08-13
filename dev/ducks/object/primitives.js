@@ -220,6 +220,7 @@ const app = (state, objectData) => {
 }
 
 const evaluate = () => ({
+    //this is a lazy node wherewhen it is called, every non-ternary operator below it evaluates
 	type: 'evaluate'
 })
 

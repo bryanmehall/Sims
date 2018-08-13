@@ -2,7 +2,7 @@ import { buildFunction } from './selectors'
 
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
-        .map((childAst) => (buildFunction(childAst)))
+        .map((childAst) => (buildFunction(childAst).string))
     return (delimiter === undefined) ? childList : childList.join(delimiter)
 }
 
@@ -10,7 +10,7 @@ const varDefsToString = (varDefs) => (
     varDefs.reverse()
         .map((varDef) => {
             const type = varDef.ast.type
-            let string =  buildFunction(varDef.ast)//jsCompilers[type](varDef.ast)
+            let string =  buildFunction(varDef.ast).string//jsCompilers[type](varDef.ast)
             if (string.hasOwnProperty('returnStatement')){
                 string = string.returnStatement
             }
@@ -22,7 +22,7 @@ const varDefsToString = (varDefs) => (
 const input = (ast) => ('inputs.'+ast.inputName)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
-const string = (ast) => (JSON.stringify(ast.value))
+const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!security risk!!!!!!!!!!!!!
 
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')

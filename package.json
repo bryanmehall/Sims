@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand",
     "start": "babel-node server-es6.js",
     "build:server": "NODE_ENV='production' babel server-es6.js --out-file server.js",
     "build:client": "NODE_ENV='production' webpack -p --config webpack.prod.config.js --progress",
