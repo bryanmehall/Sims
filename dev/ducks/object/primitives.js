@@ -1,4 +1,5 @@
-import { getValue, getJSValue, foldPrimitive, getName, getObject, getHash } from './selectors'
+import { foldPrimitive } from './selectors'
+import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
 
 const input = (state, objectData) => {
@@ -110,7 +111,7 @@ const search = (state, objectData, valueData) => {
     }
 } //replace this with a call to database?(closer to concept of new)
 
-const dbSearch = (state, objectData, valueData) => {
+const dbSearch = (state, objectData) => {
     const query = objectData.props.query.props.jsPrimitive.value //refactor
     const hash = objectData.props.hash
     return {
@@ -125,7 +126,7 @@ const dbSearch = (state, objectData, valueData) => {
 }
 
 const func = (state, objectData) => {
-	console.log('#######################here')
+	throw 'function primitive'
     const paramNames = ["result"]
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)

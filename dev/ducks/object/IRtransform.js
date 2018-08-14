@@ -1,8 +1,7 @@
-import { combineArgs, getValue, getName, convertToSearchArgs } from './selectors'
+import { combineArgs, getName, convertToSearchArgs } from './selectors'
+import { getValue } from './objectUtils'
 
-const hasProperty = (objectData, propName) => (
-    objectData.props.hasOwnProperty(propName)
-)
+
 const isNotPrimitive = (objectData) => (
     !hasProperty(objectData, 'jsPrimitive')
 )

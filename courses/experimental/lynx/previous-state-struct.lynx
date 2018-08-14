@@ -1,5 +1,5 @@
 //this is an example of getting the previous state of a point
-//add a stateUpdatesIf attribute to each object. This would be built ino the mouse move but for something like checkboxes it would be if clicked and mouseover
+//add a stateUpdatesIf attribute to each object. This would be built ino the mouse move but for something like checkboxes it would be if clicked and mouseover this would essentially build a dependency graph of state updates. is this linked to ternarys somehow?
 app = new app
     inputs: new object
         mouse: new object
@@ -11,7 +11,7 @@ app = new app
             subset1: new line
                 p1: app.inputs.mouse.pos
                 p2: app.inputs.mouse.pos.previousValue
-                
+             
 app
     varDefs: 
     args:

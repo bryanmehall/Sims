@@ -44,3 +44,23 @@ export const logFunctionTable = (functionTable) => {
 export const isUndefined = (objectData) => (
     objectData.type === 'undef'
 )
+
+export const deleteKeys = (object, keys) => { //careful, this is a shallow copy... does this matter if just deleting keys?
+	const objCopy = Object.assign({}, object)
+	keys.forEach((key) => {
+		delete objCopy[key]
+	})
+	return objCopy
+}
+/*
+let timer = performance.now()|| 0
+let counter = 0
+export const limiter = (timeLimit, countLimit) => {
+    const dt = performance.now()||0-timer
+    counter+=1
+    if (counter>countLimit){
+        throw 'count'
+    } else if (dt>timeLimit){
+        throw 'timer'
+    }
+}*/
