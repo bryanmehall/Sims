@@ -60,18 +60,10 @@ const get = (state, objectData) => {
     } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
-
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
         const next = getJSValue(state, 'placeholder', attribute, root)
         const { args, variableDefs } = foldPrimitive(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }
-
-        /*const resultVariableDef = {
-            key: next.hash,
-            ast: next,
-            string: "",
-            comment: ""
-        }*/
         return {
             hash: objectData.props.hash,
             //value: next.hash,
@@ -88,7 +80,7 @@ const get = (state, objectData) => {
         getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
     const hash = objectData.props.hash
-    const args = { [hash]: { query, getStack: [...getStack, objectData] } }
+    const args = { [hash]: { query, type: 'localSearch', getStack: [...getStack, objectData] } }
     return {
         hash,
         variableDefs: [],
@@ -99,7 +91,7 @@ const get = (state, objectData) => {
     }
 }
 
-const search = (state, objectData, valueData) => {
+const search = (state, objectData, valueData) => { //search is get root (localSearch) not dbSearch --rename to local and global
     const query = valueData.query
     const hash = objectData.props.hash
     return {
@@ -107,7 +99,7 @@ const search = (state, objectData, valueData) => {
         type: "search",
         variableDefs: [],
         children: {},
-        args: { search: { query, getStack: [] } }
+        args: { search: { query, type: 'localGet', getStack: [] } }
     }
 } //replace this with a call to database?(closer to concept of new)
 
@@ -120,8 +112,16 @@ const dbSearch = (state, objectData) => {
         hash,
         variableDefs: [],
         inline: true,
-        children: {}, //{ result: resultPrimitive },
-        args: {} //resultPrimitive.args
+        children: {},
+        args: {
+            [hash]: {
+                hash,
+                query,
+                type: 'globalGet',
+                getStack: [],
+                searchContext: objectData.inverses
+            }
+        }
     }
 }
 
@@ -227,6 +227,7 @@ const evaluate = () => ({
 
 const set = (state, objectData) => {
     const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
+    return [set1]
     const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
     return [].concat(set1, set2)
 }

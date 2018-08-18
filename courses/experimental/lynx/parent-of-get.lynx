@@ -1,0 +1,14 @@
+window = new group
+    name:"window"
+    op1: new object
+        name:"test"
+        textRepresentation:new text //parentObject: test, parentValue:test, parentSet:set
+            innerText:window.name
+            x:20
+            y:20
+    childElements: new set
+        subset1: window.op1.textRepresentation
+
+subset1 = new attribute
+    inverseAttribute:parentSet
+parentSet = new attribute

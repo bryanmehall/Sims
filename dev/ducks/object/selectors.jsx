@@ -1,7 +1,7 @@
 /* eslint pure/pure: 2 */
 import { jsCompilers } from './jsCompiler'
-import { formatGetLog, formatDBSearchLog, deleteKeys } from './utils'
-import { getValue, getJSValue, getName, getObject } from './objectUtils'
+import { formatGetLog, formatDBSearchLog, deleteKeys, checkASTs } from './utils'
+import { getValue, getJSValue, getName, getObject, getHash } from './objectUtils'
 
 /*
 refactor todo:
@@ -16,12 +16,15 @@ const combineArgs = (args) => {
 }
 
 const astToFunctionTable = (ast) => {
+
     const children = ast.children
     const childASTs = Object.values(children)
+    checkASTs(childASTs, ast)
     const childTables = childASTs.map(astToFunctionTable)
 
     const varDefs = ast.variableDefs || []
     const varDefASTs = varDefs.map((varDef) => (varDef.ast))
+    checkASTs(varDefASTs, ast)
     const varDefTables = varDefASTs.map(astToFunctionTable)
 
     const newFunctionTable = ast.type === 'app' ? {} : buildFunction(ast).newFunctionTable
@@ -71,7 +74,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
     const { argKey, query, getStack, type } = searchArgData
     //limiter(2000000, 100)
-    //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
+    console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
     if (searchName === query || query === "$this"){ //this is a shim for objects that always match. $ is to prevent accidental matches
         if (getStack.length === 0){
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
@@ -102,8 +105,10 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                     args: {
                         [argKey]: {
                             //hash: inverseHash,
+                            type: "localSearch",
                             query: '$this',
-                            getStack: newGetStack }
+                            getStack: newGetStack
+                        }
                     },
                     varDefs: []
                 }
@@ -126,8 +131,8 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                 //handle case where nextName === query returned...need to move arg to varDef
                 const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args, currentName)
                 return childArgs
-            } else if (nextJSValue.type === 'dbSearch') {
-                console.log('bdSearch')
+            } else if (nextJSValue.type === 'dbSearch') {//combine this with local get handler below?
+                console.log('dbSearch')
                 const {query, root, ast} = getDBsearchAst(state, nextValue, newGetStack)
                 console.log(ast)
                 const { variableDefs, args } = foldPrimitive(state, [ast], root)
@@ -149,7 +154,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                     }]
                 }//this arg key needs to be removed and a new dbSearch argument needs to be added
             } else if (nextValue.type === 'get') {
-                const arg = Object.values(nextJSValue.args).filter((ag) => (ag.hasOwnProperty('query')))
+                const arg = Object.values(nextJSValue.args).filter((arg) => (arg.type === 'localSearch'))
                 if (arg.length > 1) { //this would mean that a child has more than one argument
                     //console.log('args for ',searchName, arg)
                     throw 'arg length greater than one'
@@ -197,7 +202,7 @@ to searchArgs in the form:[{argKey, query, getStack}]
 */
 export const convertToSearchArgs = (args) => {
     return Object.entries(args)
-        .filter((arg) => (arg[1].hasOwnProperty('query')))
+        .filter((arg) => (arg[1].type === 'localSearch'))
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
             query: searchArg[1].query,
@@ -230,9 +235,8 @@ const argsToVarDefs = (state, currentObject, functionData, combinedArgs, objName
     //if it does, the search is resolved, if not, pass it up the tree
     const objectName = objName || getName(state, currentObject)
     let dbVariableDefs = []
-    if (objectName === 'app'){
+    if (objectName === 'app'){ //move this to special function in compiler
         dbVariableDefs = resolveDBSearches(state, combinedArgs)
-        console.log(dbVariableDefs)
         console.log(`resolving db searches for`, formatDBSearchLog(dbVariableDefs))
         dbVariableDefs.forEach((varDef) => {
             delete combinedArgs[varDef.key]
@@ -266,6 +270,7 @@ export const foldPrimitive = (state, childASTs, currentObject) => { //list of ch
 export const compile = (state) => {
     const appData = getObject(state, 'app')
     const { value: display } = getValue(state, 'app', 'jsPrimitive', appData)
+    if (display === undefined){throw 'display is undefined'}
     const functionTable = astToFunctionTable(display)
     const appString = jsCompilers.app(display)
     const renderMonad = new Function('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
@@ -274,9 +279,13 @@ export const compile = (state) => {
 
 const resolveDBSearches = (state, combinedArgs) => { //move db searches at app to variable defs
     return Object.values(combinedArgs)
-        .filter((arg) => (arg.type === 'dbSearch'))
+        .filter((arg) => {
+            return arg.type === 'dbSearch' || arg.type === 'globalGet'}//combine these conditions
+        )
         .map((arg) => {
             let  root = getObject(state, arg.query)
+            root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
+            root.props.hash = getHash(state, root).hash //formalize what hash means so it is consistent
             const rootProps = Object.assign({}, root.props, arg.searchContext)
             root = Object.assign({}, root, {
                 props: rootProps,
@@ -284,11 +293,18 @@ const resolveDBSearches = (state, combinedArgs) => { //move db searches at app t
             })
             const getStack = arg.getStack
             if (getStack.length > 1) { throw 'get stack length greater than one' }
-            const attr = getStack[0].props.attribute
-            const ast = getJSValue(state, 'placeholder', attr, root)
+            let ast
+            if (getStack.length === 0){ //generalize for getStack of length n
+                ast = getValue(state, 'placeholder', 'jsPrimitive', root).value
+                console.log('root', root, ast)
+            } else {
+                const attr = getStack[0].props.attribute
+                ast = getJSValue(state, 'placeholder', attr, root)
+            }
             ast.inline = false
             ast.isFunction = true
-            const str = buildFunction(ast).string //get rid of side effects here
+            const str = buildFunction(ast).string
+            console.log(arg)
             return {
                 key: arg.hash,
                 ast,

@@ -109,7 +109,7 @@ class Trace extends React.Component {
                     x={x}
                     y={y}
                     >
-                    {nodeLabel+(active ? displayArgs(ast) : "")}
+                    {nodeLabel}{(active ? displayArgs(ast) : "")}
                 </text>
                 {getStack}
                 {traceChildren}
@@ -138,18 +138,17 @@ const displayVarDefs = (ast , x, y) => {
 
 
 const displayArgs = (ast) => {
-    console.log(ast)
     const display = Object.keys(ast.args)
-        .map((argKey) => (displayArg(ast.args[argKey])))
-        .join(', ')
-    return '('+display+')'
+        .map((argKey) => (displayArg(ast.args[argKey], argKey)))
+    return <tspan>{'('}{display}{')'}</tspan>
 }
-const displayArg = (arg) => {
+const displayArg = (arg, argKey) => {
     if (arg === true){
         return "prim"
     } else {
         const getAttrs = arg.getStack.map((get) => (get.props.attribute))
-        return arg.query+'.'+getAttrs.join('.')
+        const color = (arg.type === "localSearch") ? "green" : "black"
+        return <tspan key={argKey} style={{ fill: color }}>{arg.query+'.'+getAttrs.join('.')}</tspan>
     }
 }
 

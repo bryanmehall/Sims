@@ -1,6 +1,7 @@
 import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
+import { deleteKeys } from './utils'
 let objectTable = {}
 
 const hasAttribute = (objectData, prop) => (
@@ -39,7 +40,10 @@ const objectFromHash = (hash) => (objectTable[hash])
 const isHash = (str) => (str.includes("$hash"))
 
 export const getHash = (state, objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
+    const inverseAttrs = objectData.inverses || {}
+    const inverseKeys = Object.keys(inverseAttrs)
 	const hashData = Object.assign({}, objectData.props, { parentValue: "parent", hash: "hash" })
+    //if (objectData.type === 'text') { console.log(JSON.stringify(hashData, null, 2))}
     const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))//hash(hashData)
     objectTable[digest] = objectData
 	return { state, hash: digest }
@@ -53,10 +57,10 @@ export const getObject = function (state, id) {
 		objectData.props.id = id
 		return objectData
 	} catch (e){
-
 		throw new Error("could not find object named "+JSON.stringify(id))
 	}
 }
+
 export const getValue = (state, inverseProps, prop, objectData) => {
     checkObjectData(state, objectData, prop)
 	let def = objectData.props[prop]
@@ -103,7 +107,6 @@ export const getValue = (state, inverseProps, prop, objectData) => {
             return { state, value: primitives[valueData.type](state, objectData, valueData) }
         } else {
             if (def.hasOwnProperty('type')){
-                //console.log(def)
                 return { state, value: def }
             } else {
                 throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
@@ -119,7 +122,8 @@ const checkObjectData = (state, objectData, prop) => {
         throw new Error('checking hash modified state')
     }*/
     if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData).hash){
-        console.log(objectData, getHash(state, objectData), objectData.props.hash)
+        console.log('objectData', objectData)
+        console.log(objectData, getHash(state, objectData).hash, objectData.props.hash)
         throw new Error("hashes not equal")
     } else if (objectData === undefined){
 		throw new Error('must have object def for '+prop)

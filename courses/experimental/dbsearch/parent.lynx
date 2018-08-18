@@ -8,7 +8,7 @@ window = new group
 
 dbtext = new text
     name:"txt"
-    x:20 //txt.parentSet.x
+    x:txt.parentSet.x
     y:20
     innerText:"test"
 

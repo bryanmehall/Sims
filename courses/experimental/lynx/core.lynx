@@ -9,7 +9,7 @@ accordianRepresentation = new group
         y:100
     r: new array
         firstElement:new text
-            innerText:"abc"
+            innerText:"test"
             x:20
             y:20
             nextElement:new text
@@ -18,7 +18,7 @@ accordianRepresentation = new group
         subset1: new text
             x:accordianRep.pos.x
             y:accordianRep.pos.y
-            innerText:"abc"
+            innerText:"test"
 
 
 attribute = new object

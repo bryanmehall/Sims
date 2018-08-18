@@ -64,6 +64,13 @@
 					"length":10
 				},
                 {
+					"id": "parent-of-get",
+					"title":"Parent Of get",
+					"text":"test for passing context of get to resulting value",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "test-features",
 					"title":"Test Features",
 					"text":"Test Features",
@@ -112,9 +119,16 @@
 					"length":10
 				},
                 {
-					"id": "parent-path",
-					"title":"Parent Path",
-					"text":"test for getting parent of a dbSearch",
+					"id": "direct-child",
+					"title":"Direct Child",
+					"text":"test for when dbSearch is direct child of primitive",
+					"type":"anim",
+					"length":10
+                },
+                {
+					"id": "parent",
+					"title":"Parent",
+					"text":"test for when dbSearch needs to get context",
 					"type":"anim",
 					"length":10
 				}

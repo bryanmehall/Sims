@@ -5,7 +5,7 @@ window = new group
             name:"txt"
             x:20
             y:20
-            innerText:new get //1.
+            innerText:new get
                 jsPrimitive:{get}
                 attribute:equalTo
                 rootObject: new object

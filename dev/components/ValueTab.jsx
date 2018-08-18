@@ -106,9 +106,9 @@ const mapStateToProps = (state, props) => {
 	const stringDef = props.objectData.props[props.attrId]
 	const value = props.attrId === 'id' ? props.objectData.props.id :
 		getValue(state, 'placeholder', props.attrId, props.objectData)
-	const definition = typeof stringDef === 'string' ? objectLib.constructSearch(stringDef) : stringDef
+	//const definition = typeof stringDef === 'string' ? objectLib.constructSearch(stringDef) : stringDef
 	return {
-		definition,
+		//definition,
 		value
 	}
 }
