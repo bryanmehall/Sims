@@ -3,7 +3,7 @@ import { compile } from './ducks/object/selectors'
 
 var fs = require('fs');
 
-const runTest = (testName, objects, done) => {
+const runTest = (objects, done) => {
     const state = {sim:{object:objects}}
     const {renderMonad, functionTable} = compile(state)
     let contains20 = false
@@ -25,14 +25,12 @@ const runTest = (testName, objects, done) => {
     if (pass){
         done()
     } else {
-        done.fail('conditions not met.')
+        done.fail('conditions not met')
     }
 }
 const loadAndRunTest = (testName, done) => {
     const corePath = __dirname + '/../courses/experimental/lynx/core.lynx'
     const path = `${__dirname}/../courses/experimental/lynx/${testName}.lynx`
-    let filesRead = 0
-    let sources = {}
     fs.readFile(corePath, 'utf8', (err, coreData) => {
         if (err) {
             done.fail('could not read core')
@@ -44,25 +42,25 @@ const loadAndRunTest = (testName, done) => {
                     const core = lynxParser(coreData)
                     const file = lynxParser(fileData)
                     const objects = Object.assign({}, core, file)
-                    runTest(testName, objects, done)
+                    runTest(objects, done)
                 }
             })
         }
     })
-
 }
 
-const testNames = [
+const tests = [
     'simple-get',
     'multiple-get',
     'get-end-chain',
     'get-middle-chain',
     'non-local-root',
     'inverse-no-prim',
-    'get-new-object'
+    'get-new-object',
+    //'parent-of-get'
 ]
 
-const testString = testNames.map((name, index) => (
+const testString = tests.map((name) => (
     `describe('${name}', () => {`+
         `it('${name}', (done) => {`+
             `loadAndRunTest('${name}', done)`+

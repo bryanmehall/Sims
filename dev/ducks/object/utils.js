@@ -1,33 +1,27 @@
-export const log = (...args) => {
-    if (window.debug){
-        console.log(...args)
-    }
-}
 
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (get.props.attribute)).join('.')
 )
 
-export const formatDBSearchLog = (dbSearches) => {
-    return dbSearches.map((dbSearch) => {
+export const formatDBSearchLog = (dbSearches) => (
+    dbSearches.map((dbSearch) => {
         const hash = dbSearch.ast.hash
         const args = dbSearch.ast.args
         const dbArgList = Object.keys(args)
             .filter((arg) => (arg.type === 'globalGet' || arg.type === 'dbSearch'))
-        if (dbArgList.length === 0 ){
+        if (dbArgList.length === 0){
             return ''
         }
         const dbArg = args[hash]
-        console.log(dbSearch)
         return formatGetLog(dbArg.query, dbArg.getStack)
     }).join(', ')
-}
+)
 
 export const getFunctionDiff = (function1, function2) => {
     const str1 = function1.toString()
     const str2 = function2.toString()
     if (str1 !== str2){
-        console.log(str1, str2)
+        throw str1+str2
     }
 }
 export const logFunctionTableDiff = (ft1, ft2) => {
@@ -38,15 +32,15 @@ export const logFunctionTableDiff = (ft1, ft2) => {
     })
 }
 export const logFunctionTable = (functionTable) => {
-    Object.entries(functionTable).forEach((entry)=>{
+    Object.entries(functionTable).forEach((entry) => {
         const key = entry[0]
         const func = entry[1].toString()
-        console.log(key, func)
+        return { key, func }
     })
 }
 export const checkASTs = (asts, objectTable) => {
-    asts.forEach(((ast)=>{
-        if (ast === undefined){throw JSON.stringify(objectTable)}
+    asts.forEach(((ast) => {
+        if (ast === undefined){ throw JSON.stringify(objectTable) }
     }))
 }
 export const isUndefined = (objectData) => (
@@ -54,12 +48,25 @@ export const isUndefined = (objectData) => (
 )
 
 export const deleteKeys = (object, keys) => { //careful, this is a shallow copy... does this matter if just deleting keys?
-	const objCopy = Object.assign({}, object)
+	let objCopy = Object.assign({}, object)
 	keys.forEach((key) => {
 		delete objCopy[key]
 	})
 	return objCopy
 }
+
+export const compileToJS = (args, string) => {
+    try {
+        return new Function(args, string)
+    } catch (e) {
+        if (e instanceof SyntaxError) {
+            throw new Error('Lynx Error: invalid syntax in compiled code '+e.message)
+        } else {
+            throw e
+        }
+    }
+}
+
 /*
 let timer = performance.now()|| 0
 let counter = 0

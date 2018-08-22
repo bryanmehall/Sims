@@ -1,4 +1,4 @@
-import { buildFunction } from './selectors'
+import { buildFunction } from './IRutils'
 
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
@@ -9,8 +9,7 @@ const buildChildren = (ast, delimiter) => {
 const varDefsToString = (varDefs) => (
     varDefs.reverse()
         .map((varDef) => {
-            const type = varDef.ast.type
-            let string =  buildFunction(varDef.ast).string//jsCompilers[type](varDef.ast)
+            let string =  buildFunction(varDef.ast).string
             if (string.hasOwnProperty('returnStatement')){
                 string = string.returnStatement
             }
@@ -26,17 +25,20 @@ const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!security ris
 
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
-    return `return function(prim, inputs) { //app\n${varDefsToString(ast.variableDefs)} ${programText}(prim)\n}`
+    const varDefs = varDefsToString(ast.variableDefs)
+    return `return function(prim, inputs) { //app\n${varDefs} ${programText}(prim)\n}`
 }
 
 const group = (ast) => {
     const programText = buildChildren(ast, '\n')
-    return ` function(prim) { //group\n${varDefsToString(ast.variableDefs)} ${programText}(prim)\n}`
+    const varDefs = varDefsToString(ast.variableDefs)
+    return ` function(prim) { //group\n${varDefs} ${programText}(prim)\n}`
 }
 
 const text = (ast) => {
     const programText = buildChildren(ast, ',\n')
-    return ` function(prim) { //text\n${varDefsToString(ast.variableDefs)} prim.text(${programText}, 0, 0, 0 );\n}`
+    const varDefs = varDefsToString(ast.variableDefs)
+    return ` function(prim) { //text\n${varDefs} prim.text(${programText}, 0, 0, 0 );\n}`
 }
 
 const get = (ast) => {
@@ -52,11 +54,11 @@ const get = (ast) => {
 }
 const search = (ast) => (ast.hash)
 
-const dbSearch = (ast) => {
-    const children = buildChildren(ast)
-    console.log(ast)
-    return `${ast.hash}()`
-}
+const dbSearch = (ast) => (
+    //const children = buildChildren(ast)
+    //console.log(ast)
+     `${ast.hash}()`
+)
 
 const apply = (ast) => {
     const children = buildChildren(ast)

@@ -6,7 +6,6 @@ const isNotPrimitive = (objectData) => (
     !hasProperty(objectData, 'jsPrimitive')
 )
 
-
 const isInverse = (objectData, propName) => (
     objectData.hasOwnProperty('inverses') ? objectData.inverses.hasOwnProperty(propName) : false
 )

@@ -1,6 +1,6 @@
 /* eslint pure/pure: 2 */
-import { jsCompilers } from './jsCompiler'
-import { formatGetLog, formatDBSearchLog, deleteKeys, checkASTs } from './utils'
+import { formatGetLog, formatDBSearchLog, deleteKeys, compileToJS } from './utils'
+import { astToFunctionTable, buildFunction } from './IRutils'
 import { getValue, getJSValue, getName, getObject, getHash } from './objectUtils'
 
 /*
@@ -15,72 +15,17 @@ const combineArgs = (args) => {
     return reduced
 }
 
-const astToFunctionTable = (ast) => {
-
-    const children = ast.children
-    const childASTs = Object.values(children)
-    checkASTs(childASTs, ast)
-    const childTables = childASTs.map(astToFunctionTable)
-
-    const varDefs = ast.variableDefs || []
-    const varDefASTs = varDefs.map((varDef) => (varDef.ast))
-    checkASTs(varDefASTs, ast)
-    const varDefTables = varDefASTs.map(astToFunctionTable)
-
-    const newFunctionTable = ast.type === 'app' ? {} : buildFunction(ast).newFunctionTable
-    const functionTable = Object.assign(newFunctionTable, ...varDefTables, ...childTables)
-    return functionTable
-}
-
-const checkAST = (ast) => {
-    if (ast === undefined) {
-        throw new Error("ast is undefined")
-    } else if (!jsCompilers.hasOwnProperty(ast.type)){
-        throw new Error(`LynxError: compiler does not have type ${ast.type}`)
-    }
-}
-
-//build string of function from ast node and add that function to the function table
-export const buildFunction = (ast) => {
-    checkAST(ast)
-    const string = jsCompilers[ast.type](ast)
-    if (ast.inline){
-        return { string , newFunctionTable: {} }
-    } else {
-        const argsList = Object.keys(ast.args).concat('functionTable')
-        try {
-            const func = string.hasOwnProperty('varDefs') ?
-                new Function(argsList, `${string.varDefs} return ${string.returnStatement}`) :
-                new Function(argsList, '\t return '+string)
-            const newFunctionTable = { [ast.hash]: func }
-            if (ast.isFunction){
-                return {
-                    string: `functionTable.${ast.hash}`,
-                    newFunctionTable
-                }
-            }
-            return {
-                string: `\tfunctionTable.${ast.hash}(${argsList.join(",")})`,
-                newFunctionTable
-            }
-        } catch (e) {
-            console.log('compiled function syntax error', ast, string)
-            throw new Error('Lynx Compiler Error: function has invalid syntax')
-        }
-    }
-}
-
 function reduceGetStack(state, currentObject, searchArgData, searchName){
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
-    const { argKey, query, getStack, type } = searchArgData
+    const { argKey, query, getStack, type, context } = searchArgData
     //limiter(2000000, 100)
-    console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
+    //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
     if (searchName === query || query === "$this"){ //this is a shim for objects that always match. $ is to prevent accidental matches
         if (getStack.length === 0){
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
-                //throw new Error('recursive')
+                throw new Error('recursive')
                 return { args: {  }, varDefs: [] }
             } else {
                 const variableDefinition = {
@@ -125,7 +70,7 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
             const nextName = getName(state, nextValue)
             if (nextJSValue.type === 'undef'){ //next value does not have primitive
-                const newSearchArgs = { argKey, query, getStack: newGetStack }
+                const newSearchArgs = { argKey, type, context, query, getStack: newGetStack }
                 console.log(`${nextName} is not a primitive`, currentObject, nextValue)
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs, searchName)
                 //handle case where nextName === query returned...need to move arg to varDef
@@ -163,11 +108,11 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                 const childQuery = arg.length === 0 ? searchName : arg[0].query
                 const childGetStack = arg.length === 0 ? [] : arg[0].getStack
                 const combinedGetStack = childGetStack.concat(newGetStack)
-                const newSearchArgs = { argKey, query: childQuery, getStack: combinedGetStack }
+                const newSearchArgs = { argKey, type, context, query: childQuery, getStack: combinedGetStack }
                 console.log('getting', formatGetLog(childQuery, combinedGetStack))
                 return reduceGetStack(state, currentObject, newSearchArgs, currentName)
             } else {
-                const newSearchArgs = { argKey, query, getStack: newGetStack }
+                const newSearchArgs = { argKey, query, type, context, getStack: newGetStack }
                 return reduceGetStack(state, nextValue, newSearchArgs, searchName)
             }
         }
@@ -206,7 +151,9 @@ export const convertToSearchArgs = (args) => {
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
             query: searchArg[1].query,
-            getStack: searchArg[1].getStack
+            getStack: searchArg[1].getStack,
+            context: searchArg[1].context,
+            type: searchArg[1].type
         }))
 }
 
@@ -270,10 +217,10 @@ export const foldPrimitive = (state, childASTs, currentObject) => { //list of ch
 export const compile = (state) => {
     const appData = getObject(state, 'app')
     const { value: display } = getValue(state, 'app', 'jsPrimitive', appData)
-    if (display === undefined){throw 'display is undefined'}
+    if (display === undefined){ throw 'display is undefined' }
     const functionTable = astToFunctionTable(display)
-    const appString = jsCompilers.app(display)
-    const renderMonad = new Function('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
+    const appString = buildFunction(display).string
+    const renderMonad = compileToJS('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
     return { renderMonad, functionTable, ast: display, objectTable: {} }
 }
 
@@ -284,7 +231,7 @@ const resolveDBSearches = (state, combinedArgs) => { //move db searches at app t
         )
         .map((arg) => {
             let  root = getObject(state, arg.query)
-            root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
+            //root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
             root.props.hash = getHash(state, root).hash //formalize what hash means so it is consistent
             const rootProps = Object.assign({}, root.props, arg.searchContext)
             root = Object.assign({}, root, {

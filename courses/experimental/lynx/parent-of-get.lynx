@@ -3,7 +3,7 @@ window = new group
     op1: new object
         name:"test"
         textRepresentation:new text //parentObject: test, parentValue:test, parentSet:set
-            innerText:window.name
+            innerText:test.name
             x:20
             y:20
     childElements: new set

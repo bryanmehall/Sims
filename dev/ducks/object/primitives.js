@@ -51,6 +51,7 @@ const binOp = (state, objectData, valueData) => ({
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
+    console.log('inverses', objectData.inverses)
     let query
     let getStack
     if (root.type === 'undef'){ //for implied root (only works for one level deep)
@@ -80,7 +81,14 @@ const get = (state, objectData) => {
         getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
     const hash = objectData.props.hash
-    const args = { [hash]: { query, type: 'localSearch', getStack: [...getStack, objectData] } }
+    const args = {
+        [hash]: {
+            query,
+            context: objectData.inverses,
+            type: 'localSearch',
+            getStack: [...getStack, objectData]
+        }
+    }
     return {
         hash,
         variableDefs: [],
@@ -125,7 +133,7 @@ const dbSearch = (state, objectData) => {
     }
 }
 
-const func = (state, objectData) => {
+/*const func = (state, objectData) => {
 	throw 'function primitive'
     const paramNames = ["result"]
     const parameters = paramNames.map((paramName) => (
@@ -135,7 +143,7 @@ const func = (state, objectData) => {
     //const foldedPrimitives = foldPrimitive(state, parameters, objectData)
     return parameters[0]
     //monad for requiring that function is in table or for placing function in table
-}
+}*/
 
 const apply = (state, objectData) => {
     const paramNames = ['op1','function', 'op2']//add support for binary op
@@ -143,7 +151,6 @@ const apply = (state, objectData) => {
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-
     const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
     const children = parameters[2] === undefined ?
         { op1: parameters[0], function: parameters[1] }
@@ -215,6 +222,7 @@ const app = (state, objectData) => {
         hash: 'apphash',//change this to actual hash...whiy isn't it there?
         children: { graphicalRep: parameters[0] },
         args,
+        inline: true,
         type: 'app',
         variableDefs,
     }
@@ -250,7 +258,7 @@ export const primitives = {
     get,
     search,
     dbSearch,
-    function: func,
+    //function: func,
     apply,
     ternary,
     text,
