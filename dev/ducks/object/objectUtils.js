@@ -39,14 +39,28 @@ const objectFromHash = (hash) => (objectTable[hash])
 
 const isHash = (str) => (str.includes("$hash"))
 
+//helper for converting each attribute to hash
+const objectValuesToHash = (hashData, entry) => {
+    const prop = entry[0]
+    const subTree = entry[1]
+    if (typeof subTree === 'string' || prop === 'jsPrimitive'){ //move this check to getHash eventually
+        return Object.assign({}, hashData, { [prop]: subTree })
+    } else {
+        return Object.assign({}, hashData, { [prop]: getHash('remove', subTree).hash })
+    }
+}
+
 export const getHash = (state, objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
+    //remove inverse attributes from data to be hashed
     const inverseAttrs = objectData.inverses || {}
     const inverseKeys = Object.keys(inverseAttrs)
-	const hashData = Object.assign({}, objectData.props, { parentValue: "parent", hash: "hash" })
-    //if (objectData.type === 'text') { console.log(JSON.stringify(hashData, null, 2))}
-    const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))//hash(hashData)
+    const expandedHashData = deleteKeys(objectData.props, ["hash", "parentValue", ...inverseKeys])
+    //convert values of props to hashes
+    const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
+    //if (objectData.type === 'group') { console.log(inverseKeys, JSON.stringify(hashData, null, 2))}
+    const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))
     objectTable[digest] = objectData
-	return { state, hash: digest }
+	return { state: 'remove', hash: digest }
 }
 
 export const getObject = function (state, id) {
@@ -57,6 +71,7 @@ export const getObject = function (state, id) {
 		objectData.props.id = id
 		return objectData
 	} catch (e){
+
 		throw new Error("could not find object named "+JSON.stringify(id))
 	}
 }
@@ -66,7 +81,9 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 	let def = objectData.props[prop]
     if (inverseProps !== 'placeholder'){
         const newProps = Object.assign({},def.props, inverseProps)
-        def = Object.assign(def, { props: newProps })
+        const defInverses = def.inverses || {}
+        const newInverses = Object.assign({}, defInverses, inverseProps)
+        def = Object.assign(def, { props: newProps, inverses: newInverses })
     } else if (typeof def === "string" && isHash(def)){
         def = objectFromHash(def)
     }
