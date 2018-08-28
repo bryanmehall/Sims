@@ -15,13 +15,15 @@ const combineArgs = (args) => {
     return reduced
 }
 
-function reduceGetStack(state, currentObject, searchArgData, searchName){
+function reduceGetStack(state, currentObject, searchArgData){ // get all args and varDefs of an argument
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
     const { argKey, query, getStack, type, context } = searchArgData
     //limiter(2000000, 100)
-    //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
-    if (searchName === query || query === "$this"){ //this is a shim for objects that always match. $ is to prevent accidental matches
+    const searchName = getName(state, currentObject)
+    console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
+    if (searchName === query || query === "$this"){ //"$this" is a for objects that always match. $ is to prevent accidental matches
         if (getStack.length === 0){
+            console.log('resloving', currentObject)
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
@@ -68,19 +70,19 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
             //get the next value with inverses from cross edge attached
             const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
             const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+            console.log('js', nextJSValue)
             const nextName = getName(state, nextValue)
             if (nextJSValue.type === 'undef'){ //next value does not have primitive
-                const newSearchArgs = { argKey, type, context, query, getStack: newGetStack }
-                console.log(`${nextName} is not a primitive`, currentObject, nextValue)
-                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs, searchName)
+                const newSearchArgs = { argKey, type, context, query:'$this', getStack: newGetStack }
+                console.log(`${nextName} is not a primitive`, nextValue, newGetStack)
+                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
+                console.log('####', nextValueFunctionData)
                 //handle case where nextName === query returned...need to move arg to varDef
-                const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args, currentName)
+                const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
                 return childArgs
-            } else if (nextJSValue.type === 'dbSearch') {//combine this with local get handler below?
-                console.log('dbSearch')
-                const {query, root, ast} = getDBsearchAst(state, nextValue, newGetStack)
-                console.log(ast)
-                const { variableDefs, args } = foldPrimitive(state, [ast], root)
+            } else if (nextJSValue.type === 'dbSearch') { //combine this with local get handler below?
+                const { query, root, ast } = getDBsearchAst(state, nextValue, newGetStack)
+                const { args } = getArgsAndVarDefs(state, [ast], root)
                 const dbSearchArg = { [nextValue.props.hash]: {
                         query,
                         hash: nextValue.props.hash,
@@ -88,10 +90,10 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                         getStack: newGetStack,
                         searchContext: nextValue.inverses //switch to context
                     } }
-                const combinedArgs = Object.assign(args, dbSearchArg)
+                //const combinedArgs = Object.assign(args, dbSearchArg)
                 console.log(`the args of the db Search are dbSearchArg: ${nextValue.props.hash}`, args)
                 return {
-                    args:args ,
+                    args: args ,
                     varDefs: [{
                         key: argKey,
                         ast: nextJSValue,
@@ -110,43 +112,29 @@ function reduceGetStack(state, currentObject, searchArgData, searchName){
                 const combinedGetStack = childGetStack.concat(newGetStack)
                 const newSearchArgs = { argKey, type, context, query: childQuery, getStack: combinedGetStack }
                 console.log('getting', formatGetLog(childQuery, combinedGetStack))
-                return reduceGetStack(state, currentObject, newSearchArgs, currentName)
+                return reduceGetStack(state, currentObject, newSearchArgs)
             } else {
-                const newSearchArgs = { argKey, query, type, context, getStack: newGetStack }
-                return reduceGetStack(state, nextValue, newSearchArgs, searchName)
+                const newSearchArgs = { argKey, query:'$this', type, context, getStack: newGetStack }
+                console.log('standard reduce', currentObject, newSearchArgs)
+                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
+                const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
+                return childArgs
             }
         }
     } else {
         if (searchName === 'app'){
-            if (searchArgData.type === 'dbSearch'){
-                return { args: {}, varDefs: [] }
-            }
             console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
         }
         return { args: {}, varDefs: [] }//this just doesn't move any args, it doesn't mean that there are not any
     }
 }
 
-const getDBsearchAst = (state, dbSearchObject, getStack) => {
-    const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
-    const rootWithoutInverses = getObject(state, query)
-    const rootProps = Object.assign({}, rootWithoutInverses.props, dbSearchObject.inverses)
-    const root = Object.assign({}, rootWithoutInverses, {
-        props: rootProps,
-        inverses: dbSearchObject.inverses
-    })
-    if (getStack.length > 1) { throw 'get stack length greater than one' }
-    const attr = getStack[0].props.attribute
-    const ast = getJSValue(state, 'placeholder', attr, root)
-    return {query, root, ast};
-}
-
 /*
 convert args in the form {argKey:{query:"query" getStack:[]}}
 to searchArgs in the form:[{argKey, query, getStack}]
 */
-export const convertToSearchArgs = (args) => {
-    return Object.entries(args)
+export const convertToSearchArgs = (args) => (
+    Object.entries(args)
         .filter((arg) => (arg[1].type === 'localSearch'))
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
@@ -155,7 +143,13 @@ export const convertToSearchArgs = (args) => {
             context: searchArg[1].context,
             type: searchArg[1].type
         }))
-}
+)
+
+const getIoArg = (args) => (
+    Object.entries(args)
+        .filter((entry) => (entry[0] === 'prim'))
+        .map(() => ({ prim: true }))
+)
 
 /*
 combine arg and varDef movements to create the final args and varDefs
@@ -173,44 +167,51 @@ const reduceFunctionData = (functionData, newFunctionData) => {
     return { args, varDefs }
 }
 
+const isResolved = (arg, name) => (
+    arg.query === name || arg.query === '$this' || arg.query === '$resolved'
+)
+const isNotResolved = (arg, name) => (
+    !isResolved(arg, name) //catches local search args that do not match and all other args
+)
 //convert object of arguments to object of unresolved args and list of variable defs
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to variableDefs
-const argsToVarDefs = (state, currentObject, functionData, combinedArgs, objName) => {
+const argsToVarDefs = (state, currentObject, functionData, combinedArgs) => {
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    const objectName = objName || getName(state, currentObject)
-    let dbVariableDefs = []
-    if (objectName === 'app'){ //move this to special function in compiler
-        dbVariableDefs = resolveDBSearches(state, combinedArgs)
-        console.log(`resolving db searches for`, formatDBSearchLog(dbVariableDefs))
-        dbVariableDefs.forEach((varDef) => {
-            delete combinedArgs[varDef.key]
-        })
-    }
-    const functionDataWithDBDefs = Object.assign({}, functionData, {
-        varDefs:functionData.varDefs.concat(dbVariableDefs)
-    })
-    //remove above and change functionDataWithDBDefs functionData
-    const resolvedFunctionData = convertToSearchArgs(combinedArgs)
-        .map((searchArgData) => {
-            console.log(`reducing get stack: ${formatGetLog(searchArgData.query, searchArgData.getStack)} with name: ${objectName} `)
-            const reduced = reduceGetStack(state, currentObject, searchArgData, objectName)
+    const objectName = getName(state, currentObject)
+    const searchArgs = convertToSearchArgs(combinedArgs)
+    //const matchingArgs = searchArgs.filter((arg) => isResolved(arg, objName))
+    //const unresolvedArgs = searchArgs.filter((arg) => isNotResolved(arg, objName))
+    const resolvedFunctionData = searchArgs.map((searchArgData) => {
+            console.log(`reducing get stack: ${formatGetLog(searchArgData.query, searchArgData.getStack)} `)
+            const reduced = reduceGetStack(state, currentObject, searchArgData)
             if (reduced.args.hasOwnProperty('recursive')){ //handle struct primitives
-                console.log('recursive', combinedArgs, objectName, getName(state, currentObject))
+                console.log('recursive', combinedArgs)
                 //throw 'recursive'
             }
             return reduced
         })
-        .reduce(reduceFunctionData, functionDataWithDBDefs)
+        .reduce(reduceFunctionData, functionData)
+    //console.log(resolvedFunctionData)
     return resolvedFunctionData
 }
-
-export const foldPrimitive = (state, childASTs, currentObject) => { //list of child objects in the form [{string:..., args:...}]
+//get args and varDefs of an object
+export const getArgsAndVarDefs = (state, childASTs, currentObject) => { //list of child objects in the form [{string:..., args:...}]
     const combinedArgs = combineArgs(childASTs)//combine arguments of sub functions
+    //const searchArgs = convertToSearchArgs(combinedArgs)
+    //const ioArgs = getIoArg(combinedArgs)
+    //const objName = getName(state, currentObject)
+    //const matchingArgs = searchArgs.filter((arg) => isResolved(arg, objName))
+    //const unresolvedArgs = searchArgs.filter((arg) => isNotResolved(arg, objName))
+    //const { args1, varDefs1 } = matchingArgs
+        //.map((arg) => (reduceGetStack(state, currentObject, arg)))
+        //.reduce(reduceFunctionData, { args: combinedArgs, varDefs: [] })
+
     const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
     const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData, combinedArgs)
+    //console.log(args, args1, varDefs, varDefs1)
     return { args, variableDefs: varDefs }
 }
 
@@ -224,6 +225,18 @@ export const compile = (state) => {
     return { renderMonad, functionTable, ast: display, objectTable: {} }
 }
 
+/*
+ let dbVariableDefs = []
+    if (objectName === 'app'){ //move this to special function in compiler
+        dbVariableDefs = resolveDBSearches(state, combinedArgs)
+        console.log(`resolving db searches for`, formatDBSearchLog(dbVariableDefs))
+        dbVariableDefs.forEach((varDef) => {
+            delete combinedArgs[varDef.key]
+        })
+    }
+    const functionDataWithDBDefs = Object.assign({}, functionData, {
+        varDefs:functionData.varDefs.concat(dbVariableDefs)
+    })*/
 const resolveDBSearches = (state, combinedArgs) => { //move db searches at app to variable defs
     return Object.values(combinedArgs)
         .filter((arg) => {
@@ -259,4 +272,18 @@ const resolveDBSearches = (state, combinedArgs) => { //move db searches at app t
                 comment: `//dbSearch for ${arg.query}`
             }
         })
+}
+
+const getDBsearchAst = (state, dbSearchObject, getStack) => {
+    const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
+    const rootWithoutInverses = getObject(state, query)
+    const rootProps = Object.assign({}, rootWithoutInverses.props, dbSearchObject.inverses)
+    const root = Object.assign({}, rootWithoutInverses, {
+        props: rootProps,
+        inverses: dbSearchObject.inverses
+    })
+    if (getStack.length > 1) { throw 'get stack length greater than one' }
+    const attr = getStack[0].props.attribute
+    const ast = getJSValue(state, 'placeholder', attr, root)
+    return {query, root, ast};
 }

@@ -1,4 +1,4 @@
-import { foldPrimitive } from './selectors'
+import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
 
@@ -63,7 +63,7 @@ const get = (state, objectData) => {
         //change to rootObject.type == new?
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
         const next = getJSValue(state, 'placeholder', attribute, root)
-        const { args, variableDefs } = foldPrimitive(state, [next], root)
+        const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
             hash: objectData.props.hash,
@@ -140,7 +140,7 @@ const dbSearch = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
     parameters[0].inline = false //refactor
-    //const foldedPrimitives = foldPrimitive(state, parameters, objectData)
+    //const foldedPrimitives = getArgsAndVarDefs(state, parameters, objectData)
     return parameters[0]
     //monad for requiring that function is in table or for placing function in table
 }*/
@@ -151,7 +151,7 @@ const apply = (state, objectData) => {
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     const children = parameters[2] === undefined ?
         { op1: parameters[0], function: parameters[1] }
          : { op1: parameters[0], function: parameters[1], op2: parameters[2] }
@@ -170,7 +170,7 @@ const ternary = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
     return {
         hash: objectData.props.hash,
@@ -187,7 +187,7 @@ const text = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: objectData.props.hash,
         args: Object.assign(args, { prim: true }), //combine args of x,y,text
@@ -201,7 +201,7 @@ const text = (state, objectData) => {
 const group = (state, objectData) => {
     const children = getJSValue(state, 'placeholder', 'childElements', objectData)
     const parameters = children.filter((child) => (child !== undefined))
-    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     //need to sort by z-order
     return {
         hash: objectData.props.hash,
@@ -217,7 +217,7 @@ const app = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = foldPrimitive(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: 'apphash',//change this to actual hash...whiy isn't it there?
         children: { graphicalRep: parameters[0] },

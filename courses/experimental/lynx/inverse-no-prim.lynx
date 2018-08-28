@@ -13,7 +13,7 @@ window = new group
                     equalTo:apply.function.result
                     function: new funct
                         name:"factorial"
-                        op1:"failedtest"
+                        op1:"failedtst"
                         result:factorial.caller.op1
                     op1:"test"
 
