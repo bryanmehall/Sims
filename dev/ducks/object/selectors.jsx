@@ -219,6 +219,7 @@ export const compile = (state) => {
     const appData = getObject(state, 'app')
     const { value: display } = getValue(state, 'app', 'jsPrimitive', appData)
     if (display === undefined){ throw 'display is undefined' }
+    console.log(display)
     const functionTable = astToFunctionTable(display)
     const appString = buildFunction(display).string
     const renderMonad = compileToJS('functionTable', `${appString}`)//returns a thunk with all of render information enclosed

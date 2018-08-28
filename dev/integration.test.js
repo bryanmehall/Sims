@@ -57,7 +57,7 @@ const tests = [
     'non-local-root',
     'inverse-no-prim',
     'get-new-object',
-    //'parent-of-get'
+    'vardef-in-get-chain',
 ]
 
 const testString = tests.map((name) => (
