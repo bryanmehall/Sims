@@ -51,7 +51,7 @@ const binOp = (state, objectData, valueData) => ({
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
-    console.log('inverses', objectData.inverses)
+    //console.log('inverses', objectData.inverses)
     let query
     let getStack
     if (root.type === 'undef'){ //for implied root (only works for one level deep)

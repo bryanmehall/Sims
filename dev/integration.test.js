@@ -28,9 +28,9 @@ const runTest = (objects, done) => {
         done.fail('conditions not met')
     }
 }
-const loadAndRunTest = (testName, done) => {
+const loadAndRunTest = (testName, folder, done) => {
     const corePath = __dirname + '/../courses/experimental/lynx/core.lynx'
-    const path = `${__dirname}/../courses/experimental/lynx/${testName}.lynx`
+    const path = `${__dirname}/../courses/experimental/${folder}/${testName}.lynx`
     fs.readFile(corePath, 'utf8', (err, coreData) => {
         if (err) {
             done.fail('could not read core')
@@ -49,7 +49,7 @@ const loadAndRunTest = (testName, done) => {
     })
 }
 
-const tests = [
+const coreTests = [
     'simple-get',
     'multiple-get',
     'get-end-chain',
@@ -59,18 +59,22 @@ const tests = [
     'get-new-object',
     'vardef-in-get-chain',
 ]
-
-const testString = tests.map((name) => (
-    `describe('${name}', () => {`+
+const dbTests = [
+    'simple-get',
+    'direct-child'
+]
+const generateTestSuite = (testNames, folder) => (
+    testNames.map((name) => (
+    `describe('${folder}', () => {`+
         `it('${name}', (done) => {`+
-            `loadAndRunTest('${name}', done)`+
+            `loadAndRunTest('${name}','${folder}', done)`+
         `})`+
     `})`
     )).join('\n')
+)
 
+const coreTestString = generateTestSuite(coreTests, 'lynx')
+const dbTestString = generateTestSuite(dbTests, 'dbsearch')
 
-
-
-eval(testString)
+eval(coreTestString + '\n' + dbTestString)
     //terrible hack because jest doesn't have programatic test generation
-
