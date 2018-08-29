@@ -81,6 +81,7 @@ const get = (state, objectData) => {
         getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
     const hash = objectData.props.hash
+    console.log('adding context to ',objectData, objectData.inverses)
     const args = {
         [hash]: {
             query,

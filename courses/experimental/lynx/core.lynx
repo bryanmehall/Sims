@@ -10,8 +10,8 @@ accordianRepresentation = new group
     r: new array
         firstElement:new text
             innerText:"test"
-            x:20
-            y:20
+            x:50
+            y:60
             nextElement:new text
                 innerText:"def"
     childElements: new set
@@ -27,7 +27,7 @@ app = new object
     jsPrimitive:{app}
     name:"app"
     graphicalRepresentation:window
-    x:20
+    x:31
     mouse: new object
         pos: new coordinatePosition
             x:new input
@@ -55,7 +55,7 @@ div = new group
         innerText:"abc"
         y:50
         pos:new coordinatePosition
-            x:20
+            x:40
             y:100
         nextElement: div.textRepresentation
 

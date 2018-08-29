@@ -4,7 +4,7 @@ import { primitives } from './primitives'
 import { deleteKeys } from './utils'
 let objectTable = {}
 
-const hasAttribute = (objectData, prop) => (
+export const hasAttribute = (objectData, prop) => (
     objectData.props.hasOwnProperty(prop)
 )
 

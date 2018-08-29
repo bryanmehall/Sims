@@ -1,7 +1,7 @@
 /* eslint pure/pure: 2 */
 import { formatGetLog, deleteKeys, compileToJS } from './utils'
 import { astToFunctionTable, buildFunction } from './IRutils'
-import { getValue, getName, getObject } from './objectUtils'
+import { getValue, getName, getObject, hasAttribute } from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
@@ -22,14 +22,17 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
     const { argKey, query, getStack, type, context } = searchArgData
     //limiter(2000000, 100)
     const searchName = getName(state, currentObject)
-    //console.log('name:', searchName, 'query:',query, currentObject, searchArgData)
+    //console.log('name:', searchName, 'query:', query, currentObject, searchArgData)
     if (searchName === query || query === "$this"){ //"$this" is a for objects that always match. $ is to prevent accidental matches
+        if (searchName === "txt"){
+            console.log('txt', searchArgData)
+        }
         if (getStack.length === 0){
-            //console.log('resloving', currentObject)
+            console.log('resloving', currentObject, searchArgData)
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             if (jsResult.type === 'undef') {
-                //console.log('adding recursive function', currentObject, searchName)
-                throw new Error('recursive')
+                console.log('adding recursive function', currentObject, searchName)
+                //throw new Error('recursive')
                 return { args: {}, varDefs: [] }
             } else {
                 const variableDefinition = {
@@ -43,14 +46,26 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
         } else {
             const nextGet = getStack[0]
             const newGetStack = getStack.slice(1)
-            //const currentName = getName(state, currentObject)
             const attr = nextGet.props.attribute//attribute to go to
             const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
             if (isInverseAttr){
                 //return args to show that this is not a resolved attribute
                 //const { value: inverseObject } = getValue(state, 'placeholder', attr, currentObject)
+                const currentName = getName(state, currentObject)
                 //console.log(`${currentName}.${attr} is an inverse. returning: ${formatGetLog('this', newGetStack)}`)
-                return {
+                const hasAttr = hasAttribute(currentObject, attr)
+                if (hasAttr) {
+                    const newSearchArgs = { argKey, query: '$this', type, context, getStack: newGetStack }
+                    //should this be
+                    const { value: nextValue } = getValue(state, 'placeholder', attr, currentObject)
+                    console.log(nextValue)
+                    const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
+                    const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
+                    return childArgs
+                } else {
+                    throw new Error('attribute not found')
+                }
+                /*return {
                     args: {
                         [argKey]: {
                             //hash: inverseHash,
@@ -60,7 +75,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                         }
                     },
                     varDefs: []
-                }
+                }*/
             }
             //the next section is for allowing objects referenced by a get to have inverse attributes
             //if nextGet has any attributes other than those listed
@@ -109,7 +124,13 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                 const childQuery = arg.length === 0 ? searchName : arg[0].query
                 const childGetStack = arg.length === 0 ? [] : arg[0].getStack
                 const combinedGetStack = childGetStack.concat(newGetStack)
-                const newSearchArgs = { argKey, type, context, query: childQuery, getStack: combinedGetStack }
+                const newSearchArgs = {
+                    argKey,
+                    type,
+                    context,
+                    query: childQuery,
+                    getStack: combinedGetStack
+                }
                 //console.log('getting', formatGetLog(childQuery, combinedGetStack))
                 return reduceGetStack(state, currentObject, newSearchArgs)
             } else {
