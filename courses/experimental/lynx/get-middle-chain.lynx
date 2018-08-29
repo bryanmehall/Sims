@@ -5,7 +5,7 @@ window = new group
             name:"txt"
             x:txt.op1.x
             op2:new object
-                x:30
+                x:20
             op1:txt.op2
-            y:20
+            y:30
             innerText:"test"

@@ -1,8 +1,9 @@
 window = new group
     name:"group"
     childElements: new set
-        subset1: new text // var hash(txt.y) = 20 text(hash(txt.y), 20, "test")
+        subset1: new text
             name:"txt"
-            x:txt.y //({query:"txt", getStack:["y"]})
-            y:20
+            x:txt.op1
+            op1:20
+            y:30
             innerText:"test"

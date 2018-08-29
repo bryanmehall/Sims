@@ -4,6 +4,7 @@ window = new group
         subset1: new text
             name:"txt"
             op1:20
-            x:txt.y
-            y:txt.op1
+            r:txt.op1
+            x:txt.r
+            y:30
             innerText:"test"

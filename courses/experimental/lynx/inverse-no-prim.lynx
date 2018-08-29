@@ -4,7 +4,7 @@ window = new group
         subset1: new text
             name:"txt"
             x:20
-            y:20
+            y:30
             innerText:new get
                 jsPrimitive:{get}
                 attribute:equalTo

@@ -4,7 +4,7 @@ window = new group
         subset1: new text
             name:"txt"
             x:txt.op1.x
-            y:20
+            y:30
             op1:new dbSearch
                 jsPrimitive:{dbSearch}
                 query:"dbobject"

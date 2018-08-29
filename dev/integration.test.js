@@ -7,12 +7,16 @@ const runTest = (objects, done) => {
     const state = {sim:{object:objects}}
     const {renderMonad, functionTable} = compile(state)
     let contains20 = false
+    let contains30 = false
     let containsTest = false
     let isNotUndef = true
     Object.entries(functionTable).forEach((func) => {
         const st = func.toString()
-        if (st.includes('20')){
+        if (st.includes(' 20')){
             contains20 = true
+        }
+        if (st.includes(' 30')){
+            contains30 = true
         }
         if (st.includes('test')){
             containsTest = true
@@ -21,7 +25,7 @@ const runTest = (objects, done) => {
             isNotUndef = false
         }
     })
-    const pass = contains20 && containsTest && isNotUndef
+    const pass = contains20 && contains30 && containsTest && isNotUndef
     if (pass){
         done()
     } else {
@@ -58,10 +62,12 @@ const coreTests = [
     'inverse-no-prim',
     'get-new-object',
     'vardef-in-get-chain',
+    'parent-of-get'
 ]
 const dbTests = [
     'simple-get',
-    'direct-child'
+    'direct-child',
+    'parent'
 ]
 const generateTestSuite = (testNames, folder) => (
     testNames.map((name) => (

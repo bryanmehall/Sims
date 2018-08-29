@@ -7,5 +7,5 @@ window = new group
 dbtext = new text
     name:"txt"
     x:20
-    y:20
+    y:30
     innerText:"test"

@@ -36,9 +36,9 @@ const group = (ast) => {
 }
 
 const text = (ast) => {
-    const programText = buildChildren(ast, ',\n')
+    const programText = buildChildren(ast, ', ') //space is important for unit tests
     const varDefs = varDefsToString(ast.variableDefs)
-    return ` function(prim) { //text\n${varDefs} prim.text(${programText}, 0, 0, 0 );\n}`
+    return ` function(prim) { //text\n${varDefs} prim.text( ${programText}, 0, 0, 0 );\n}`//space is important for unit tests
 }
 
 const get = (ast) => {

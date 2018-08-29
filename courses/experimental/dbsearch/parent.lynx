@@ -1,7 +1,7 @@
 window = new group
     x:30
     childElements: new set
-        x:25
+        x:20
         subset1: new dbSearch
             jsPrimitive:{dbSearch}
             query:"dbtext"
@@ -9,7 +9,7 @@ window = new group
 dbtext = new text
     name:"txt"
     x:txt.parentSet.x
-    y:20
+    y:30
     innerText:"test"
 
 subset1 = new attribute

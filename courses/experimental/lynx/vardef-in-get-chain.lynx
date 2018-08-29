@@ -7,7 +7,7 @@ window = new group
             name:"tests"
             innerText:test.name
             x:window.x
-            y:20
+            y:30
     childElements: new set
         subset1: window.op1.textRepresentation
 

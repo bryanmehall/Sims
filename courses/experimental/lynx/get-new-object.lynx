@@ -8,5 +8,5 @@ window = new group
                 rootObject: new object
                     op1:20
                 attribute: op1
-            y:20
+            y:30
             innerText:"test"
