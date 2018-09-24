@@ -61,6 +61,7 @@ const coreTests = [
     'non-local-root',
     'inverse-no-prim',
     'get-new-object',
+    'parent-path',
     'vardef-in-get-chain',
     'parent-of-get'
 ]

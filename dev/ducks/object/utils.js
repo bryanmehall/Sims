@@ -16,7 +16,29 @@ export const formatDBSearchLog = (dbSearches) => (
         return formatGetLog(dbArg.query, dbArg.getStack)
     }).join(', ')
 )
+export const formatArg = (arg) => (
+    `${arg.prim}`
+)
 
+export const formatVarDef = (varDef) => (
+    `${varDef.key} = `
+)
+
+export const debugReduce = (shift, message, name) => {
+    /* eslint-disable no-console */
+    try{
+        if (shift === 1) {
+            console.group(name)
+            console.log(message)
+        } else if (shift === -1){
+            console.log(message)
+            console.groupEnd()
+        }
+    } catch (e){
+        console.log('debug suppressed')
+    }
+    /* eslint-enable no-console */
+}
 export const getFunctionDiff = (function1, function2) => {
     const str1 = function1.toString()
     const str2 = function2.toString()

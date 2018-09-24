@@ -5,26 +5,20 @@ window = new group
             name:"txt"
             x:20
             y:20
-            innerText:new get //1.
+            innerText:new get
                 jsPrimitive:{get}
                 attribute:equalTo
                 rootObject: new object
                     name:"apply"
                     equalTo:apply.function.result
-                    function: new funct
-                        name:"factorial"
-                        op1:25
-                        result:factorial.caller.op1
-                    op1:2
+                    function: new dbSearch
+                        jsPrimitive:{dbSearch}
+                        query:"factorial"
+                    op1:30
 
 dbSearch = new object
 equalTo = new attribute
 funct = new object
 factorial = new funct
     name:"factorial"
-    op1:4
     result:factorial.caller.op1
-
-fac = new dbSearch //(db:factorial, hash(factorial.caller.op1):$this.op1) "functionTable.factorialHash(hash(factorial.caller.op1))
-    jsPrimitive:{dbSearch}
-    query:"factorial"

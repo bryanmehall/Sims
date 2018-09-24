@@ -1,12 +1,12 @@
 window = new group
-    x:30
+    x:100
     childElements: new set
-        x:25
+        x:30
         subset1: new text
             name:"txt"
             x:txt.parentSet.x
             y:20
-            innerText:"test"//implied: parentSet:
+            innerText:"test"
 
 subset1 = new attribute
     inverseAttribute:parentSet

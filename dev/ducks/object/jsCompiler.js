@@ -48,6 +48,9 @@ const get = (ast) => {
         const programText = buildChildren(ast, "")
         const varDef = varDefsToString(ast.variableDefs)
         //console.log('programText',programText, 'varDef',varDef)
+        if (ast.isFunction){
+            return { varDefs: varDef, returnStatement: ast.hash }
+        }
         return { varDefs: varDef, returnStatement: programText } //is this structure needed or can this just return a string?
     }
 
@@ -55,9 +58,7 @@ const get = (ast) => {
 const search = (ast) => (ast.hash)
 
 const dbSearch = (ast) => (
-    //const children = buildChildren(ast)
-    //console.log(ast)
-     `${ast.hash}()`
+    `${ast.hash}('a') //${ast.query}`
 )
 
 const apply = (ast) => {
@@ -68,6 +69,7 @@ const apply = (ast) => {
         return `( ${children.join(' ')})`
     }
 }
+//todo: combine the
 const ternary = (ast) => {
     const [condition, then, alt] = buildChildren(ast)
     return `(${condition}) ? ${then} : ${alt}`

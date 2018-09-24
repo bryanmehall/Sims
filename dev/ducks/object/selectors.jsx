@@ -1,10 +1,16 @@
 /* eslint pure/pure: 2 */
-import { formatGetLog, deleteKeys, compileToJS } from './utils'
+import { formatGetLog, debugReduce, deleteKeys, compileToJS } from './utils'
 import { astToFunctionTable, buildFunction } from './IRutils'
 import { getValue, getName, getObject, hasAttribute } from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
+todo:
+    -add factorial function
+    -fix problem of double inverse attributes
+    -build visualizer
+        -are structs needed?
+    -construct state model
 refactor todo:
     -switch render and prim to just io
     -make objectTabl constant per evaluation cycle
@@ -24,11 +30,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
     const searchName = getName(state, currentObject)
     //console.log('name:', searchName, 'query:', query, currentObject, searchArgData)
     if (searchName === query || query === "$this"){ //"$this" is a for objects that always match. $ is to prevent accidental matches
-        if (searchName === "txt"){
-            console.log('txt', searchArgData)
-        }
         if (getStack.length === 0){
-            console.log('resloving', currentObject, searchArgData)
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
             if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
@@ -48,34 +50,27 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
             const newGetStack = getStack.slice(1)
             const attr = nextGet.props.attribute//attribute to go to
             const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
+            const currentName = getName(state, currentObject)
             if (isInverseAttr){
-                //return args to show that this is not a resolved attribute
-                //const { value: inverseObject } = getValue(state, 'placeholder', attr, currentObject)
-                const currentName = getName(state, currentObject)
-                //console.log(`${currentName}.${attr} is an inverse. returning: ${formatGetLog('this', newGetStack)}`)
+                //if the attribute is inverse return an inverse arg that only matches
+
                 const hasAttr = hasAttribute(currentObject, attr)
                 if (hasAttr) {
                     const newSearchArgs = { argKey, query: '$this', type, context, getStack: newGetStack }
-                    //should this be
+                    debugReduce(1, `${currentName}.${attr} is an inverse. returning: ${formatGetLog('$this', newGetStack)}`, currentName)
+                    debugReduce(-1)
+                    //if (currentObject.props[attr] === currentObject.props.parentValue){
+                    return { args: { [argKey]: newSearchArgs }, varDefs: [] }
+                    //}
                     const { value: nextValue } = getValue(state, 'placeholder', attr, currentObject)
-                    console.log(nextValue)
                     const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
+
                     const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
+
                     return childArgs
                 } else {
                     throw new Error('attribute not found')
                 }
-                /*return {
-                    args: {
-                        [argKey]: {
-                            //hash: inverseHash,
-                            type: "localSearch",
-                            query: '$this',
-                            getStack: newGetStack
-                        }
-                    },
-                    varDefs: []
-                }*/
             }
             //the next section is for allowing objects referenced by a get to have inverse attributes
             //if nextGet has any attributes other than those listed
@@ -86,17 +81,24 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
             const inverses = hasInverses ? inverseAttributes : 'placeholder'
             //get the next value with inverses from cross edge attached
             const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
+            console.log('getting nextJS')
             const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+            console.log('finished getting JS', nextJSValue)
             if (nextJSValue.type === 'undef'){ //next value does not have primitive
                 const newSearchArgs = { argKey, type, context, query: '$this', getStack: newGetStack }
+                debugReduce(1, `${currentName}.${attr} is not a primitive`, currentName)
                 //console.log(`${nextName} is not a primitive`, nextValue, newGetStack)
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
                 //handle case where nextName === query returned...need to move arg to varDef
                 const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
+                debugReduce(-1)
                 return childArgs
             } else if (nextJSValue.type === 'dbSearch') { //combine this with local get handler below?
+                //this gets the ast of the end of the get stack not the root
                 const { query, root, ast } = getDBsearchAst(state, nextValue, newGetStack)
-                const { args } = getArgsAndVarDefs(state, [ast], root)
+                console.log(ast)
+                //const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
+                //console.log(args, variableDefs, currentObject)
                 const dbSearchArg = { [nextValue.props.hash]: {
                         query,
                         hash: nextValue.props.hash,
@@ -104,7 +106,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                         getStack: newGetStack,
                         searchContext: nextValue.inverses //switch to context
                     } }
-                const combinedArgs = Object.assign(args, dbSearchArg)
+                const combinedArgs = Object.assign({}, ast.args, dbSearchArg)
                 //console.log(`the args of the db Search are dbSearchArg: ${nextValue.props.hash}`, args)
                 return {
                     args: combinedArgs ,
@@ -131,12 +133,14 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                     query: childQuery,
                     getStack: combinedGetStack
                 }
-                //console.log('getting', formatGetLog(childQuery, combinedGetStack))
+                console.log('getting#########', formatGetLog(childQuery, combinedGetStack))
                 return reduceGetStack(state, currentObject, newSearchArgs)
             } else {
+                debugReduce(1, `getting ${formatGetLog('$this', getStack)}`, currentName)
                 const newSearchArgs = { argKey, query: '$this', type, context, getStack: newGetStack }
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
                 const childArgs = argsToVarDefs(state, currentObject, nextValueFunctionData, nextValueFunctionData.args)
+                debugReduce(-1, childArgs)
                 return childArgs
             }
         }
@@ -218,6 +222,7 @@ const argsToVarDefs = (state, currentObject, functionData, combinedArgs) => {
 }
 //get args and varDefs of an object
 export const getArgsAndVarDefs = (state, childASTs, currentObject) => { //list of child objects in the form [{string:..., args:...}]
+    console.log('getting args and VarDefs of ', getName(state, currentObject))
     const combinedArgs = combineArgs(childASTs)//combine arguments of sub functions
     //const searchArgs = convertToSearchArgs(combinedArgs)
     //const ioArgs = getIoArg(combinedArgs)
