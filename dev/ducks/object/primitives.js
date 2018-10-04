@@ -1,6 +1,7 @@
 import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
+import { THIS } from './constants'
 
 const input = (state, objectData) => {
     const hash = objectData.props.hash
@@ -40,12 +41,12 @@ const greaterThan    = (...args) => (binOp(...args))
 const and            = (...args) => (binOp(...args))
 const or             = (...args) => (binOp(...args))
 const binOp = (state, objectData, valueData) => ({
-        hash: objectData.props.hash,
-        type: valueData.type,
-        variableDefs: [],
-		children: {},
-        args: {},
-        inline: true
+    hash: objectData.props.hash,
+    type: valueData.type,
+    variableDefs: [],
+    children: {},
+    args: {},
+    inline: true
 })
 
 const get = (state, objectData) => {
@@ -55,8 +56,8 @@ const get = (state, objectData) => {
     let query
     let getStack
     if (root.type === 'undef'){ //for implied root (only works for one level deep)
-        //set query to '$this' if root is left undefined
-        query = '$this'
+        //set query to THIS if root is left undefined
+        query = THIS
         getStack = []
     } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?

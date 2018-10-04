@@ -23,10 +23,12 @@ export const formatArg = (arg) => (
 export const formatVarDef = (varDef) => (
     `${varDef.key} = `
 )
-
+export const objectFromEntries = (obj, entry) => ( //convert array of [[key1, value1], ...] to an object when used with reduce
+    Object.assign(obj, { [entry[0]]: entry[1] })
+)
 export const debugReduce = (shift, message, name) => {
     /* eslint-disable no-console */
-    try{
+    try {
         if (shift === 1) {
             console.group(name)
             console.log(message)

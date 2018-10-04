@@ -75,10 +75,12 @@ window = new group
 
 
 parentConcept = new attribute
-    name:"a"
+    name:"parentConcept"
+
 textRepresentation = new attribute
     name:"textRepresentation"
     inverseAttribute:parentConcept
+
 graphicalRepresentation = new attribute
     name:"graphicalRepresentation"
     inverseAttribute:parentConcept

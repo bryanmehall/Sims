@@ -139,15 +139,17 @@ const displayVarDefs = (ast , x, y) => {
 
 const displayArgs = (ast) => {
     const display = Object.keys(ast.args)
-        .map((argKey) => (displayArg(ast.args[argKey], argKey)))
+        .map((argKey, i) => ([i=== 0 ? '' : ', ', displayArg(ast.args[argKey], argKey)]))
     return <tspan>{'('}{display}{')'}</tspan>
 }
 const displayArg = (arg, argKey) => {
     if (arg === true){
-        return "prim"
+        return <tspan key={"prim"} style={{ fill: 'gray' }}>{'prim'}</tspan>
     } else {
         const getAttrs = arg.getStack.map((get) => (get.props.attribute))
-        const color = (arg.type === "localSearch") ? "green" : "black"
+        const color = (arg.type === "localSearch") ? "green" :
+            arg.type === 'inverse' ? 'red' :
+            "black"
         return <tspan key={argKey} style={{ fill: color }}>{arg.query+'.'+getAttrs.join('.')}</tspan>
     }
 }

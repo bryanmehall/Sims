@@ -122,12 +122,10 @@ export const getValue = (state, inverseProps, prop, objectData) => {
         if (primitives.hasOwnProperty(valueData.type)){
             //console.log(`getting ${valueData.type} subtree named ${name}`)
             return { state, value: primitives[valueData.type](state, objectData, valueData) }
-        } else {
-            if (def.hasOwnProperty('type')){
+        } else if (def.hasOwnProperty('type')){
                 return { state, value: def }
-            } else {
-                throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
-            }
+        } else {
+            throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
         }
 	} else {
         return returnWithContext(state, name, prop, attrData, valueData, objectData)
@@ -153,10 +151,7 @@ const checkObjectData = (state, objectData, prop) => {
 
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objData) => {
-	//const objectData = objData === undefined ? getObject(state, name) : objData
 	const { value: valueData } = getValue(state, 'placeholder', prop, objData)
-    //if (prop === 'subset2'){console.log('gettingJS', name, prop, objData, valueData)}
-	//const objectData = getObject(state, value) //replace eval: modify here
 	if (valueData.type === 'undef'){
 		return undefined
 	} else {

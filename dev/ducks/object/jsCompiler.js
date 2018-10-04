@@ -47,7 +47,6 @@ const get = (ast) => {
     } else {
         const programText = buildChildren(ast, "")
         const varDef = varDefsToString(ast.variableDefs)
-        //console.log('programText',programText, 'varDef',varDef)
         if (ast.isFunction){
             return { varDefs: varDef, returnStatement: ast.hash }
         }
