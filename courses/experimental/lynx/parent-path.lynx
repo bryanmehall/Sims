@@ -1,10 +1,14 @@
 window = new group
     x:100
     childElements: new set
-        x:30
+        x:30//inverse does not work here because of the hack used with sets
         subset1: new text
             name:"txt"
-            x:txt.parentSet.x
+            x:txt.subset1.x
+            subset1:new object
+                name:"obj"
+                x:obj.parentSet.r
+            r:30
             y:20
             innerText:"test"
 
