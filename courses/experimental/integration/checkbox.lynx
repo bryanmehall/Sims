@@ -1,10 +1,10 @@
 window = new group
     childElements: new set
-        subset1: checkBox.graphicalRepresentation
+        subset1: checkbox.graphicalRepresentation
 
 
 checkBox = new object
-    name:"checkBox"
+    name:"checkbox"
     isChecked:new ternary
         condition:checkbox.graphicalRepresentation.isChanged
         then: not(checkbox.isChecked.previousState)

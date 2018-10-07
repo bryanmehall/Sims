@@ -63,12 +63,13 @@ const coreTests = [
     'get-new-object',
     'parent-path',
     'vardef-in-get-chain',
-    'parent-of-get'
+    'parent-of-get',
+    'vardef-in-get-chain'
 ]
 const dbTests = [
     'simple-get',
     'direct-child',
-    'parent'
+    //'parent'
 ]
 const generateTestSuite = (testNames, folder) => (
     testNames.map((name) => (

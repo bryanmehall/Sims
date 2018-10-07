@@ -71,37 +71,9 @@
 					"length":10
 				},
                 {
-					"id": "test-features",
-					"title":"Test Features",
-					"text":"Test Features",
-					"type":"anim",
-					"length":10
-				},
-				{
-					"id": "factorial",
-					"title":"Factorial",
-					"text":"example of the factorial function",
-					"type":"anim",
-					"length":10
-				},
-                {
-					"id": "functions",
-					"title":"Functions",
-					"text":"Functions",
-					"type":"anim",
-					"length":10
-				},
-                {
-					"id": "checkbox",
-					"title":"Checkbox",
-					"text":"Checkbox",
-					"type":"anim",
-					"length":10
-				},
-                {
-					"id": "ternary",
-					"title":"Ternary",
-					"text":"Ternary",
+					"id": "vardef-in-get-chain",
+					"title":"vardef-in-get-chain",
+					"text":"",
 					"type":"anim",
 					"length":10
 				}
@@ -129,6 +101,47 @@
 					"id": "parent",
 					"title":"Parent",
 					"text":"test for when dbSearch needs to get context",
+					"type":"anim",
+					"length":10
+				}
+            ]
+        },
+        {
+			"id":"integration",
+			"title":"Integration",
+			"contentBlocks":[
+                {
+					"id": "checkbox",
+					"title":"Checkbox",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "test-features",
+					"title":"Test Features",
+					"text":"Test Features",
+					"type":"anim",
+					"length":10
+				},
+				{
+					"id": "factorial",
+					"title":"Factorial",
+					"text":"example of the factorial function",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "functions",
+					"title":"Functions",
+					"text":"Functions",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "ternary",
+					"title":"Ternary",
+					"text":"Ternary",
 					"type":"anim",
 					"length":10
 				}
