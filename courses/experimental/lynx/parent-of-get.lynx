@@ -5,7 +5,7 @@ window = new group
         textRepresentation:new text //parentObject: test, parentValue:test, parentSet:set
             name:"txt"
             innerText:txt.parentConcept.name
-            x:20//txt.parentSet.x
+            x:txt.parentSet.x
             y:30
     childElements: new set
         x: 20

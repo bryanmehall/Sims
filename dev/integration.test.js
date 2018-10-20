@@ -69,7 +69,7 @@ const coreTests = [
 const dbTests = [
     'simple-get',
     'direct-child',
-    //'parent'
+    'parent'
 ]
 const generateTestSuite = (testNames, folder) => (
     testNames.map((name) => (

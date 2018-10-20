@@ -2,7 +2,7 @@
 import { formatGetLog, debugReduce, deleteKeys, compileToJS, objectFromEntries } from './utils'
 import { LOCAL_SEARCH, THIS } from './constants'
 import { astToFunctionTable, buildFunction } from './IRutils'
-import { getValue, getName, getObject, hasAttribute } from './objectUtils'
+import { getValue, getName, getObject, hasAttribute, objectFromHash } from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
@@ -30,7 +30,6 @@ const resolveInverses = (state, functionData, attr) => {
     const newArgs = Object.entries(args)
         .map((entry) => {
             if (entry[1].type === 'inverse' && entry[1].query === inverseAttr){
-                console.log(entry[1].getStack.slice(1))
                 const localArg = Object.assign({}, entry[1], { type: LOCAL_SEARCH, query: THIS, getStack: entry[1].getStack.slice(1) })
                 return [entry[0], localArg]
             } else {
@@ -51,6 +50,9 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
     if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
         if (getStack.length === 0){
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
+            const inverseObject = objectFromHash(context.parentSet) //get the inverse value
+            const targetFunctionData = { args: jsResult.args, varDefs: jsResult.variableDefs }
+            const inverseFunctionData = argsToVarDefs(state, inverseObject, targetFunctionData, context.$attr)
             if (jsResult.type === 'undef') {
                 console.log('adding recursive function', currentObject, searchName)
                 //throw new Error('recursive')
@@ -62,7 +64,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                     string: jsResult.string,
                     comment: `//${searchName}`
                 }
-                return { args: jsResult.args, varDefs: [variableDefinition] }
+                return { args: inverseFunctionData.args, varDefs: [variableDefinition, ...inverseFunctionData.varDefs] }
             }
         } else {
             const nextGet = getStack[0]
@@ -105,8 +107,6 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
             } else if (nextJSValue.type === 'dbSearch') { //combine this with local get handler below?
                 //this gets the ast of the end of the get stack not the root
                 const { query, root, ast } = getDBsearchAst(state, nextValue, newGetStack)
-                //const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
-                //console.log(args, variableDefs, currentObject)
                 const dbSearchArg = { [nextValue.props.hash]: {
                         query,
                         hash: nextValue.props.hash,
@@ -218,12 +218,12 @@ const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => {
     //if it does, the search is resolved, if not, pass it up the tree
     const functionData = resolveInverses(state, functionDataWithInverse, attr)
     const combinedArgs = functionData.args
-    const objectName = getName(state, currentObject)
+    //const objectName = getName(state, currentObject)
     const searchArgs = convertToSearchArgs(combinedArgs)
     //const inverseArgs = getInverseArgs(combinedArgs)
     //const matchingArgs = searchArgs.filter((arg) => isResolved(arg, objName))
     //const unresolvedArgs = searchArgs.filter((arg) => isNotResolved(arg, objName))
-    console.log('argsToVarDefs', objectName, attr, searchArgs)
+    //console.log('argsToVarDefs', objectName, attr, searchArgs)
     const resolvedFunctionData = searchArgs.map((searchArgData) => {
             //console.log(`reducing get stack: ${formatGetLog(searchArgData.query, searchArgData.getStack)} `)
             const reduced = reduceGetStack(state, currentObject, searchArgData)
@@ -238,11 +238,12 @@ const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => {
 }
 
 //combine args of children and test which of these args are resolved
-export const getArgsAndVarDefs = (state, childASTs, currentObject, attr) => {
+export const getArgsAndVarDefs = (state, childASTs, currentObject) => {
     const combinedArgs = combineArgs(childASTs)//combine arguments of sub functions
     const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
-    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData, 'subset1')//todo: name will never match an inverse it is just a placeholder for somethign that neds to go here
-    //console.log(args, args1, varDefs, varDefs1)
+    //todo: change x to sometng that will never have inverse
+    const inverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.$attr : 'x'
+    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData, inverseAttr)
     return { args, variableDefs: varDefs }
 }
 

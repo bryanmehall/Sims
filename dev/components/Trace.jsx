@@ -1,4 +1,6 @@
 import React from "react"
+import { formatArg } from '../ducks/object/utils'
+
 const sum = (accumulator, currentValue) => (accumulator + currentValue);
 const getChildWidths = (astNode) => {
     if (astNode === undefined || !astNode.hasOwnProperty('children')){
@@ -150,7 +152,7 @@ const displayArg = (arg, argKey) => {
         const color = (arg.type === "localSearch") ? "green" :
             arg.type === 'inverse' ? 'red' :
             "black"
-        return <tspan key={argKey} style={{ fill: color }}>{arg.query+'.'+getAttrs.join('.')}</tspan>
+        return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
     }
 }
 

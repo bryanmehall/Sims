@@ -3,6 +3,7 @@ import { jsCompilers } from './jsCompiler'
 
 //build string of function from ast node and add that function to the function table
 export const buildFunction = (ast) => {
+                console.log(ast)
     checkAST(ast)
     const string = jsCompilers[ast.type](ast)
     if (ast.inline && !ast.isFunction){

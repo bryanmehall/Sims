@@ -56,9 +56,13 @@ const get = (ast) => {
 }
 const search = (ast) => (ast.hash)
 
-const dbSearch = (ast) => (
-    `${ast.hash}('a') //${ast.query}`
-)
+const dbSearch = (ast) => {
+    if (ast.inline){
+        return ast.hash+'()'
+    } else {
+        return `return ${ast.hash}(prim, functionTable) //${ast.query}`
+    }
+}
 
 const apply = (ast) => {
     const children = buildChildren(ast)

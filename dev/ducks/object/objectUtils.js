@@ -24,7 +24,7 @@ export const returnWithContext = (state, name, attr, attrData, valueData, object
     const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
     const inverseAttrs = Object.assign({ parentValue: parentHash }, inverse)
     const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
-    const objectInverses = Object.assign({}, valueData.inverses, inverseAttrs)
+    const objectInverses = Object.assign({ $attr: attr }, valueData.inverses, inverseAttrs)
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash, inverses: objectInverses })
     const { hash, state: state2 } = getHash(state1, objectDataWithoutHash)
     const newProps = Object.assign({}, newPropsWithoutHash, { hash })
@@ -35,7 +35,10 @@ export const returnWithContext = (state, name, attr, attrData, valueData, object
     }
 
 }
-const objectFromHash = (hash) => (objectTable[hash])
+export const objectFromHash = (hash) => {
+    console.log(hash, objectTable)
+    return objectTable[hash]
+}
 
 const isHash = (str) => (str.includes("$hash"))
 

@@ -2,6 +2,9 @@
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (get.props.attribute)).join('.')
 )
+export const formatInverseArg = (query, getStack) => (
+    getStack.map((get) => (get.props.attribute)).join('.')
+)
 
 export const formatDBSearchLog = (dbSearches) => (
     dbSearches.map((dbSearch) => {
@@ -16,9 +19,18 @@ export const formatDBSearchLog = (dbSearches) => (
         return formatGetLog(dbArg.query, dbArg.getStack)
     }).join(', ')
 )
-export const formatArg = (arg) => (
-    `${arg.prim}`
-)
+export const formatArg = (arg) => {
+    switch (arg.type){
+        case 'inverse':
+            return formatInverseArg(arg.query, arg.getStack)
+        case 'localSearch':
+            return formatGetLog(arg.query, arg.getStack)
+        case 'globalGet':
+            return arg.query
+        default:
+            throw `type ${arg.type} not found`
+    }
+}
 
 export const formatVarDef = (varDef) => (
     `${varDef.key} = `
