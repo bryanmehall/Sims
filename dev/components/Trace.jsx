@@ -1,25 +1,27 @@
 import React from "react"
 import { formatArg } from '../ducks/object/utils'
-
+import { LOCAL_SEARCH, THIS, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
 const sum = (accumulator, currentValue) => (accumulator + currentValue);
 const getChildWidths = (astNode) => {
     if (astNode === undefined || !astNode.hasOwnProperty('children')){
-        return [50]
+        return [25]
     } else if (Object.keys(astNode.children).length === 0) {
-        return [50]
+        return [20]
     } else {
         const childWidths = Object.keys(astNode.children).map(getChildWidths)
         const totalChildWidth = childWidths.reduce(sum,0)
-        return [50].concat(totalChildWidth)
+        return [20].concat(totalChildWidth)
     }
 }
 const getWidth = (astNode) => {
     if (astNode === undefined || !astNode.hasOwnProperty('children')){
-        return 75
-    } else if (Object.keys(astNode.children).length === 0) {
-        return 75
+        return 60
+    }
+    const subNodes = combineChildrenAndVarDefs(astNode)
+    if (Object.keys(subNodes).length === 0) {
+        return 50
     } else {
-        const childWidths = Object.keys(astNode.children).map(getWidth)
+        const childWidths = Object.keys(subNodes).map(getWidth)
         return childWidths.reduce(sum,0)
     }
 }
@@ -43,7 +45,6 @@ class Trace extends React.Component {
             return <text x={x} y={y} textAnchor="middle">undef</text>
         }
 		const childNodes = combineChildrenAndVarDefs(ast)
-        const children = Object.keys(ast.children || {}) || []
         const width = getWidth(ast)
 
         let cumulativeWidth = 0
@@ -51,7 +52,7 @@ class Trace extends React.Component {
             const childAst = child.ast
             const subTraceWidth = getWidth(childAst)
             cumulativeWidth += subTraceWidth
-            const childX = x+cumulativeWidth-width
+            const childX = x+cumulativeWidth-width/2
             const childY = active ? y+150 : y+50
             const varLabel = (
                 <text
@@ -124,7 +125,7 @@ const displayVarDefs = (ast , x, y) => {
     const varDefMap = (varDef, i) => (
         <Trace
             x={x}
-            y={y+20*(i+1)}
+            y={y}
             ast={varDef.ast}
             key={i}
             setActive={this.props.setActive}
@@ -149,8 +150,9 @@ const displayArg = (arg, argKey) => {
         return <tspan key={"prim"} style={{ fill: 'gray' }}>{'prim'}</tspan>
     } else {
         const getAttrs = arg.getStack.map((get) => (get.props.attribute))
-        const color = (arg.type === "localSearch") ? "green" :
-            arg.type === 'inverse' ? 'red' :
+        const color = (arg.type === LOCAL_SEARCH) ? "green" :
+            arg.type === INVERSE ? 'red' :
+            arg.type === GLOBAL_SEARCH ? 'purple' :
             "black"
         return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
     }

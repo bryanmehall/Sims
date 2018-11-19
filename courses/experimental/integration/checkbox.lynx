@@ -1,7 +1,10 @@
 window = new group
-    childElements: new set
-        subset1: checkbox.graphicalRepresentation
+    childElement1: \checkBox.graphicalRepresentation
 
+bool = new object
+    value:
+    checkboxRepresentation:
+    toggleRepresentation:
 
 checkBox = new object
     name:"checkbox"
@@ -18,8 +21,7 @@ checkBox = new object
         height:20
         mouseOver:app.mouse.pos.x > box.pos.x && app.mouse.pos.x < box.pos.x + box.width
         isChanged:checkRectangle.mouseOver && app.mouse.clicked
-        childElements: new set
-            subset1:new rectangle
+        childElement1: new rectangle
                 color:new ternary
                     condition: checkbox.isChecked
                     then: green

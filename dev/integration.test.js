@@ -4,8 +4,8 @@ import { compile } from './ducks/object/selectors'
 var fs = require('fs');
 
 const runTest = (objects, done) => {
-    const state = {sim:{object:objects}}
-    const {renderMonad, functionTable} = compile(state)
+    const state = { sim: { object: objects } }
+    const { renderMonad, functionTable } = compile(state)
     let contains20 = false
     let contains30 = false
     let containsTest = false
@@ -29,7 +29,7 @@ const runTest = (objects, done) => {
     if (pass){
         done()
     } else {
-        done.fail('conditions not met')
+        done.fail('conditions not met'+[contains20, contains30, containsTest, isNotUndef].join(', '))
     }
 }
 const loadAndRunTest = (testName, folder, done) => {
@@ -63,13 +63,12 @@ const coreTests = [
     'get-new-object',
     'parent-path',
     'vardef-in-get-chain',
-    'parent-of-get',
-    'vardef-in-get-chain'
+    'parent-of-get'
 ]
 const dbTests = [
-    'simple-get',
-    'direct-child',
-    'parent'
+    //'simple-get',
+    //'direct-child',
+    //'parent'
 ]
 const generateTestSuite = (testNames, folder) => (
     testNames.map((name) => (

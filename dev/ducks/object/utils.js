@@ -1,3 +1,4 @@
+import { LOCAL_SEARCH, THIS, GLOBAL_SEARCH, INVERSE } from './constants'
 
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (get.props.attribute)).join('.')
@@ -11,7 +12,7 @@ export const formatDBSearchLog = (dbSearches) => (
         const hash = dbSearch.ast.hash
         const args = dbSearch.ast.args
         const dbArgList = Object.keys(args)
-            .filter((arg) => (arg.type === 'globalGet' || arg.type === 'dbSearch'))
+            .filter((arg) => (arg.type === GLOBAL_SEARCH))
         if (dbArgList.length === 0){
             return ''
         }
@@ -20,12 +21,15 @@ export const formatDBSearchLog = (dbSearches) => (
     }).join(', ')
 )
 export const formatArg = (arg) => {
+    if (typeof arg === 'boolean'){//for prim
+        return arg
+    }
     switch (arg.type){
-        case 'inverse':
+        case INVERSE:
             return formatInverseArg(arg.query, arg.getStack)
-        case 'localSearch':
+        case LOCAL_SEARCH:
             return formatGetLog(arg.query, arg.getStack)
-        case 'globalGet':
+        case GLOBAL_SEARCH:
             return arg.query
         default:
             throw `type ${arg.type} not found`
@@ -74,11 +78,7 @@ export const logFunctionTable = (functionTable) => {
         return { key, func }
     })
 }
-export const checkASTs = (asts, objectTable) => {
-    asts.forEach(((ast) => {
-        if (ast === undefined){ throw JSON.stringify(objectTable) }
-    }))
-}
+
 export const isUndefined = (objectData) => (
     objectData.type === 'undef'
 )
@@ -103,15 +103,16 @@ export const compileToJS = (args, string) => {
     }
 }
 
-/*
-let timer = performance.now()|| 0
+
+/*let timer = performance.now()|| 0
 let counter = 0
 export const limiter = (timeLimit, countLimit) => {
     const dt = performance.now()||0-timer
     counter+=1
     if (counter>countLimit){
-        throw 'count'
+        throw `compilation exceeded ${countLimit} cycles`
     } else if (dt>timeLimit){
-        throw 'timer'
+        throw `compilation timed out after ${timeLimit} ms`
     }
 }*/
+export const limiter = (a,b) => (a+b)

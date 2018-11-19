@@ -1,15 +1,16 @@
-import { checkASTs, compileToJS } from './utils'
+import { compileToJS } from './utils'
 import { jsCompilers } from './jsCompiler'
 
 //build string of function from ast node and add that function to the function table
 export const buildFunction = (ast) => {
-                console.log(ast)
     checkAST(ast)
     const string = jsCompilers[ast.type](ast)
     if (ast.inline && !ast.isFunction){
         return { string , newFunctionTable: {} }
     } else {
-        const argsList = Object.keys(ast.args).concat('functionTable')
+        const argsList = Object.keys(ast.args)
+            .concat('functionTable')//list of child args
+
         try {
             const func = string.hasOwnProperty('varDefs') ?
                 compileToJS(argsList, `${string.varDefs} return ${string.returnStatement}`) :
@@ -26,7 +27,7 @@ export const buildFunction = (ast) => {
                 newFunctionTable
             }
         } catch (e) {
-            console.log('compiled function syntax error', ast, string)
+            console.log('compiled function syntax error', ast, string, e)
             throw new Error('Lynx Compiler Error: function has invalid syntax')
         }
     }
@@ -46,6 +47,12 @@ export const astToFunctionTable = (ast) => {
     const newFunctionTable = ast.type === 'app' ? {} : buildFunction(ast).newFunctionTable
     const functionTable = Object.assign(newFunctionTable, ...varDefTables, ...childTables)
     return functionTable
+}
+
+const checkASTs = (asts, objectTable) => {
+    asts.forEach(((ast) => {
+        if (ast === undefined){ throw JSON.stringify(objectTable) }
+    }))
 }
 
 export const checkAST = (ast) => {

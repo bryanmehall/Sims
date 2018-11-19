@@ -40,6 +40,10 @@ export const objectFromHash = (hash) => {
     return objectTable[hash]
 }
 
+export const getInverseAttr = (state, attr) => (
+    getObject(state, attr).props.inverseAttribute
+)
+
 const isHash = (str) => (str.includes("$hash"))
 
 //helper for converting each attribute to hash
@@ -59,9 +63,11 @@ export const getHash = (state, objectData) => { //this should check that all chi
     const inverseKeys = Object.keys(inverseAttrs)
     const expandedHashData = deleteKeys(objectData.props, ["hash", "parentValue", ...inverseKeys])
     //convert values of props to hashes
+    const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
+
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
     //if (objectData.type === 'group') { console.log(inverseKeys, JSON.stringify(hashData, null, 2))}
-    const digest = "$hash"+murmurhash.v3(JSON.stringify(hashData))
+    const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     objectTable[digest] = objectData
 	return { state: 'remove', hash: digest }
 }
@@ -139,7 +145,9 @@ const checkObjectData = (state, objectData, prop) => {
     /*if (state !== getHash(state, objectData).state){
         throw new Error('checking hash modified state')
     }*/
-    if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData).hash){
+    if (objectData === undefined) {
+        throw new Error('Lynx Error: objectData is undefined')
+    } else if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData).hash){
         console.log('objectData', objectData)
         console.log(objectData, getHash(state, objectData).hash, objectData.props.hash)
         throw new Error("hashes not equal")

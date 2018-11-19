@@ -1,0 +1,49 @@
+sum = new function //new is just short for new object...isA --parent chain
+    name:sum
+    arguments:caller.list
+    list: sum.caller.list
+    result: new apply.equalTo //sum.list[0] +sum(splice(1, sum.list))
+        function<function>: addition
+        op1:new apply.equalTo
+            
+        op2:
+        equalTo:addition.result
+        
+getIndex = new function //for general lists
+    list<list>:caller.list
+    index<nat>:caller.index
+    wasmPrimitive:fastest
+    wasmPrimitives:{
+        list.structPrimitive = array ? new wasmSubroutine
+            address: structPrimitive.address+structPrimitive.
+            ops:[
+               
+            i32.load] 
+        list.structPrimitive == linkedList 
+            
+    }
+
+addition = new function
+    wasmPrimitive:new wasmSubroutine
+        ops:[get_local op1.wasmPrimitive, get_local_op2.wasmPrimitive, i32.add]
+    computationTime: 3
+
+    
+list = new object
+    graphicalRepresentation: new group
+        childElement1: new rectangle
+        childElement2:
+    structPrimitives:{linkedList, array}
+
+linkedList = new struct
+    value<int32>:1
+    allocatedMemory:
+        address:
+        totalSize:
+        locations:
+    nextList<linkedList | null>:
+
+array = new struct
+    length<int>:array.parentConcept.length
+    memorySize:array.length*elements.structPrimitive.allcatedMemory.totalSize
+    

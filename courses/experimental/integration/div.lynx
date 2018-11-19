@@ -1,0 +1,14 @@
+div = new group
+    isA: group, graphicalElement
+    childElement1:
+    childElement2:
+    children: new list
+        firstElement: new element
+            prevElement:none
+            value:new text
+                x:10
+                y:10
+                innerText:"test"
+            nextElement:
+                
+    

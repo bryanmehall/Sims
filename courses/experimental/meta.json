@@ -118,9 +118,9 @@
 					"length":10
 				},
                 {
-					"id": "test-features",
-					"title":"Test Features",
-					"text":"Test Features",
+					"id": "accordian",
+					"title":"Accordian",
+					"text":"Accordian",
 					"type":"anim",
 					"length":10
 				},

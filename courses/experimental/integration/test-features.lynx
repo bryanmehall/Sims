@@ -1,4 +1,0 @@
-window = new group
-    name:"group"
-    childElements: new set
-        subset1: app.accordianRep

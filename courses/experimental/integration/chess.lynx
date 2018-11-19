@@ -1,0 +1,99 @@
+app = new app
+    graphicalRep:new group
+    game:game
+
+game = new object
+    board:new board
+    player1:new player
+        other:game.player2
+    player2: new player
+        other:game.player1
+    
+board = new object
+    graphicalRepresentation:new group
+        width:1000px
+        height:1000px
+        children:[
+            get(graphicalRepresenation of each board.squares),
+            get(graphicalRepresentation of each board.activePieces)
+            ]
+    positions: map position
+        rowIndex:each([1...8])
+        columnIndex:each([1...8])
+    squares:map square
+        position:board.positions
+    activePieces:difference(board.startingPieces, board.takenPieces)
+    StartingPieces:union(game.player1.startingPieces, game.player2.startingPieces)
+    
+square = new object
+    position:
+    graphicalRep: new rectangle
+        width: board.graphicalRep.width/8
+        height: app.board.graphicalRep.height/8
+
+postion:
+    algebraicNotation: alphabet[position.rowIndex] + toString(position.columnIndex)
+    rowIndex:
+    columnIndex:
+    screenCoordinates:new coordinatePosition
+        x:columnIndex*board.graphicalRep.width/8
+        y:rowIndex*board.graphicalRep.width/8
+        
+    
+player
+    name<string>:
+    color:
+    startingPieces:union({
+        new king
+            
+    })
+    direction:
+    pieces:
+    possibleMoves<set>:
+    bestMoves
+    
+game:
+    previousMove:
+    activePlayer<player>:
+    
+piece
+    color:piece.player.color
+    active: piece.active.previousState
+    player:
+    position<position>?!taken:
+    taken<bool>:piece.taken.previousState ||  piece.player.otherPlayer.previousMove.pos == piece.position
+    
+pawn = new piece
+    value:10
+    graphicalRep: new polygon
+        color: pawn.color
+    possibleMoves:{
+        
+    }
+
+move = new object
+    piece<piece| taken:false>:
+    from<position>:
+    through<set| elements.type = square> :
+    to<position>:
+    highlightrepresentation:
+    arrowRepresentation: new arrow
+        tip:move.from.screenCoordinate
+        tail:move.to.screenCoordinate
+    
+/*the graphical Representation of screen coordinate is a good example of how categories can be parallel
+tip must have the type coordinate position
+arrow.tip ------> position
+    |
+    |
+   \/
+screenCoord
+*/
+        
+    
+    
+    
+    
+    
+    
+    

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "axios": "^0.16.2",
+    "d3": "^5.7.0",
     "express": "^4.15.3",
     "express-winston-2": "0.0.2",
     "history": "^4.6.3",

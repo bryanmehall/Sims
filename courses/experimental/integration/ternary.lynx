@@ -1,12 +1,11 @@
 window = new group
     name:"group"
-    childElements: new set
-        subset1: new text
-            name:"txt"
-            op1:false
-            x:new ternary
-                condition:txt.op1
-                then:20
-                alt:100
-            y:20
-            innerText:"test"
+    childElement1: new text
+        name:"txt"
+        op1:true
+        x:new ternary
+            condition:txt.op1
+            then:20
+            alt:100
+        y:20
+        innerText:"test"

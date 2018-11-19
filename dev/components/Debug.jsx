@@ -1,6 +1,8 @@
 import React from "react"
 import { cardStyle } from './styles'
 import Trace from './Trace'
+import AstVis from './AstVis'
+
 class Debug extends React.Component {
     constructor(props){
         super(props)
@@ -35,6 +37,8 @@ class Debug extends React.Component {
                 {activeHash}:{functionString}
             </pre>
         )
+
+
         return (
             <div style={{...cardStyle, backgroundColor:"white", position:'absolute', top:310, left:'26%'}}>
                 {functionDisplay}
@@ -46,20 +50,20 @@ class Debug extends React.Component {
                     viewBox = {`${offs.x-300} ${offs.y-150} 600 600`}
 
                     >
-                    <Trace
+                    <AstVis ast={this.props.ast} setActive={setActive}></AstVis>
+                    {/*<Trace
                         setCenter = {setCenter}
                         setActive = {setActive}
                         ast={this.props.ast}
                         x={0}
                         y={20}
-                        ></Trace>
+                        ></Trace>*/}
                 </svg>
             </div>
 
         )
 	}
 }
-
 
 
 export default Debug

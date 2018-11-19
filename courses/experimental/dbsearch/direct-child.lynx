@@ -1,8 +1,7 @@
 window = new group
-    childElements: new set
-        subset1: new dbSearch
-            jsPrimitive:{dbSearch}
-            query:"dbtext"
+    childElement1: new dbSearch
+        jsPrimitive:{dbSearch}
+        query:"dbtext"
 
 dbtext = new text
     name:"txt"

@@ -1,7 +1,7 @@
 import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
-import { THIS } from './constants'
+import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
 const input = (state, objectData) => {
     const hash = objectData.props.hash
@@ -52,7 +52,6 @@ const binOp = (state, objectData, valueData) => ({
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
-    //console.log('inverses', objectData.inverses)
     let query
     let getStack
     if (root.type === 'undef'){ //for implied root (only works for one level deep)
@@ -87,7 +86,7 @@ const get = (state, objectData) => {
         [hash]: {
             query,
             context: objectData.inverses,
-            type: 'localSearch',
+            type: LOCAL_SEARCH,
             getStack: [...getStack, objectData]
         }
     }
@@ -100,8 +99,10 @@ const get = (state, objectData) => {
         children: {},
     }
 }
-
-const search = (state, objectData, valueData) => { //search is get root (localSearch) not dbSearch --rename to local and global
+const recursive = (state, objectData) => {
+    throw 'here'
+}
+const search = (state, objectData, valueData) => { //search is get root (local Search) not dbSearch --rename to local and global
     const query = valueData.query
     const hash = objectData.props.hash
     return {
@@ -117,7 +118,7 @@ const dbSearch = (state, objectData) => {
     const query = objectData.props.query.props.jsPrimitive.value //refactor
     const hash = objectData.props.hash
     return {
-        type: 'dbSearch',
+        type: GLOBAL_SEARCH,
         query,
         hash,
         variableDefs: [],
@@ -127,7 +128,7 @@ const dbSearch = (state, objectData) => {
             [hash]: {
                 hash,
                 query,
-                type: 'globalGet',
+                type: GLOBAL_SEARCH,
                 getStack: [],
                 searchContext: objectData.inverses
             }
@@ -154,9 +155,9 @@ const apply = (state, objectData) => {
         ))
         .filter((param) => (param !== undefined))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
-    const children = parameters[2] === undefined ?
-        { op1: parameters[0], function: parameters[1] }
-         : { op1: parameters[0], function: parameters[1], op2: parameters[2] }
+    const children = parameters[2] === undefined
+        ? { op1: parameters[0], function: parameters[1] }
+        : { op1: parameters[0], function: parameters[1], op2: parameters[2] }
     return {
         hash: objectData.props.hash,
         args,
@@ -190,6 +191,7 @@ const text = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    console.log(args)
     return {
         hash: objectData.props.hash,
         args: Object.assign(args, { prim: true }), //combine args of x,y,text
@@ -201,14 +203,22 @@ const text = (state, objectData) => {
 }
 
 const group = (state, objectData) => {
-    const children = getJSValue(state, 'placeholder', 'childElements', objectData)
-    const parameters = children.filter((child) => (child !== undefined))
+    const paramNames = ["childElement1", "childElement2"]
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+        ))
+        .filter((child) => (child !== undefined))
+    console.log(paramNames, parameters)
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     //need to sort by z-order
+    console.log(paramNames, parameters)
+    const children = parameters.length ===1 ?
+        { childElement1: parameters[0] } :
+        { childElement1: parameters[0], childElement2: parameters[1] }
     return {
         hash: objectData.props.hash,
         type: 'group',
-        children: { childElement1: parameters[0] },
+        children,
         args,
         variableDefs,
     }
@@ -260,6 +270,7 @@ export const primitives = {
     get,
     search,
     dbSearch,
+    recursive,
     //function: func,
     apply,
     ternary,

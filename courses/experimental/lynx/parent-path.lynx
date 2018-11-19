@@ -1,16 +1,14 @@
 window = new group
     x:100
-    childElements: new set
-        x:30//inverse does not work here because of the hack used with sets
-        subset1: new text
-            name:"txt"
-            x:txt.subset1.x
-            subset1:new object
-                name:"obj"
-                x:obj.parentSet.r
-            r:30
-            y:20
-            innerText:"test"
+    childElement1: new text
+        name:"txt"
+        x:txt.function.x
+        function:new object
+            name:"obj"
+            x:obj.caller.r
+        r:30
+        y:20
+        innerText:"test"
 
 subset1 = new attribute
     inverseAttribute:parentSet

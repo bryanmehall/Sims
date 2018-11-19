@@ -1,18 +1,11 @@
 window = new group
     name:"window"
+    x:20
     op1: new object
         name:"test"
         textRepresentation:new text //parentObject: test, parentValue:test, parentSet:set
             name:"txt"
             innerText:txt.parentConcept.name
-            x:txt.parentSet.x
+            x:txt.parentGroup.x
             y:30
-    childElements: new set
-        x: 20
-        name:"set"
-        subset1: window.op1.textRepresentation
-
-subset1 = new attribute
-    inverseAttribute:parentSet
-
-parentSet = new attribute
+    childElement1: window.op1.textRepresentation

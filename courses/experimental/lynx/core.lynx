@@ -14,11 +14,10 @@ accordianRepresentation = new group
             y:60
             nextElement:new text
                 innerText:"def"
-    childElements: new set
-        subset1: new text
-            x:accordianRep.pos.x
-            y:accordianRep.pos.y
-            innerText:"test"
+    childElement1: new text
+        x:accordianRep.pos.x
+        y:accordianRep.pos.y
+        innerText:"test"
 
 
 attribute = new object
@@ -41,23 +40,25 @@ group = new object
     name:"group"
     jsPrimitive:{group}
 
+childElement1 = new attribute
+    inverseAttribute: parentGroup
+
+childElement2 = new attribute
+    inverseAttribute: parentGroup
+
+parentGroup = new attribute
+
 div = new group
     name:"div"
-    textRepresentation:new text
-        name:"bear"
-        innerText:bear.parentConcept.name
-        x:bear.previousElement.y
-        y:130
-    childElements: new set
-        subset1:div.firstElement
-        subset2:div.firstElement.nextElement
+    childElement1: div.firstElement
     firstElement:new text
         innerText:"abc"
-        y:50
-        pos:new coordinatePosition
-            x:40
+        x:div.parentGroup.x
+        y:100 //div.parentGroup.pos.y
+        nextElement: new text
+            innerText:"abc"
+            x:10
             y:100
-        nextElement: div.textRepresentation
 
 firstElement = new attribute
     name:"firstElement"
@@ -70,8 +71,6 @@ previousElement = new attribute
     name:"previousElement"
 value = new attribute
     name:"value"
-window = new group
-    childElements:new set
 
 
 parentConcept = new attribute

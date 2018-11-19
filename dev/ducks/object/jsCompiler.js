@@ -21,7 +21,7 @@ const varDefsToString = (varDefs) => (
 const input = (ast) => ('inputs.'+ast.inputName)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
-const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!security risk!!!!!!!!!!!!!
+const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
 
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
@@ -30,7 +30,7 @@ const app = (ast) => {
 }
 
 const group = (ast) => {
-    const programText = buildChildren(ast, '\n')
+    const programText = buildChildren(ast, '(prim)\n')
     const varDefs = varDefsToString(ast.variableDefs)
     return ` function(prim) { //group\n${varDefs} ${programText}(prim)\n}`
 }
@@ -47,18 +47,23 @@ const get = (ast) => {
     } else {
         const programText = buildChildren(ast, "")
         const varDef = varDefsToString(ast.variableDefs)
+
+        /*
         if (ast.isFunction){
             return { varDefs: varDef, returnStatement: ast.hash }
-        }
-        return { varDefs: varDef, returnStatement: programText } //is this structure needed or can this just return a string?
+        }*/
+        //console.log("here", ast, varDef, programText)
+        const ret = programText === "" ? ast.hash + "//fix case with no children" : programText // todo: see why the case with no children is failing
+        return { varDefs: varDef, returnStatement: ret } //is this structure needed or can this just return a string?
     }
 
 }
 const search = (ast) => (ast.hash)
 
-const dbSearch = (ast) => {
+const globalSearch = (ast) => {
     if (ast.inline){
-        return ast.hash+'()'
+        const args = Object.keys(ast.args)
+        return `${ast.hash}( ${args.join(',')}, functionTable)`
     } else {
         return `return ${ast.hash}(prim, functionTable) //${ast.query}`
     }
@@ -75,7 +80,7 @@ const apply = (ast) => {
 //todo: combine the
 const ternary = (ast) => {
     const [condition, then, alt] = buildChildren(ast)
-    return `(${condition}) ? ${then} : ${alt}`
+    return `${condition} ? \n\t\t${then} : \n\t\t${alt}`
 }
 const addition       = () => ('+')
 const subtraction    = () => ('-')
@@ -101,7 +106,8 @@ export const jsCompilers = {
     ternary,
     get,
     search,
-    dbSearch,
+    globalSearch,
+    //recursive,
     apply,
     addition,
     subtraction,

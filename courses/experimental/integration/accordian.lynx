@@ -1,0 +1,27 @@
+window = new group
+    name:"group"
+    x:10 //referencing here instead of inner group
+    childElement1: group.accordianRep
+    accordianRep: new group
+        name:"accordianRep"
+        x:200
+        pos: new coordinatePosition
+            x:20
+            y:20
+        childElement1: new text
+            x:accordianRep.pos.x
+            y:accordianRep.pos.y
+            innerText:accordianRep.parentConcept.name
+        childElement2:accordianRep.op1
+        op1: new group
+            name:"div"
+            x:100
+            childElement1: div.firstElement
+            firstElement:new text
+                innerText:"abc"
+                x:div.x
+                y:100 //div.parentGroup.pos.y
+                nextElement: new text
+                    innerText:"abc"
+                    x:10
+                    y:100

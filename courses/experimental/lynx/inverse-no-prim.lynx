@@ -1,21 +1,20 @@
 window = new group
     name:"group"
-    childElements: new set
-        subset1: new text
-            name:"txt"
-            x:20
-            y:30
-            innerText:new get
-                jsPrimitive:{get}
-                attribute:equalTo
-                rootObject: new object
-                    name:"apply"
-                    equalTo:apply.function.result
-                    function: new funct
-                        name:"factorial"
-                        op1:"failedtst"
-                        result:factorial.caller.op1
-                    op1:"test"
+    childElement1: new text
+        name:"txt"
+        x:20
+        y:30
+        innerText:new get
+            jsPrimitive:{get}
+            attribute:equalTo
+            rootObject: new object
+                name:"apply"
+                equalTo:apply.function.result
+                function: new funct
+                    name:"factorial"
+                    op1:"failedtst"
+                    result:factorial.caller.op1
+                op1:"test"
 
 dbSearch = new object
 equalTo = new attribute

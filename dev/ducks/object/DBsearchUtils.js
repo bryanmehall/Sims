@@ -1,10 +1,11 @@
 import { getObject, getHash, getValue, getJSValue } from './objectUtils'
+import { GLOBAL_SEARCH } from './constants'
 import { getArgsAndVarDefs } from './selectors'
 //import { buildFunction } from './IRutils'
 
 export const resolveDBSearches = (state, combinedArgs) => { //move db searches at app to variable defs
     return Object.values(combinedArgs)
-        .filter((arg) => (arg.type === 'dbSearch' || arg.type === 'globalGet')) //combine these conditions
+        .filter((arg) => (arg.type === GLOBAL_SEARCH)) //combine these conditions
         .map((arg) => {
             let root = getObject(state, arg.query)
             //root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
@@ -32,10 +33,10 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
             }
             ast.inline = false
             ast.isFunction = true
-            const astWithVarDefs = Object.assign({}, ast, { args:args1, variableDefs:variableDefs1 })
-            console.log(ast, astWithVarDefs)
+            const astWithVarDefs = Object.assign({}, ast, { args: args1, variableDefs: variableDefs1 })
             return {
                 key: arg.hash,
+                varDefKey:arg.hash,
                 ast: astWithVarDefs,
                 string: "",
                 comment: `//dbSearch for ${arg.query}`
@@ -43,8 +44,21 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
         })
 }
 
+/*****************
+handling recursion
+for recursive functions the pure version of getDBsearchAst results in an infinite loop in the compiler because the ast of the function needs the arguments of itself to compile
+*****************/
+let dbCache = {}//switch this to cache all ASTs
 //this gets the ast of the primitive at the end of the get stack not the root object
 export const getDBsearchAst = (state, dbSearchObject, getStack) => {
+    const hash = dbSearchObject.props.hash
+    if (dbCache.hasOwnProperty(hash)){
+        return dbCache[hash]
+    }
+    dbCache[hash] = {
+        query: 'factorial',
+        ast: { type: 'recursive', args: {}, variableDefs: [], children: {}, context: {} }
+    }
     const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
     const rootWithoutInverses = getObject(state, query)
     const rootProps = Object.assign({}, rootWithoutInverses.props, dbSearchObject.inverses)
@@ -52,11 +66,18 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
         props: rootProps,
         inverses: dbSearchObject.inverses
     })
-    if (getStack.length > 1) { throw 'get stack length greater than one' }
+    if (getStack.length > 1) { throw 'get stack length greater than one' } //todo:make this work for longer paths
     const attr = getStack[0].props.attribute
-
     const ast = getJSValue(state, 'placeholder', attr, root)
-    const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root )
-    console.log(args, variableDefs)
-    return { query, root, ast }
+    /*if (ast.args.hasOwnProperty('$hash_get_3797190171')){
+        ast.args.problem = ast.args.$hash_get_3797190171
+        ast.args.problem.key = "problem"
+        delete ast.args.$hash_get_3797190171
+    }*/
+    const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
+    const astWithArgs = Object.assign({}, ast, { args, variableDefs })
+    const searchData = { query, root, ast: astWithArgs }
+    dbCache[hash] = searchData
+    console.log('db1', searchData.ast)
+    return searchData
 }
