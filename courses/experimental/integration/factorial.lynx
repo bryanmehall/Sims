@@ -2,9 +2,9 @@ window = new group
     name:"group"
     childElement1: new text
         name:"txt"
-        x:20
+        innerText:"test"
         y:20
-        innerText:new get
+        x:new get
             jsPrimitive:{get}
             attribute:equalTo
             rootObject: new object
@@ -13,24 +13,21 @@ window = new group
                 function: new dbSearch
                     jsPrimitive:{dbSearch}
                     query:"factorial"
-                op1:20
-
+                op1:5
 
 dbSearch = new object
 equalTo = new attribute
 funct = new object
 factorial = new funct
-    x:50
     name:"factorial"
     op1: factorial.caller.op1
     result: new ternary
-        name:"tern"
         condition:factorial.op1 < 1
         then:1
         alt:new apply
             function:multiplication
             op1:factorial.op1
-            op2:new get //var hash(factorial)
+            op2:new get 
                 jsPrimitive:{get}
                 attribute:equalTo
                 rootObject: new object
@@ -39,4 +36,4 @@ factorial = new funct
                     function: new dbSearch
                         jsPrimitive:{dbSearch}
                         query:"factorial"
-                    op1:factorial.op1-1  //(factorial.op1)
+                    op1:factorial.op1-1

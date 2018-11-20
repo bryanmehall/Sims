@@ -1,18 +1,11 @@
 window = new group
-    x:30
-    childElements: new set
-        x:20
-        subset1: new dbSearch
-            jsPrimitive:{dbSearch}
-            query:"dbtext"
+    x:20
+    childElement1: new dbSearch
+        jsPrimitive:{dbSearch}
+        query:"dbtext"
 
 dbtext = new text
     name:"txt"
-    x:txt.parentSet.x
+    x:txt.parentGroup.x
     y:30
     innerText:"test"
-
-subset1 = new attribute
-    inverseAttribute:parentSet
-
-parentSet = new attribute

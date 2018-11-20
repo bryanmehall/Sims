@@ -6,10 +6,22 @@ var fs = require('fs');
 const runTest = (objects, done) => {
     const state = { sim: { object: objects } }
     const { renderMonad, functionTable } = compile(state)
+    const render = renderMonad(functionTable)
+    let xTest, yTest, innerTextTest
+    const prim = {
+        text: (x, y, innerText) => {
+           xTest = x
+           yTest = y
+           innerTextTest = innerText
+        }
+    }
+    render(prim, {})
+    /*console.log(xTest, yTest, innerTextTest)
     let contains20 = false
     let contains30 = false
     let containsTest = false
     let isNotUndef = true
+
     Object.entries(functionTable).forEach((func) => {
         const st = func.toString()
         if (st.includes(' 20')){
@@ -25,11 +37,11 @@ const runTest = (objects, done) => {
             isNotUndef = false
         }
     })
-    const pass = contains20 && contains30 && containsTest && isNotUndef
-    if (pass){
+    const pass = contains20 && contains30 && containsTest && isNotUndef*/
+    if (xTest === 20 && yTest === 30 && innerTextTest === 'test'){
         done()
     } else {
-        done.fail('conditions not met'+[contains20, contains30, containsTest, isNotUndef].join(', '))
+        done.fail('conditions not met'+[xTest, yTest, innerTextTest].join(', '))
     }
 }
 const loadAndRunTest = (testName, folder, done) => {
@@ -66,8 +78,8 @@ const coreTests = [
     'parent-of-get'
 ]
 const dbTests = [
-    //'simple-get',
-    //'direct-child',
+    'simple-get',
+    'direct-child',
     //'parent'
 ]
 const generateTestSuite = (testNames, folder) => (

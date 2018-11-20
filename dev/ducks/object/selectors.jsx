@@ -1,6 +1,6 @@
 /* eslint pure/pure: 2 */
 import { formatGetLog, debugReduce, deleteKeys, compileToJS, objectFromEntries, limiter } from './utils'
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED } from './constants'
 import { astToFunctionTable, buildFunction } from './IRutils'
 import { getValue, getName, getObject, hasAttribute, objectFromHash, getInverseAttr } from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
@@ -53,11 +53,10 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
     if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
         if (getStack.length === 0){
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
-            console.log(currentObject)
             const inverseAttr = getInverseAttr(state, context.$attr)
-            let inverseFunctionData = {args:{}, varDefs:[]}
+            let inverseFunctionData = { args: {}, varDefs: [] }
             const targetFunctionData = { args: jsResult.args, varDefs: jsResult.variableDefs }
-            let functionData1 = {varDefs:[], args:{}}
+            let functionData1 = { varDefs: [], args: {} }
             if (inverseAttr !== undefined){//######################################################this is a false positive?
                 const inverseObject = objectFromHash(context[inverseAttr]) //get the inverse value
                 functionData1 = argsToVarDefs(state, inverseObject , targetFunctionData, context.$attr)
@@ -67,7 +66,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                 console.log('target', targetFunctionData)
                 inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, context.$attr)
             }
-            if (jsResult.type === 'undef') {
+            if (jsResult.type === UNDEFINED) {
                 console.log('adding recursive function', currentObject, searchName)
                 //throw new Error('recursive')
                 return { args: {}, varDefs: [] }
@@ -93,7 +92,6 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                 if (hasAttr) {
                     const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
                     //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
-                    console.log('inverse', newSearchArgs)
                     debugReduce(1, `${currentName}.${attr} is an inverse. returning new inverse argument: ${formatGetLog('', newGetStack)}`, currentName)
                     debugReduce(-1)
                     return { args: { [argKey]: newSearchArgs }, varDefs: [] }
@@ -111,7 +109,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
             //get the next value with inverses from cross edge attached
             const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
             const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-            if (nextJSValue.type === 'undef'){ //next value does not have primitive
+            if (nextJSValue.type === UNDEFINED){ //next value does not have primitive
                 const newSearchArgs = { argKey, type, context, query: THIS, getStack: newGetStack }
                 debugReduce(1, `${currentName}.${attr} is not a primitive`, currentName)
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)

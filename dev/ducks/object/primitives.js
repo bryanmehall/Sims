@@ -1,6 +1,7 @@
 import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
+import { getDBsearchAst } from './DBsearchUtils'
 import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
 const input = (state, objectData) => {
@@ -99,7 +100,8 @@ const get = (state, objectData) => {
         children: {},
     }
 }
-const recursive = (state, objectData) => {
+
+const recursive = () => {
     throw 'here'
 }
 const search = (state, objectData, valueData) => { //search is get root (local Search) not dbSearch --rename to local and global
@@ -112,11 +114,15 @@ const search = (state, objectData, valueData) => { //search is get root (local S
         children: {},
         args: { search: { query, type: 'localGet', getStack: [] } }
     }
-} //replace this with a call to database?(closer to concept of new)
+}
 
 const dbSearch = (state, objectData) => {
-    const query = objectData.props.query.props.jsPrimitive.value //refactor
+    const query = objectData.props.query.props.jsPrimitive.value //refactor --get from dbSerachast
     const hash = objectData.props.hash
+    //const { ast } = getDBsearchAst(state, objectData, [])
+    //console.log(ast)
+    //const astArgs = isUndefined(ast) ? {} : ast.args
+    //console.log(astArgs)
     return {
         type: GLOBAL_SEARCH,
         query,
@@ -131,7 +137,8 @@ const dbSearch = (state, objectData) => {
                 type: GLOBAL_SEARCH,
                 getStack: [],
                 searchContext: objectData.inverses
-            }
+            },
+            //...astArgs
         }
     }
 }
@@ -191,7 +198,6 @@ const text = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
-    console.log(args)
     return {
         hash: objectData.props.hash,
         args: Object.assign(args, { prim: true }), //combine args of x,y,text
@@ -208,13 +214,11 @@ const group = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((child) => (child !== undefined))
-    console.log(paramNames, parameters)
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     //need to sort by z-order
-    console.log(paramNames, parameters)
-    const children = parameters.length ===1 ?
-        { childElement1: parameters[0] } :
-        { childElement1: parameters[0], childElement2: parameters[1] }
+    const children = parameters.length ===1
+        ? { childElement1: parameters[0] }
+        :{ childElement1: parameters[0], childElement2: parameters[1] }
     return {
         hash: objectData.props.hash,
         type: 'group',
@@ -247,7 +251,6 @@ const evaluate = () => ({
 
 const set = (state, objectData) => {
     const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
-    return [set1]
     const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
     return [].concat(set1, set2)
 }

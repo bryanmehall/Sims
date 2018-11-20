@@ -36,7 +36,7 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
             const astWithVarDefs = Object.assign({}, ast, { args: args1, variableDefs: variableDefs1 })
             return {
                 key: arg.hash,
-                varDefKey:arg.hash,
+                varDefKey: arg.hash,
                 ast: astWithVarDefs,
                 string: "",
                 comment: `//dbSearch for ${arg.query}`
@@ -52,11 +52,12 @@ let dbCache = {}//switch this to cache all ASTs
 //this gets the ast of the primitive at the end of the get stack not the root object
 export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     const hash = dbSearchObject.props.hash
+    //todo: if the same ast is hashed twice with a different get stack it will create undefined results
     if (dbCache.hasOwnProperty(hash)){
         return dbCache[hash]
     }
-    dbCache[hash] = {
-        query: 'factorial',
+    dbCache[hash] = { //prevent recursive evaluation
+        query: 'fact',
         ast: { type: 'recursive', args: {}, variableDefs: [], children: {}, context: {} }
     }
     const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
@@ -67,17 +68,17 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
         inverses: dbSearchObject.inverses
     })
     if (getStack.length > 1) { throw 'get stack length greater than one' } //todo:make this work for longer paths
+    if (getStack.length === 0){
+        const ast = getValue(state, 'placeholder', 'jsPrimitive', root).value
+        const searchArgs = { query, root, ast }
+        dbCache[hash] = searchArgs
+        return searchArgs
+    }
     const attr = getStack[0].props.attribute
     const ast = getJSValue(state, 'placeholder', attr, root)
-    /*if (ast.args.hasOwnProperty('$hash_get_3797190171')){
-        ast.args.problem = ast.args.$hash_get_3797190171
-        ast.args.problem.key = "problem"
-        delete ast.args.$hash_get_3797190171
-    }*/
     const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
     const astWithArgs = Object.assign({}, ast, { args, variableDefs })
     const searchData = { query, root, ast: astWithArgs }
     dbCache[hash] = searchData
-    console.log('db1', searchData.ast)
     return searchData
 }
