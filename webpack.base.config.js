@@ -26,10 +26,15 @@ var config = {
 	module: {
 		loaders: [
 			{
-			include: DEV,
-			exclude: "/node_modules/",
-			loader: "babel-loader",
-		}]
+                include: DEV,
+                exclude: "/node_modules/",
+                loader: "babel-loader",
+            },
+            {
+                test: /\.peg$/,
+                loader: 'pegjs-loader?cache=true'
+            }
+		]
 	},
 	resolve: {
 		extensions: ['.js', '.jsx']

@@ -112,7 +112,7 @@ prevVal = new attribute
 
 type = new attribute
     name:"type"
-
+equalTo = new attribute
 mouse = new attribute
     name:"a"
 set = new object

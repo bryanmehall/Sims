@@ -1,4 +1,5 @@
 import parser from './parser'
+//pegjs --track-line-and-column --cache parser.peg
 
 export const lynxParser = (lynxString) => {
     //convert indents to double curly braces so grammar is context free
@@ -21,10 +22,10 @@ export const lynxParser = (lynxString) => {
         }
     })
     try {
-        const out = parser.parse(outString+"}}")
-
+        const out = parser.parse(outString)
         return out
     } catch (e) {
-        console.warn("parsing failed for" , e.message, e.location.start, e.location.end)
+        console.warn("parsing failed for" , e.message, 'line:', e.line, 'column:', e.column)
+        throw new Error('parsing error')
     }
 }

@@ -16,7 +16,7 @@ window = new group
                 op1:5
 
 dbSearch = new object
-equalTo = new attribute
+
 funct = new object
 factorial = new funct
     name:"factorial"

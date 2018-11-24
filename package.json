@@ -84,6 +84,8 @@
     "html-webpack-plugin": "^2.29.0",
     "jest": "^20.0.4",
     "jsx-loader": "^0.13.2",
+    "pegjs": "^0.10.0",
+    "pegjs-loader": "^0.5.4",
     "react-test-renderer": "^15.6.1",
     "redux-devtools": "^3.3.2",
     "redux-logger": "^3.0.1",

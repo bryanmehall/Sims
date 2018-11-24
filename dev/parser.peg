@@ -65,6 +65,7 @@ Module
     }
 Declaration
 	= "\n"*id:Name _ "="_ object:Object {return Object.assign({}, object, {id:id})}
+    / BlockComment
 
 Object "object"
 	= value:New "{{"?attributes:("\n""    "*Attribute)*"}}"? {
@@ -193,6 +194,10 @@ Primitive "static primitive"
     ="{"type:Name"}" {return {type:type}}
 //whitespace
 _ = " "*
+
 //comment
 Comment "comment"
 	="//"[^\n]*
+
+BlockComment "block comment"
+    ="/*" (!"*/" .)* "*/"
