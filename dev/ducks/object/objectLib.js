@@ -1,3 +1,9 @@
+const constructString = (string) => ({
+    type: "string",
+    props: {
+        jsPrimitive: { type: "string", value: string }
+    }
+})
 export const objectLib = {
 	id: (id) => ({
 		type: 'id',
@@ -8,7 +14,8 @@ export const objectLib = {
 	undef: {
 		type: 'undef',
 		props: {
-			id: 'undef'
+			id: 'undef',
+            name: constructString("undefined")
 		}
 	},
 	union: (set1, set2, scope) => ({
@@ -51,14 +58,7 @@ export const objectLib = {
 			jsPrimitive: { type: 'search', id: query }
 		}
 	}),
-    constructString: function(string){
-        return {
-            type: "string",
-            props: {
-                jsPrimitive: { type: "string", value: string }
-            }
-        }
-    },
+    constructString,
     constructArray: function(name, elements){
         const length = elements.length
         if (length === 0){

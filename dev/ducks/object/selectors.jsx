@@ -50,9 +50,11 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
 
     const searchName = getName(state, currentObject)
     //console.log('name:', searchName, 'query:', query, currentObject, searchArgData)
+    //if (currentObject.type === 'undef'){throw new Error('current is undefined')}
     if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
         if (getStack.length === 0){
             const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
+            console.log(jsResult)
             const inverseAttr = getInverseAttr(state, context.$attr)
             let inverseFunctionData = { args: {}, varDefs: [] }
             const targetFunctionData = { args: jsResult.args, varDefs: jsResult.variableDefs }
@@ -93,7 +95,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                     const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
                     //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
                     debugReduce(1, `${currentName}.${attr} is an inverse. returning new inverse argument: ${formatGetLog('', newGetStack)}`, currentName)
-                    debugReduce(-1)
+                    debugReduce(-1, currentName)
                     return { args: { [argKey]: newSearchArgs }, varDefs: [] }
                 } else {
                     throw new Error('attribute not found')
@@ -112,10 +114,11 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
             if (nextJSValue.type === UNDEFINED){ //next value does not have primitive
                 const newSearchArgs = { argKey, type, context, query: THIS, getStack: newGetStack }
                 debugReduce(1, `${currentName}.${attr} is not a primitive`, currentName)
+                console.log('next undefined', nextValue)
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
                 //handle case where nextName === query returned...need to move arg to varDef
                 const childArgsAndVarDefs = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
-                debugReduce(-1)
+                debugReduce(-1, currentName)
                 return childArgsAndVarDefs
             } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
                 //this gets the ast of the end of the get stack not the root
@@ -145,7 +148,14 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                     ]
                 }//this arg key needs to be removed and a new dbSearch argument needs to be added
             } else if (nextValue.type === 'get') {
+                //console.log('next is get', currentObject, nextValue, newGetStack)
+                //console.log(argsToVarDefs(state, currentObject,{args:{}, varDefs:[]}, attr))
+                //const newSearchArgs = { argKey, query: THIS, type, context, getStack: newGetStack }
+                //const nextfd = reduceGetStack(state, nextValue, newSearchArgs)
+                //const { varDefs } = argsToVarDefs(state, currentObject, nextfd, attr)
+                //const arg1 = Object.values(args)//refactor
                 const arg = Object.values(nextJSValue.args).filter((arg) => (arg.type === LOCAL_SEARCH))
+                //console.log(arg, arg1, varDefs)
                 if (arg.length > 1) { //this would mean that a child has more than one argument
                     //console.log('args for ',searchName, arg)
                     throw 'arg length greater than one'
@@ -154,7 +164,7 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                 const childQuery = arg.length === 0 ? searchName : arg[0].query
                 const childGetStack = arg.length === 0 ? [] : arg[0].getStack
                 const combinedGetStack = childGetStack.concat(newGetStack)
-                const newSearchArgs = {
+                const appendedSearchArgs = {
                     argKey,
                     type,
                     context,
@@ -162,7 +172,8 @@ function reduceGetStack(state, currentObject, searchArgData){ // get all args an
                     getStack: combinedGetStack
                 }
                 //console.log('getting#########', formatGetLog(childQuery, combinedGetStack))
-                return reduceGetStack(state, currentObject, newSearchArgs)
+                const getFunctionData = {args:{[argKey]:appendedSearchArgs}, varDefs:[]}//varDefs}
+                return argsToVarDefs(state, currentObject, getFunctionData, attr)
             } else {
                 debugReduce(1, `getting ${formatGetLog(THIS, getStack)}`, currentName)
                 const newSearchArgs = { argKey, query: THIS, type, context, getStack: newGetStack }

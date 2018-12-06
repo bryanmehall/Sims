@@ -93,6 +93,7 @@ const get = (state, objectData) => {
     }
     return {
         hash,
+        query,
         variableDefs: [],
         args,
         inline: true,

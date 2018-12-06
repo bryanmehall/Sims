@@ -75,6 +75,7 @@ const coreTests = [
     'get-new-object',
     'parent-path',
     'vardef-in-get-chain',
+    'vardef-in-get-append',
     'parent-of-get'
 ]
 const dbTests = [

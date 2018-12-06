@@ -71,9 +71,23 @@
 					"length":10
 				},
                 {
+					"id": "vardef-in-get-append",
+					"title":"vardef-in-get-append",
+					"text":"",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "vardef-in-get-chain",
 					"title":"vardef-in-get-chain",
 					"text":"",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "local-new-object-get",
+					"title":"local new object get",
+					"text":"test for agruments passing up through new object get",
 					"type":"anim",
 					"length":10
 				}

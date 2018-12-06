@@ -8,9 +8,12 @@ window = new group
                 function: sum
                 equalTo:apply.function.result
                 op1:new list
-                    length:1
+                    name:"list"
+                    length:list.lastElement.index+1
+                    lastElement:new element
+                        value:10
                     firstElement:new element
-                        value:11
+                        value:50
                         nextElement: new element
                             value:9
         y:20
@@ -20,21 +23,33 @@ sum = new function //new is just short for new object...isA --parent chain
     name:"sum"
     list: sum.caller.op1
     result: new ternary //{sum.list.length, sum.list}
-        condition: sum.list.length == 1
-        then: 10
-        alt: new get
-            attr:equalTo
-            root: new apply //sum.list[0] +sum(splice(1, sum.list))
-                function: addition
-                op1:new get
-                    attr:equalTo
-                    root: new object
-                        result:50
-                op2:50
-            equalTo:addition.result
+        condition: sum.list.length == 0
+        then: 0
+        alt:new get
+            jsPrimitive:{get}
+            attribute: equalTo
+            rootObject: new object
+                name:"apply"
+                equalTo:apply.function.result
+                function:shift
+                list:sum.list.length
+
+shift = new function
+    name:"shift"
+    result:shift.op1
+    op1:shift.caller.list
 
 list = new object
+element = new object
+    name:"element"
+    index:new ternary
+        condition:element.previousElement.name == "undefined"
+        then:20
+        alt:element.previousElement.index
+
 length = new attribute
+index = new attribute
+lastElement = new attribute
 /*      
 getIndex = new function //for general lists
     list<list>:caller.list
@@ -69,12 +84,20 @@ list = new object
     graphicalRepresentation: new group
         childElement1: new rectangle
         childElement2: 
-    firstElement <element>: new element
-        value:1
+    firstElement <element>: new listElement
+        value:
+        index:0
+        
     lastElement: <element>:
     length: 
     structPrimitive: minResources(list.structPrimitives, runEstimate)
     structPrimitives:{linkedList, array, lynxList} //lynxList goes to interpreter
+    
+listElement = new object
+    index:new ternary
+        condition:#isfirst element#
+        then:0
+        else:prevElement +1
 
 linkedList = new struct
     value<int32>:1

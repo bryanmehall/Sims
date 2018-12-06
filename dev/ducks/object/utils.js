@@ -46,13 +46,15 @@ export const debugReduce = (shift, message, name) => {
     /* eslint-disable no-console */
     try {
         if (shift === 1) {
-            console.group(name)
+            //console.group(name)
+
             console.log(message)
         } else if (shift === -1){
             console.log(message)
-            console.groupEnd()
+            //console.groupEnd()
         }
     } catch (e){
+        throw e
         console.log('debug suppressed')
     }
     /* eslint-enable no-console */
