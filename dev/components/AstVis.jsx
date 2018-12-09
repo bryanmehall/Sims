@@ -21,17 +21,10 @@ class AstVis extends React.Component {
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
                 .id((d) => (d.id))
-                .strength(0.2)
+                .strength(0)
                 )
-            .force("l1", isolate(d3.forceManyBody().strength(-200), (d) => (d.ast.level === 1)))
-            .force("l2", isolate(d3.forceManyBody().strength(-200), (d) => (d.ast.level === 2)))
-            .force("l3", isolate(d3.forceManyBody().strength(-200), (d) => (d.ast.level === 3)))
-            .force("l4", isolate(d3.forceManyBody().strength(-200), (d) => (d.ast.level === 4)))
-            .force("l5", isolate(d3.forceManyBody().strength(-200), (d) => (d.ast.level === 5)))
-            .force("a", d3.forceManyBody() )
-
             .force("forceY", d3.forceY()
-                .strength(1)
+                .strength(3)
                 .y((d) => (d.ast.level*60)
                 )
             )
@@ -42,15 +35,28 @@ class AstVis extends React.Component {
             for (var i = 0; i < vis.state.nodes.length; i++) {
                 const currNode = vis.state.nodes[i]
                 const prevNode = i === 0 ? { ast: { level: -1 }, x: 0 } : vis.state.nodes[i-1]
+                const nextNode = i === vis.state.nodes.length-1 ? { ast: { level: -1 }, x: 0 } : vis.state.nodes[i+1]
                 if (currNode.ast.level === prevNode.ast.level){
-                    if (currNode.x < prevNode.x){
-                        vis.state.nodes[i].x += 50;
-                    } else {
-                        //vis.state.nodes[i].x -= 1;
+                    if (currNode.x < prevNode.x+80){
+                        const acc = (80-(currNode.x-prevNode.x))
+                        currNode.vx += acc
+                        prevNode.vx -= acc
                     }
                 }
+                /*if (nextNode.ast.level === currNode.ast.level){
+                    if (nextNode.x < currNode.x+90){
+                        currNode.vx -= (90-(nextNode.x-currNode.x))
+                    }
+                }*/
+                const parNode = vis.state.nodes[currNode.ast.parId] || { ast: { level: -1 }, x: 0 }
+                const x = parNode === undefined ? 0 : parNode.x
+                const diff = (x-currNode.x)
+                const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
+                parNode.vx -= acc*2
+                currNode.vx += acc
             }
         }
+
         this.simulation.on("tick", () => {
             const appNode = this.state.nodes[0]
             orderingForce()

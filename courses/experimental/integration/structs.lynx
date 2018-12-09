@@ -1,0 +1,17 @@
+window = new group
+    childElement1: new text
+        name:"text"
+        x:text.op1.index
+        op1:new object
+            value:10
+            name:"element"
+            index:new ternary
+                condition:element.previousElement.name == "undefined"
+                then:30
+                alt:element.previousElement.index
+        y:20
+        innerText:"test"
+
+list = new object
+length = new attribute
+index = new attribute

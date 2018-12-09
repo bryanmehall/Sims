@@ -165,6 +165,13 @@
 					"text":"Linked List",
 					"type":"anim",
 					"length":10
+				},
+                {
+					"id": "structs",
+					"title":"Structs",
+					"text":"simple struct example",
+					"type":"anim",
+					"length":10
 				}
             ]
         }
