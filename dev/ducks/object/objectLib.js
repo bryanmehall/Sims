@@ -60,21 +60,12 @@ export const objectLib = {
 	}),
     constructString,
     constructArray: function(name, elements){
-        const length = elements.length
-        if (length === 0){
-            return {
-                type: 'end',
-                props: {
-                    type: objectLib.constructString("end")
-                }
-            }
-        } else {
-            return {
-                type: 'array',
-                props: {
-                    value: elements[0],
-                    nextElement: objectLib.constructArray(' ', elements.slice(1))
-                }
+        return {
+            type: 'array',
+            props: {
+                name: "array",
+                instanceOf: "array",
+                jsPrimitive: { type: "array", value: elements }
             }
         }
     },

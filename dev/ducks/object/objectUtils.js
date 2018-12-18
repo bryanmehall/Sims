@@ -119,7 +119,7 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 			let attrs = Object.keys(objectData.props)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
-			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)//use array for now because linked list is simpler than rb-tree or c-trie
+			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)
             if (name === 'app'){ console.log(attrSet) }
 			return returnWithContext(state, name, prop,attrData, attrSet, objectData)
 		}
@@ -131,8 +131,6 @@ export const getValue = (state, inverseProps, prop, objectData) => {
         if (primitives.hasOwnProperty(valueData.type)){
             //console.log(`getting ${valueData.type} subtree named ${name}`)
             return { state, value: primitives[valueData.type](state, objectData, valueData) }
-        } else if (def.hasOwnProperty('type')){
-                return { state, value: def }
         } else {
             throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
         }

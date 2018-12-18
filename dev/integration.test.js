@@ -76,7 +76,9 @@ const coreTests = [
     'parent-path',
     'vardef-in-get-chain',
     'vardef-in-get-append',
-    'parent-of-get'
+    'parent-of-get',
+    'local-new-object-get',
+    'local-get-end-get-stack'
 ]
 const dbTests = [
     'simple-get',

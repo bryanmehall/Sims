@@ -1,0 +1,9 @@
+set = new object
+    graphicalRepresentation:
+    jsPrimitive:{type:set}
+
+setToList = new function
+    
+union = new function
+intersection = new function
+difference = new function

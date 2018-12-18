@@ -1,0 +1,39 @@
+window = new group
+    childElement1: new text
+        name:"text"
+        x:30
+        y:20
+        innerText:text.attributes.firstElement.value
+
+array = new object
+    name:"array"
+    firstElement:new element
+        name:"firstElement"
+        value:new get
+            name:"test"
+            jsPrimitive:{get}
+            attribute:equalTo
+            rootObject:new object
+                name:"apply"
+                equalTo: apply.function.result
+                function: getIndex
+                array:apply.attributes //apply.attributes works but test.attributes does not
+                index:1
+
+getIndex = new function
+    name:"getIndex"
+    result:new object 
+        jsPrimitive:{getIndex}
+        array:getIndex.caller.array
+        index:getIndex.caller.index
+
+element = new object
+    name:"element"
+/*
+    nextElement:getIndex(element.array, element.index+1)
+    previousElement:getIndex(element.array, element.index-1) //element.previousElement is only defined for elements with index > 0 which fits with getIndex only taking integers greater than 0
+*/
+length = new attribute
+nextElement = new attribute
+previousElement = new attribute
+index = new attribute

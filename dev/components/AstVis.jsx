@@ -154,7 +154,7 @@ class Node extends React.Component {
         this.state = { active: false }
     }
     render(){
-        const { x, y, ast, setActive, id } = this.props
+        const { x, y, ast, setActive } = this.props
         const self = this
         const active = this.state.active
         return (
@@ -172,7 +172,7 @@ class Node extends React.Component {
                 x={x}
                 y={y}
                 >
-                {ast.hasOwnProperty('value') ? ast.value : ast.type}
+                {ast.hasOwnProperty('value') ? JSON.stringify(ast.value) : ast.hasOwnProperty('vis') ? ast.vis.name : ast.type}
                 {(active ? displayArgs(ast) : "")}
             </text>
         )

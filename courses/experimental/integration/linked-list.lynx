@@ -1,7 +1,7 @@
 window = new group
     childElement1: new text
         x:new get
-            jsPrimitive:{get}
+            jsPrimitive:{get}//varDefs are here
             attribute:equalTo
             rootObject:new apply
                 name:"apply"

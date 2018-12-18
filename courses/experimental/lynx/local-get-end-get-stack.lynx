@@ -1,0 +1,13 @@
+window = new group
+    childElement1: new text
+        name:"text"
+        x:20
+        y:30
+        innerText:text.op1.value
+        op1:new object
+            value:new get
+                jsPrimitive:{get}
+                attribute:equalTo
+                rootObject:new object
+                    name:"apply"
+                    equalTo:"test"

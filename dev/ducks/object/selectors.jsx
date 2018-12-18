@@ -7,12 +7,14 @@ import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
 todo:
-    -add factorial function
     -fix problem of double inverse attributes
     -build visualizer
         -are structs needed?
     -construct state model
 refactor todo:
+    -switch all args to get objects
+        -replace THIS with next value
+        -replace root can be next value
     -switch render and prim to just io
     -make objectTabl constant per evaluation cycle
 */
@@ -28,6 +30,7 @@ const resolveInverses = (state, functionData, attr) => {
     const { args, varDefs } = functionData
     const inverseAttr = getObject(state, attr).props.inverseAttribute
     const args1 = args || {} //prevent undefined
+
     const newArgs = Object.entries(args1)
         .map((entry) => {
             if (entry[1].type === INVERSE && entry[1].query === inverseAttr){
@@ -41,9 +44,93 @@ const resolveInverses = (state, functionData, attr) => {
     return { args: newArgs, varDefs }
 }
 
-const createVarDef = (state, searchArgData, currentObject, searchName) => {
+const getNext = (state, currentObject, searchArgData) => {
+    const { argKey, getStack, context } = searchArgData
+    const searchName = getName(state, currentObject) //remove for debug
+    const nextGet = getStack[0]
+    const newGetStack = getStack.slice(1)
+    const attr = nextGet.props.attribute//attribute to go to
+    const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
+    if (isInverseAttr){
+        //if the attribute is inverse return an inverse arg that only matches
+        if (!hasAttribute(currentObject, attr)) {
+            throw new Error('LynxError: attribute not found')
+        }
+        const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
+        //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
+        return { args: { [argKey]: newSearchArgs }, varDefs: [] }
+    }
+    //the next section is for allowing objects referenced by a get to have inverse attributes
+    //if nextGet has any attributes other than those listed
+    //then get inverses to add to nextValue
+    const extraAttrs = ['jsPrimitive', 'rootObject', 'attribute', 'parentValue', 'hash']
+    const inverseAttributes = deleteKeys(nextGet.props, extraAttrs)
+    const hasInverses = Object.keys(inverseAttributes).length !== 0
+    const inverses = hasInverses ? inverseAttributes : 'placeholder'
+    //get the next value with inverses from cross edge attached
+    const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
+    const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+    if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
+        //this gets the ast of the end of the get stack not the root
+        const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
+        const dbSearchArg = { [nextValue.props.hash]: {
+                query,
+                hash: nextValue.props.hash,
+                type: GLOBAL_SEARCH,
+                getStack: newGetStack,
+                searchContext: nextValue.inverses //switch to context
+            } }
+        const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs }, attr)
+        //combine args from db search ast, with any args in putting this in context of current with db arg
+        const combinedArgs = Object.assign({}, ast.args, args, dbSearchArg)
+        const searchAST = Object.assign({}, nextJSValue, { args: combinedArgs, varDefs })
+        return {
+            args: combinedArgs,
+            varDefs: [
+                {
+                    key: argKey,
+                    varDefKey: argKey,
+                    ast: searchAST,
+                    inline: false,
+                    comment: ` //dbSearch: ${query}`
+                },
+                ...varDefs
+            ]
+        }//this arg key needs to be removed and a new dbSearch argument needs to be added
+    } else if (nextJSValue.type === 'get') {
+        //for direct get: if root is not search or get
+        const { value: root } = getValue(state, 'placeholder', "rootObject", nextValue)
+        if (root.type !== 'get' && root.type !== 'search'){//don't move conditions to get
+            //needs larger scale refactoring
+            const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+            const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
+            return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+        }
+        const arg = Object.values(nextJSValue.args).filter((arg) => (arg.type === LOCAL_SEARCH))
+        if (arg.length > 1) { //this would mean that the get object has more than one argument
+            throw 'arg length greater than one'
+        }
+        const childQuery = arg.length === 0 ? searchName : arg[0].query
+        const childGetStack = arg.length === 0 ? [] : arg[0].getStack
+        const combinedGetStack = childGetStack.concat(newGetStack)
+        const appendedSearchArgs = {
+            ...searchArgData,
+            query: childQuery,
+            getStack: combinedGetStack
+        }
+        const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
+        return argsToVarDefs(state, currentObject, getFunctionData, attr)
+    } else {
+        const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+        const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
+        return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+    }
+}
+
+const createVarDef = (state, currentObject, searchArgData) => {
     const { argKey, context } = searchArgData
     const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
+    const searchName = getName(state, currentObject) //remove for debug
     const inverseAttr = getInverseAttr(state, context.$attr)
     const targetFunctionData = { args: jsResult.args, varDefs: jsResult.variableDefs }
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, context.$attr)
@@ -71,88 +158,15 @@ const createVarDef = (state, searchArgData, currentObject, searchName) => {
 
 const reduceGetStack = (state, currentObject, searchArgData) => { // get all args and varDefs of an argument
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
-    const { argKey, query, getStack, context } = searchArgData
+    const { query, getStack } = searchArgData
     //limiter(4000, 100)
     const searchName = getName(state, currentObject)
     //console.log('name:', searchName, 'query:', query, currentObject, searchArgData)
-    //if (currentObject.type === 'undef'){throw new Error('current is undefined')}
     if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
         if (getStack.length === 0){
-            return createVarDef(state, searchArgData, currentObject, searchName)
+            return createVarDef(state, currentObject, searchArgData)
         } else {
-            const nextGet = getStack[0]
-            const newGetStack = getStack.slice(1)
-            const attr = nextGet.props.attribute//attribute to go to
-            const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
-            const currentName = getName(state, currentObject)
-            if (isInverseAttr){
-                //if the attribute is inverse return an inverse arg that only matches
-                const hasAttr = hasAttribute(currentObject, attr)
-                if (hasAttr) {
-                    const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
-                    //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
-                    return { args: { [argKey]: newSearchArgs }, varDefs: [] }
-                } else {
-                    throw new Error('LynxError: attribute not found')
-                }
-            }
-            //the next section is for allowing objects referenced by a get to have inverse attributes
-            //if nextGet has any attributes other than those listed
-            //then get inverses to add to nextValue
-            const extraAttrs = ['jsPrimitive', 'rootObject', 'attribute', 'parentValue', 'hash']
-			const inverseAttributes = deleteKeys(nextGet.props, extraAttrs)
-            const hasInverses = Object.keys(inverseAttributes).length !== 0
-            const inverses = hasInverses ? inverseAttributes : 'placeholder'
-            //get the next value with inverses from cross edge attached
-            const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
-            const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-            if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
-                //this gets the ast of the end of the get stack not the root
-                const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
-                const dbSearchArg = { [nextValue.props.hash]: {
-                        query,
-                        hash: nextValue.props.hash,
-                        type: GLOBAL_SEARCH,
-                        getStack: newGetStack,
-                        searchContext: nextValue.inverses //switch to context
-                    } }
-                const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs }, attr)
-                //combine args from db search ast, with any args in putting this in context of current with db arg
-                const combinedArgs = Object.assign({}, ast.args, args, dbSearchArg)
-                const searchAST = Object.assign({}, nextJSValue, { args: combinedArgs, varDefs })
-                return {
-                    args: combinedArgs,
-                    varDefs: [
-                        {
-                            key: argKey,
-                            varDefKey: argKey,
-                            ast: searchAST,
-                            inline: false,
-                            comment: ` //dbSearch: ${query}`
-                        },
-                        ...varDefs
-                    ]
-                }//this arg key needs to be removed and a new dbSearch argument needs to be added
-            } else if (nextJSValue.type === 'get') {
-                const arg = Object.values(nextJSValue.args).filter((arg) => (arg.type === LOCAL_SEARCH))
-                if (arg.length > 1) { //this would mean that the get object has more than one argument
-                    throw 'arg length greater than one'
-                }
-                const childQuery = arg.length === 0 ? searchName : arg[0].query
-                const childGetStack = arg.length === 0 ? [] : arg[0].getStack
-                const combinedGetStack = childGetStack.concat(newGetStack)
-                const appendedSearchArgs = {
-                    ...searchArgData,
-                    query: childQuery,
-                    getStack: combinedGetStack
-                }
-                const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
-                return argsToVarDefs(state, currentObject, getFunctionData, attr)
-            } else {
-                const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
-                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)//think of this as getting the child args
-                return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
-            }
+            return getNext(state, currentObject, searchArgData)
         }
     } else {
         if (searchName === 'app'){
@@ -197,6 +211,15 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 
     })
     return { args, varDefs }
+}
+const checkDuplicates = (str, varDefs) => {
+    varDefs = varDefs || []
+    let duplicates = []
+    varDefs.forEach((varDef)=>{
+        const key = varDef.key
+        duplicates = duplicates.concat(varDefs.filter((varDef1) => (varDef1.key === key)))
+    })
+    console.log(str, duplicates, varDefs)
 }
 
 //if an an argument is defined entirely under the current object in the tree then it is considered

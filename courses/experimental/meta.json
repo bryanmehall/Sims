@@ -90,7 +90,14 @@
 					"text":"test for agruments passing up through new object get",
 					"type":"anim",
 					"length":10
-				}
+				},
+                {
+                    "id": "local-get-end-get-stack",
+					"title":"local-get-end-get-stack",
+					"text":"test for when neo object get is part of get stack" ,
+					"type":"anim",
+					"length":10
+                }
 			]
 		},
         {
@@ -163,6 +170,13 @@
 					"id": "linked-list",
 					"title":"Linked List",
 					"text":"Linked List",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "array",
+					"title":"Array",
+					"text":"array",
 					"type":"anim",
 					"length":10
 				},

@@ -21,7 +21,13 @@ const varDefsToString = (varDefs) => (
 const input = (ast) => ('inputs.'+ast.inputName)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
+const array = (ast) => JSON.stringify(ast.value)
 const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
+
+const getIndex = (ast) => {
+    const programText = buildChildren(ast)
+    return `${programText[0]}[${programText[1]}]`
+}
 
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
@@ -99,7 +105,9 @@ export const jsCompilers = {
     input,
     number,
     boolean,
+    array,
     string,
+    getIndex,
     app,
     group,
     text,

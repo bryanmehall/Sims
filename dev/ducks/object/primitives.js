@@ -1,7 +1,6 @@
 import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
-import { getDBsearchAst } from './DBsearchUtils'
 import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
 const input = (state, objectData) => {
@@ -15,7 +14,7 @@ const input = (state, objectData) => {
         inline: true
     }
 }
-//data primitives
+//data constants
 const number = (...args) => (primitive(...args))
 const bool =   (...args) => (primitive(...args))
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!security risk if brackets are allowed in string
@@ -30,6 +29,22 @@ const primitive = (state, objectData, valueData) => ({
     inline: true,
 })
 
+//data structures
+const array = (state, objectData, valueData) => {
+    return {
+        hash: objectData.props.hash,
+        value: valueData.value,
+        args: {},
+        children: {},
+        variableDefs: [],
+        type: 'array',
+        inline: true
+    }
+}
+
+const set = (state, objectData) => {
+
+}
 
 //operation primitives
 const addition       = (...args) => (binOp(...args))
@@ -49,6 +64,23 @@ const binOp = (state, objectData, valueData) => ({
     args: {},
     inline: true
 })
+
+const getIndex = (state, objectData) => {
+    const paramNames = ['array', 'index']
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+    ))
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    return {
+        hash: objectData.props.hash,
+        args: Object.assign(args), //combine args of x,y,text
+        children: { array: parameters[0], index: parameters[1] },
+        type: 'getIndex',
+        variableDefs,
+        inline: true,
+        vis: { name: getName(state, objectData) }
+    }
+}
 
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
@@ -189,7 +221,8 @@ const ternary = (state, objectData) => {
         children: { condition: parameters[0],then: parameters[1], alt: parameters[2] },
         args,
         variableDefs,
-        inline: false
+        inline: false,
+        vis: { name: getName(state, objectData) }
     }
 }
 
@@ -206,6 +239,7 @@ const text = (state, objectData) => {
         type: 'text',
         variableDefs,
         inline: false,
+        vis: { name: getName(state, objectData) }
     }
 }
 
@@ -226,6 +260,7 @@ const group = (state, objectData) => {
         children,
         args,
         variableDefs,
+        vis: { name: getName(state, objectData) }
     }
 }
 
@@ -250,11 +285,11 @@ const evaluate = () => ({
 	type: 'evaluate'
 })
 
-const set = (state, objectData) => {
+/*const set = (state, objectData) => {
     const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
     const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
     return [].concat(set1, set2)
-}
+}*/
 //need to create primitives fo array and struct datatypes
 
 export const primitives = {
@@ -262,6 +297,7 @@ export const primitives = {
     number,
     bool,
     string,
+    array,
     addition,
     subtraction,
     multiplication,
@@ -271,6 +307,7 @@ export const primitives = {
     greaterThan,
     and,
     or,
+    getIndex,
     get,
     search,
     dbSearch,
