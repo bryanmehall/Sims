@@ -94,7 +94,14 @@
                 {
                     "id": "local-get-end-get-stack",
 					"title":"local-get-end-get-stack",
-					"text":"test for when neo object get is part of get stack" ,
+					"text":"test for when new object get is part of get stack" ,
+					"type":"anim",
+					"length":10
+                },
+                 {
+                    "id": "parent-of-new-get",
+					"title":"parent-of-new-get",
+					"text":"local search goes out of new get" ,
 					"type":"anim",
 					"length":10
                 }
@@ -176,6 +183,13 @@
                 {
 					"id": "array",
 					"title":"Array",
+					"text":"array",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "copy",
+					"title":"array problem",
 					"text":"array",
 					"type":"anim",
 					"length":10

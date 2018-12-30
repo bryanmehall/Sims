@@ -70,6 +70,9 @@ const getNext = (state, currentObject, searchArgData) => {
     //get the next value with inverses from cross edge attached
     const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
     const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
+    if (attr === 'function'){
+        console.log(nextValue)
+    }
     if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
         const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
@@ -122,7 +125,13 @@ const getNext = (state, currentObject, searchArgData) => {
         return argsToVarDefs(state, currentObject, getFunctionData, attr)
     } else {
         const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+        if (attr === 'function'){
+            console.log('nextValiue', nextValue)
+        }
         const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
+        if (attr === 'function'){
+            console.log(nextValueFunctionData)
+        }
         return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
     }
 }
@@ -228,6 +237,8 @@ const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => {
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
+    console.group(`${attr} is ${getName(state, currentObject)}`)
+    //if (attr === 'rootObject'){throw new Error('duplicate')}
     const functionData = resolveInverses(state, functionDataWithInverse, attr)//varDefs just pass through
     const combinedArgs = functionData.args
     const searchArgs = convertToSearchArgs(combinedArgs)
@@ -240,6 +251,7 @@ const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => {
             return reduced
         })
         .reduce(reduceFunctionData, functionData)
+    console.groupEnd()
     return resolvedFunctionData
 }
 

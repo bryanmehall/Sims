@@ -1,6 +1,7 @@
 import { lynxParser } from './lynxParser'
 import { compile } from './ducks/object/selectors'
-
+console.group = function(){}
+console.groupEnd = function(){}
 var fs = require('fs');
 
 const runTest = (objects, done) => {

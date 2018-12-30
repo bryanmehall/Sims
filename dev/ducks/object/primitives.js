@@ -73,7 +73,7 @@ const getIndex = (state, objectData) => {
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: objectData.props.hash,
-        args: Object.assign(args), //combine args of x,y,text
+        args: args, //combine args of x,y,text
         children: { array: parameters[0], index: parameters[1] },
         type: 'getIndex',
         variableDefs,
@@ -104,7 +104,7 @@ const get = (state, objectData) => {
             inline: false,
             args,
             type: 'get',
-            children: { value: next },
+            children: { value: next }, //is getting this next the cause of duplicate trees?
             variableDefs: variableDefs
         }
     } else {

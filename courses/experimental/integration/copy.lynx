@@ -17,14 +17,19 @@ array = new object
                 equalTo: apply.function.result
                 function: getIndex
                 array:apply.attributes //apply.attributes works but array.attributes does not
-                index:1
+
 
 getIndex = new function
     name:"getIndex"
     result:new object
+        name:"result"
         jsPrimitive:{getIndex}
         array:getIndex.caller.array
-        index:3
+        index:0
+
+length = new function
+    name:"length"
+    result: new object
 
 element = new object
     name:"element"
