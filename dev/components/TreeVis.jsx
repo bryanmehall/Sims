@@ -1,13 +1,18 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
+import { objectFromName } from '../ducks/object/objectUtils'
 import { LOCAL_SEARCH, THIS, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
 
-class AstVis extends React.Component {
+class TreeVis extends React.Component {
     constructor(props){
         super(props)
         //const { nodes, links } = astToD3(this.props.ast)
-        const { nodes, links } = bfsAST(this.props.ast)
+        //const { nodes, links } = bfsAST(this.props.ast)
+        console.log(this.props.ast)
+        const appObject = objectFromName('app', this.props.objectTable)
+        const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
+        console.log(nodes, links)
         const vis = this
         //console.log(nodes, links)
         //throw 'here'
@@ -25,7 +30,7 @@ class AstVis extends React.Component {
                 )
             .force("forceY", d3.forceY()
                 .strength(3)
-                .y((d) => (d.ast.level*60)
+                .y((d) => (d.level*60)
                 )
             )
     }
@@ -34,9 +39,9 @@ class AstVis extends React.Component {
         const orderingForce = () => {
             for (var i = 0; i < vis.state.nodes.length; i++) {
                 const currNode = vis.state.nodes[i]
-                const prevNode = i === 0 ? { ast: { level: -1 }, x: 0 } : vis.state.nodes[i-1]
-                const nextNode = i === vis.state.nodes.length-1 ? { ast: { level: -1 }, x: 0 } : vis.state.nodes[i+1]
-                if (currNode.ast.level === prevNode.ast.level){
+                const prevNode = i === 0 ? {level: -1, x: 0 } : vis.state.nodes[i-1]
+                const nextNode = i === vis.state.nodes.length-1 ? {  level: -1 , x: 0 } : vis.state.nodes[i+1]
+                if (currNode.level === prevNode.level){
                     if (currNode.x < prevNode.x+80){
                         const acc = (80-(currNode.x-prevNode.x))
                         currNode.vx += acc
@@ -48,7 +53,7 @@ class AstVis extends React.Component {
                         currNode.vx -= (90-(nextNode.x-currNode.x))
                     }
                 }*/
-                const parNode = vis.state.nodes[currNode.ast.parId] || { ast: { level: -1 }, x: 0 }
+                const parNode = vis.state.nodes[currNode.object.parId] || {  level: -1, x: 0 }
                 const x = parNode === undefined ? 0 : parNode.x
                 const diff = (x-currNode.x)
                 const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
@@ -73,10 +78,9 @@ class AstVis extends React.Component {
                 x={node.x}
                 y={node.y}
                 level={node.level}
-                queue={node.queue.length}
                 id={i}
                 key={i}
-                ast={node.ast}
+                object={node.object}
                 setActive={this.props.setActive}/>
         ))
         const linksVis = links.map((link, i) => (<Link source={link.source} target={link.target} key={i}></Link>))
@@ -85,36 +89,37 @@ class AstVis extends React.Component {
 }
 let id = 0
 let queue = []
-const astToD3 = (ast, level, parId) => {
-    parId = typeof parId === 'undefined' ? 0 : parId
-    level = level || 0
-
-    const children = Object.entries(ast.children).map((entry) => {
-        const attr = entry[0]
-        const childAst = entry[1]
-
-        const newLink = { source: parId, target: id }
-        const childD3 = astToD3(childAst, level+1, id)
-        return { nodes: childD3.nodes, links: [...childD3.links, newLink] }
-    })
-    const varDefs = ast.variableDefs.map((varDef) => {
-        const newLink = { source: parId, target: id }
-        id+=1
-        const childD3 = astToD3(varDef.ast, level+1, id)
-        return { nodes: childD3.nodes, links: [...childD3.links, newLink] }
-    })
-    const reducer = (acc, current) => (
-        { nodes: [...acc.nodes, ...current.nodes], links: [...acc.links, ...current.links] }
-    )
-    const newNode = { id, ast, level }
-    return [...children, ...varDefs].reduce(reducer, { nodes: [newNode], links: [] })
-}
 //sort nodes in bfs order to apply forces to them
+
+
+const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
+    objQueue = objQueue || [Object.assign({}, currentObj, { level: 0 })]
+    if (objQueue.length === 0) { return d3Data }
+    d3Data = d3Data || { nodes: [], links: [] }
+    const first = objQueue.shift()
+    const level = first.level
+    const i = d3Data.nodes.length
+    const newD3Data = {
+        nodes: d3Data.nodes.concat({ id: i, object: first, objQueue, level }),
+        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i })
+    }
+    const propList = first.hasOwnProperty('props') ? Object.entries(first.props) : []
+    const entries = propList
+        .filter((entry) => { //filter out hash and inverse properties
+            const inverses = first.inverses || {}
+            return !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id'].includes(entry[0]) && !inverses.hasOwnProperty(entry[0])
+        }).map((entry) => (
+            typeof entry[1] === 'string' ? [entry[0], objectFromName(entry[1], objectTable)] : entry
+        ))
+    const children = entries.map((entry) => (Object.assign({}, entry[1], { attr: entry[0], parId:i, level:level+1 })))
+
+    const newQueue = [...objQueue, ...children]
+    return bfsObjectTree(objectTable, first, newD3Data, newQueue)
+}
 const bfsAST = (ast, d3Data, queue) => {
     queue = queue || [Object.assign({}, ast, { level: 0 })]
     if (queue.length === 0) { return d3Data }
     d3Data = d3Data || { nodes: [], links: [] }
-
 
     const first = queue.shift()
     const level = first.level
@@ -126,7 +131,9 @@ const bfsAST = (ast, d3Data, queue) => {
 
     const childrenASTs = Object.values(first.children)
         .map((ast) => (Object.assign({}, ast, { parId: i, level: level+1 })))
-    const varDefASTs = first.variableDefs.map((varDef) => (Object.assign({}, varDef.ast, { parId: i, level: level+1, varDef: true })))
+    const varDefASTs = first.variableDefs
+        .map((varDef) => (Object.assign({}, varDef.ast, { parId: i, level: level+1, varDef: true })))
+
     const newQueue = [...queue, ...childrenASTs, ...varDefASTs]
     return bfsAST(first, newD3Data, newQueue)
 }
@@ -136,6 +143,7 @@ const displayArgs = (ast) => {
         .map((argKey, i) => ([i=== 0 ? '' : ', ', displayArg(ast.args[argKey], argKey)]))
     return <tspan>{'('}{display}{')'}</tspan>
 }
+
 const displayArg = (arg, argKey) => {
     if (arg === true){
         return <tspan key={"prim"} style={{ fill: 'gray' }}>{'prim'}</tspan>
@@ -148,32 +156,38 @@ const displayArg = (arg, argKey) => {
         return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
     }
 }
+
 class Node extends React.Component {
     constructor(props){
         super(props)
         this.state = { active: false }
     }
     render(){
-        const { x, y, ast, setActive } = this.props
+        const { x, y, object, setActive } = this.props
         const self = this
         const active = this.state.active
+        const nameObject = object.props.name
+        const name = typeof nameObject === 'undefined' ? 'object' : nameObject.props.jsPrimitive.value
+        const isPrimitive = object.props.hasOwnProperty('jsPrimitive')
+        const hasValue = isPrimitive ? object.props.jsPrimitive.hasOwnProperty('value') : false
+        const label = hasValue ? object.props.jsPrimitive.value : name
         return (
             <text
                 onMouseOver={function(){
                     self.setState({ active: true })
-                    setActive(ast)
+                    //setActive(ast)
                 }}
                 onMouseLeave={function(){
                     self.setState({ active: false })
                 }}
                 textAnchor="middle"
-                fontWeight={self.state.active ? 600 : 400}
-                opacity = {self.state.active ? 1 : 0.7}
+                fontWeight={active ? 600 : 400}
+                opacity = {active ? 1 : 0.7}
+                fill={isPrimitive? 'blue': 'black'}
                 x={x}
                 y={y}
                 >
-                {ast.hasOwnProperty('value') ? JSON.stringify(ast.value).slice(0,12) : ast.hasOwnProperty('vis') ? ast.vis.name : ast.type}
-                {(active ? displayArgs(ast) : "")}
+                {label}{active ? object.hash : null}
             </text>
         )
     }
@@ -186,7 +200,7 @@ const Link = ({ source, target }) => (
         x2={target.x}
         y2={target.y-15}
         style={{
-          stroke: target.ast.varDef ? "#00f":"#000",
+          stroke: "#000",
           strokeOpacity: ".9",
           strokeWidth: 1.6
 
@@ -195,4 +209,4 @@ const Link = ({ source, target }) => (
 )
 
 
-export default AstVis
+export default TreeVis

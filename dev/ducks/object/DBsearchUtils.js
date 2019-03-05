@@ -9,7 +9,7 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
         .map((arg) => {
             let root = getObject(state, arg.query)
             //root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
-            root.props.hash = getHash(state, root).hash //formalize what hash means so it is consistent
+            root.props.hash = getHash(root) //formalize what hash means so it is consistent
             const rootProps = Object.assign({}, root.props, arg.searchContext)
             root = Object.assign({}, root, {
                 props: rootProps,

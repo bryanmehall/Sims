@@ -1,33 +1,34 @@
 window = new group
-    childElement1: \checkBox.graphicalRepresentation
+    name:"window"
+    childElement1: new get
+        jsPrimitive:{get}
+        rootObject:checkbox
+        attribute:graphicalRepresentation
 
-bool = new object
-    value:
-    checkboxRepresentation:
-    toggleRepresentation:
-
-checkBox = new object
+checkbox = new object
     name:"checkbox"
-    isChecked:new ternary
-        condition:checkbox.graphicalRepresentation.isChanged
-        then: not(checkbox.isChecked.previousState)
-        else: checkbox.isChecked.previousState
-    graphicalRepresentation: new group
+    isChecked:true
+    graphicalRepresentation: new text
         name:"box"
-        pos: new coordinatePosition
-            x:20
-            y:20
-        width:20
-        height:20
-        mouseOver:app.mouse.pos.x > box.pos.x && app.mouse.pos.x < box.pos.x + box.width
-        isChanged:checkRectangle.mouseOver && app.mouse.clicked
-        childElement1: new rectangle
-                color:new ternary
-                    condition: checkbox.isChecked
-                    then: green
-                    else: red
+        mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30
+        isClicked: box.mouseOver && app.mouse.down
+        isChecked: new ternary
+            condition: box.isClicked
+            then: true
+            alt: false
+        innerText: new ternary
+            condition:box.isChecked
+            then:"1"
+            alt:"0"
+        x:30
+        y:30
 
-checked = new attribute
+isChecked = new attribute
+    name:"isChecked"
 mouseOver = new attribute
+    name:"mouseOver"
+isClicked = new attribute
+    name:"isClicked"
 left = new attribute
 right = new attribute
+isChanged = new attribute

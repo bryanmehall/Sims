@@ -9,6 +9,7 @@ const input = (state, objectData) => {
     return {
         hash,
         type: 'input',
+        children: {},
         inputName: name,
         args: { name },
         inline: true
@@ -30,17 +31,15 @@ const primitive = (state, objectData, valueData) => ({
 })
 
 //data structures
-const array = (state, objectData, valueData) => {
-    return {
-        hash: objectData.props.hash,
-        value: valueData.value,
-        args: {},
-        children: {},
-        variableDefs: [],
-        type: 'array',
-        inline: true
-    }
-}
+const array = (state, objectData, valueData) => ({
+    hash: objectData.props.hash,
+    value: valueData.value,
+    args: {},
+    children: {},
+    variableDefs: [],
+    type: 'array',
+    inline: true
+})
 
 const set = (state, objectData) => {
 
@@ -82,6 +81,23 @@ const getIndex = (state, objectData) => {
     }
 }
 
+const contains = (state, objectData) => { //eventually switch to set
+    const paramNames = ['array', 'value']
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+    ))
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    return {
+        hash: objectData.props.hash,
+        args: args, //combine args of x,y,text
+        children: { array: parameters[0], index: parameters[1] },
+        type: 'contains',
+        variableDefs,
+        inline: true,
+        vis: { name: getName(state, objectData) }
+    }
+}
+
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
@@ -96,7 +112,9 @@ const get = (state, objectData) => {
         //change to rootObject.type == new?
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
         const next = getJSValue(state, 'placeholder', attribute, root)
+        console.log(next, root)
         const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
+        console.log(args)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
             hash: objectData.props.hash,
@@ -308,6 +326,7 @@ export const primitives = {
     and,
     or,
     getIndex,
+    contains,
     get,
     search,
     dbSearch,

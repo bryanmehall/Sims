@@ -1,4 +1,4 @@
-import { LOCAL_SEARCH, THIS, GLOBAL_SEARCH, INVERSE } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from './constants'
 
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (get.props.attribute)).join('.')
@@ -21,7 +21,7 @@ export const formatDBSearchLog = (dbSearches) => (
     }).join(', ')
 )
 export const formatArg = (arg) => {
-    if (typeof arg === 'boolean'){//for prim
+    if (typeof arg === 'boolean') { //for prim
         return arg
     }
     switch (arg.type){
@@ -42,7 +42,7 @@ export const formatVarDef = (varDef) => (
 export const objectFromEntries = (obj, entry) => ( //convert array of [[key1, value1], ...] to an object when used with reduce
     Object.assign(obj, { [entry[0]]: entry[1] })
 )
-export const debugReduce = (shift, message, name) => {
+export const debugReduce = (shift, message) => {
     /* eslint-disable no-console */
     try {
         if (shift === 1) {
@@ -55,7 +55,6 @@ export const debugReduce = (shift, message, name) => {
         }
     } catch (e){
         throw e
-        console.log('debug suppressed')
     }
     /* eslint-enable no-console */
 }
@@ -77,6 +76,7 @@ export const logFunctionTable = (functionTable) => {
     Object.entries(functionTable).forEach((entry) => {
         const key = entry[0]
         const func = entry[1].toString()
+        console.log(key, func)
         return { key, func }
     })
 }

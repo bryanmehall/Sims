@@ -5,6 +5,7 @@ import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
 import { compile } from '../ducks/object/selectors'
 import Video from './Video'
+import { Runtime } from '../ducks/object/runtime'
 import Plot from './Plot'
 import Circle from './Circle'
 import Group from './Group'
@@ -19,62 +20,32 @@ class Sim extends React.Component {
 	constructor(props){
 		super(props)
 		this.loadSim = this.loadSim.bind(this)
-		this.closeSim = this.closeSim.bind(this)
-        this.state = {offset:{x:300, y:0}, objectTable: props.objectTable, ast: props.ast, debugView:'tree'}
+        this.state = {
+            offset: { x: 300, y: 0 },
+            inputs: { mouseX: 0, mouseY: 0, mouseDown: false },
+             //each of these is a function
+            objectTable: props.objectTable,
+            ast: props.ast,
+            debugView: 'tree' //tree or other
+        }
 	}
 
 	componentDidMount(){
 		const contentBlockId = this.props.contentBlockId
 		this.loadSim(contentBlockId)
-        let canvas = document.getElementById('canvas')
-        this.width = canvas.getBoundingClientRect().width
-        this.height = canvas.getBoundingClientRect().height
-        canvas.width = this.width
-        canvas.height = this.height
-        this.ctx = canvas.getContext('2d')
+        this.canvas = document.getElementById('canvas')
 	}
     componentDidUpdate(nextProps){
-        let ctx = this.ctx
-        const checkTypes = (type, vars) => {
-            vars.forEach((variable)=>{
-                if(typeof variable !== type){
-                    console.log('variables', vars)
-                    throw new Error(`Lynx typeError: type of ${variable} is not ${type}`)
-                }
-            })
+        const self = this
+        if (this.props.loadState === 'loaded'){
+            self.runtime = new Runtime(this.props.state, this.canvas)
         }
-        this.prim = {
-            rect: (x,y,width, height,r,g,b) => {
-                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
-                ctx.fillRect(x, y, width, height)
-            },
-            text: (x, y, innerText, r, g, b) => {
-                const size=20
-                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
-                ctx.font = `${size}px serif`
-                checkTypes('number', [x,y,r,g,b])
-                ctx.fillText(innerText || "undef", x, y)
-            },
-            clear: () => {
-                ctx.clearRect(0, 0, this.width, this.height);
-            }
-        }
-        const functionTable = this.props.functionTable
-        //this.setState({ast:this.props.ast})
-        this.render = this.props.renderMonad(functionTable)//returns compiled program
-        this.render(this.prim, {mouseX:0, mouseY:0, mouseDown:false})
+
 		const contentBlockId = nextProps.contentBlockId
 		if (this.props.contentBlockId !== contentBlockId) { //only update on change
 			this.loadSim(contentBlockId)
 		}
     }
-	componentWillReceiveProps(nextProps){
-		//componentWill update takes next props as argument
-
-        //ctx.fillStyle = 'rgb(255, 0, 0)';
-        //ctx.fillRect(10, 10, 50, 50);
-
-	}
 	loadSim(contentBlockId){
 		if (contentBlockId === null){
 
@@ -84,12 +55,7 @@ class Sim extends React.Component {
 		}
 
 	}
-	closeSim(){
-
-	}
 	render(){
-		const { contentBlockId, partId, courseId, setProp } = this.props
-		const active = this.props.contentBlockId !== null
 		const imageUrl = `/content/courses/${this.props.courseId}/${this.props.partId}/thumbnail.png`
 		const image = (
 			<Link to={`/courses/${this.props.courseId}/${this.props.partId}/${this.props.contentBlockId}`}>
@@ -113,31 +79,15 @@ class Sim extends React.Component {
 			backgroundColor: '#fff' 
 		}
 		//combine these into one file for importing children
-        this.inputAvailable = true
-        let mouseDown = false
-		const setMousePos = (e) => {
-			const mouseX = e.pageX - e.currentTarget.offsetLeft || 0
-            const mouseY = e.pageY - e.currentTarget.offsetTop || 0
-            this.prim.clear()
-            this.render(this.prim, {mouseX, mouseY})
-
-            this.inputAvailable = true
-		}
-		const setMouseDown = () => {
-			mouseDown = true
-            this.inputAvailable = true
-		}
-		const setMouseUp = () => {
-			mouseDown = false
-            this.inputAvailable = true
-		}
         const functionTable = this.props.functionTable
-        const tableVis = this.props.loadState !=='loading' ? Object.keys(functionTable).map((func)=>(
-            <pre key={func}>{func}:{functionTable[func].toString()}</pre>
-        )): 'loading'
+        const tableVis = this.props.loadState ==='loading'
+            ?'loading'
+            :Object.keys(functionTable).map((func) => (
+                  <pre key={func}>{func}:{functionTable[func].toString()}</pre>
+              ))
         const codeVis = (
-            <pre style={{...cardStyle, backgroundColor:"white", position:'absolute', top:300}}>
-                {this.props.loadState !=='loading' ? this.props.renderMonad.toString() : "loading"}
+            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', top: 300 }}>
+                {this.props.loadState ==='loading' ? "loading" : this.props.renderMonad.toString() }
                 {tableVis}
             </pre>
         )
@@ -145,6 +95,7 @@ class Sim extends React.Component {
               <Debug
                   functionTable={functionTable}
                   ast={this.props.ast}
+                  objectTable={this.props.objectTable}
                   appString={this.props.renderMonad.toString()}
                 ></Debug> : null
 
@@ -160,7 +111,6 @@ class Sim extends React.Component {
                     width="600"
                     height="600"
                     style={simCardStyle}
-                    onMouseMove = {setMousePos}
                 >
                 </canvas>
 
@@ -182,6 +132,14 @@ class Sim extends React.Component {
 	}
 }
 
+const checkTypes = (type, vars) => {
+    vars.forEach((variable)=>{
+        if(typeof variable !== type){
+            console.log('variables', vars)
+            throw new Error(`Lynx typeError: type of ${variable} is not ${type}`)
+        }
+    })
+}
 
 function mapStateToProps(state) {
 	const loadState = getLoadState(state)
@@ -190,8 +148,10 @@ function mapStateToProps(state) {
 	} else {
         console.time('draw')
 		const { renderMonad, functionTable, ast, objectTable } = compile(state)
+
         console.timeEnd('draw')
 		return {
+            state,
 			renderMonad,
             functionTable,
             ast,

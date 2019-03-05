@@ -2,7 +2,7 @@
 import { formatGetLog, debugReduce, deleteKeys, compileToJS, objectFromEntries, limiter } from './utils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED } from './constants'
 import { astToFunctionTable, buildFunction } from './IRutils'
-import { getValue, getName, getObject, hasAttribute, objectFromHash, getInverseAttr } from './objectUtils'
+import { getValue, getName, getHash, getObject, hasAttribute, objectFromHash, getInverseAttr, getObjectTable} from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
@@ -20,6 +20,7 @@ refactor todo:
 */
 
 const combineArgs = (args) => {
+    args.forEach((arg) => {if (typeof arg === 'undefined'){throw new Error("LynxError: arg is undefined")} })
     const reduced = args.reduce((combined, prim) => (
         Object.assign(combined, prim.args)
     ),{})
@@ -59,6 +60,9 @@ const getNext = (state, currentObject, searchArgData) => {
         const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
         //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
+    } else if (attr === 'previousValue'){
+        console.log('getting previous value')
+
     }
     //the next section is for allowing objects referenced by a get to have inverse attributes
     //if nextGet has any attributes other than those listed
@@ -70,9 +74,6 @@ const getNext = (state, currentObject, searchArgData) => {
     //get the next value with inverses from cross edge attached
     const { value: nextValue } = getValue(state, inverses, attr, currentObject) //evaluate attr of currentobject
     const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-    if (attr === 'function'){
-        console.log(nextValue)
-    }
     if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
         const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
@@ -122,20 +123,24 @@ const getNext = (state, currentObject, searchArgData) => {
             getStack: combinedGetStack
         }
         const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
-        return argsToVarDefs(state, currentObject, getFunctionData, attr)
+        if (console1) {
+            console2 = true
+        }
+        const getData = argsToVarDefs(state, currentObject, getFunctionData, attr)
+        if (console1) {
+            console2 = false
+            console.log(getData)
+        }
+        return getData
     } else {
+
         const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
-        if (attr === 'function'){
-            console.log('nextValiue', nextValue)
-        }
         const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-        if (attr === 'function'){
-            console.log(nextValueFunctionData)
-        }
-        return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+        const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+        return returnFunctionData
     }
 }
-
+let console2 = false
 const createVarDef = (state, currentObject, searchArgData) => {
     const { argKey, context } = searchArgData
     const { value: jsResult } = getValue(state, 'placeholder', 'jsPrimitive', currentObject)
@@ -143,6 +148,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
     const inverseAttr = getInverseAttr(state, context.$attr)
     const targetFunctionData = { args: jsResult.args, varDefs: jsResult.variableDefs }
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, context.$attr)
+    if (console1){console.log('inverse', inverseFunctionData)}
     let functionData1 = { varDefs: [], args: {} }
     if (inverseAttr !== undefined){
         const inverseObject = objectFromHash(context[inverseAttr]) //get the inverse value
@@ -173,6 +179,7 @@ const reduceGetStack = (state, currentObject, searchArgData) => { // get all arg
     //console.log('name:', searchName, 'query:', query, currentObject, searchArgData)
     if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
         if (getStack.length === 0){
+
             return createVarDef(state, currentObject, searchArgData)
         } else {
             return getNext(state, currentObject, searchArgData)
@@ -233,25 +240,35 @@ const checkDuplicates = (str, varDefs) => {
 
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to variableDefs
+let console1 = false
 const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => { //test if the args in functionData are resolved...return
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    console.group(`${attr} is ${getName(state, currentObject)}`)
+    //console.group(`${attr} is ${getName(state, currentObject)}`)
     //if (attr === 'rootObject'){throw new Error('duplicate')}
     const functionData = resolveInverses(state, functionDataWithInverse, attr)//varDefs just pass through
     const combinedArgs = functionData.args
     const searchArgs = convertToSearchArgs(combinedArgs)
     const resolvedFunctionData = searchArgs.map((searchArgData) => {
+            if (attr === 'rootObject' ){
+                console1 = true
+            }
             const reduced = reduceGetStack(state, currentObject, searchArgData)
+            if (attr === 'rootObject'){
+                console1 = false
+            }
             if (reduced.args.hasOwnProperty('recursive')){ //handle struct primitives
                 console.log('recursive', combinedArgs)
                 //throw 'recursive'
             }
+
             return reduced
         })
         .reduce(reduceFunctionData, functionData)
-    console.groupEnd()
+    //console.groupEnd()
+
+
     return resolvedFunctionData
 }
 
@@ -262,11 +279,15 @@ export const getArgsAndVarDefs = (state, childASTs, currentObject) => {
     //todo: change x to sometng that will never have inverse
     const inverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.$attr : 'x'
     const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData, inverseAttr)
+
     return { args, variableDefs: varDefs }
 }
 
 //compile a module...right now this only does app
 export const compile = (state) => {
+    const hashTable = Object.values(state.sim.object).reduce((hashTable, obj) => {
+        return Object.assign(hashTable, { [getHash(obj)]: obj })
+    }, {}) //get hash table for visualization
     const appData = getObject(state, 'app')
     const { value: appAST } = getValue(state, 'app', 'jsPrimitive', appData)
     if (appAST === undefined){ throw 'appAST is undefined' }
@@ -274,8 +295,7 @@ export const compile = (state) => {
     const appVarDefs = appAST.variableDefs.concat(dbASTs)
     const appASTwithDB = Object.assign(appAST, { variableDefs: appVarDefs })
     const functionTable = astToFunctionTable(appASTwithDB)
-    //functionTable.$hash997200528 = new Function('a', 'return a')
     const appString = buildFunction(appASTwithDB).string
     const renderMonad = compileToJS('functionTable', `${appString}`)//returns a thunk with all of render information enclosed
-    return { renderMonad, functionTable, ast: appASTwithDB, objectTable: {} }
+    return { renderMonad, functionTable, ast: appASTwithDB, objectTable: hashTable }
 }

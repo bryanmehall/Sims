@@ -34,6 +34,7 @@ export const buildFunction = (ast) => {
 }
 
 export const astToFunctionTable = (ast) => {
+    console.log(ast)
     const children = ast.children
     const childASTs = Object.values(children)
     checkASTs(childASTs, ast)

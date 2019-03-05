@@ -1,5 +1,5 @@
 window = new group
-    name:"group"
+    name:"window"
     childElement1: new text
         name:"txt"
         x:txt.op1

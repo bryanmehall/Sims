@@ -14,22 +14,24 @@ array = new object
             attribute:equalTo
             rootObject:new object
                 name:"apply"
-                equalTo: apply.function.result
-                function: getIndex
+                equalTo: apply.function.result //should be a contains object with array and value as args
+                function: new function
+                    name:"contains"
+                    result:new object
+                        name:"result"
+                        jsPrimitive:{contains}
+                        array:array.attributes
+                        value: contains.caller.value
                 array:apply.attributes //apply.attributes works but array.attributes does not
-
+                value:"prevVal"
 
 getIndex = new function
     name:"getIndex"
     result:new object
-        name:"result"
         jsPrimitive:{getIndex}
         array:getIndex.caller.array
-        index:0
+        index:getIndex.caller.index
 
-length = new function
-    name:"length"
-    result: new object
 
 element = new object
     name:"element"
@@ -41,3 +43,4 @@ length = new attribute
 nextElement = new attribute
 previousElement = new attribute
 index = new attribute
+value = new attribute

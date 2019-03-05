@@ -1,7 +1,7 @@
 import React from "react"
 import { cardStyle } from './styles'
 import Trace from './Trace'
-import AstVis from './AstVis'
+import TreeVis from './TreeVis'
 
 class Debug extends React.Component {
     constructor(props){
@@ -50,7 +50,7 @@ class Debug extends React.Component {
                     viewBox = {`${offs.x-300} ${offs.y-150} 600 600`}
 
                     >
-                    <AstVis ast={this.props.ast} setActive={setActive}></AstVis>
+                    <TreeVis ast={this.props.ast} objectTable={this.props.objectTable} setActive={setActive}></TreeVis>
                     {/*<Trace
                         setCenter = {setCenter}
                         setActive = {setActive}

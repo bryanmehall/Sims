@@ -1,4 +1,5 @@
 window = new group
+    name:"window"
     childElement1: new text
         name:"text"
         x:30
@@ -14,25 +15,37 @@ array = new object
             attribute:equalTo
             rootObject:new object
                 name:"apply"
-                equalTo: apply.function.result
-                function: getIndex
+                equalTo: apply.function.result //should be a contains object with array and value as args
+                function: contains
                 array:apply.attributes //apply.attributes works but array.attributes does not
-                index:1
+                value:"prevVal"
 
 getIndex = new function
     name:"getIndex"
     result:new object
         jsPrimitive:{getIndex}
         array:getIndex.caller.array
-        index:3
+        index:getIndex.caller.index
+
+contains = new function
+    name:"contains"
+    result:new object
+        jsPrimitive:{contains}
+        array:contains.caller.array
+        value: contains.caller.value
 
 element = new object
     name:"element"
-/*
-    nextElement:getIndex(element.array, element.index+1)
-    previousElement:getIndex(element.array, element.index-1) //element.previousElement is only defined for elements with index > 0 which fits with getIndex only taking integers greater than 0
-*/
+
 length = new attribute
+    name:"length"
+
 nextElement = new attribute
+    name:"nextElement"
+
 previousElement = new attribute
+    name:"previousElement"
 index = new attribute
+    name:"index"
+value = new attribute
+    name:"value"

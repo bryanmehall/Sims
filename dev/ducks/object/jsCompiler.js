@@ -29,6 +29,11 @@ const getIndex = (ast) => {
     return `${programText[0]}[${programText[1]}]`
 }
 
+const contains = (ast) => {
+    const programText = buildChildren(ast)
+    return `!(${programText[0]}.indexOf(${programText[1]}) === -1)`
+}
+
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.variableDefs)
@@ -36,9 +41,15 @@ const app = (ast) => {
 }
 
 const group = (ast) => {
-    const programText = buildChildren(ast, '(prim)\n')
-    const varDefs = varDefsToString(ast.variableDefs)
-    return ` function(prim) { //group\n${varDefs} ${programText}(prim)\n}`
+    const child1 = ast.children.childElement1
+    if (child1.type === array){
+        console.log('################array')
+    } else {
+        const programText = buildChildren(ast, '(prim)\n')
+        const varDefs = varDefsToString(ast.variableDefs)
+        return ` function(prim) { //group\n${varDefs} ${programText}(prim)\n}`
+    }
+
 }
 
 const text = (ast) => {
@@ -108,6 +119,7 @@ export const jsCompilers = {
     array,
     string,
     getIndex,
+    contains,
     app,
     group,
     text,

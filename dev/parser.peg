@@ -1,4 +1,5 @@
 {
+//from dev folder run $pegjs --cache parser.peg
 var symbolTable = {
 	"+":"addition",
     "*":"multiplication",
@@ -110,6 +111,10 @@ Sum "sum"
     /Product
 Product "product"
 	= left:Value _ op:("*"/"/") _ right:Product { return createBinOp(left, right, op)}
+    / Not
+    
+Not "not"
+    ="!"value:Not {return createApply(value, "not")}
     / Apply / Value
 
 Name "name"
@@ -177,7 +182,7 @@ Float "number"
     }
 
 String "string"
-     = '"'characters:[a-zA-Z]*'"' {
+     = '"'characters:[a-zA-Z0-9]*'"' {
          var value = characters.join("")
          return createString(value)
      }

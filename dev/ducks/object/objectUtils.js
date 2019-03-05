@@ -4,6 +4,32 @@ import { primitives } from './primitives'
 import { deleteKeys } from './utils'
 let objectTable = {}
 
+export const getObjectTable = () => {
+    let tableWithHashes = {} //put hash attribute in the props attribute
+    Object.entries(objectTable).forEach((entry) => {
+        const newProps = Object.assign({}, entry[1].props, { hash: entry[0] })
+        tableWithHashes[entry[0]] = Object.assign({}, entry[1], { props: newProps })
+    })
+    const appObject = objectFromName('app', tableWithHashes)
+
+    const appWithInverses = Object.assign(appObject, { inverses: {} })
+    return Object.assign(objectTable, {[appObject.props.hash]: appWithInverses})
+}
+
+export const objectFromName = (name, objectTable) => {
+    const values = Object.values(objectTable)
+    const matches = values.filter((obj) => {
+        const nameObject = obj.props.name
+        if (typeof nameObject === 'undefined'){ return false}
+        const objName = nameObject.props.jsPrimitive.value //try is to replace wrapping this\
+        return objName === name
+    })
+    if (matches.length !== 1) {
+        console.log(matches, name, objectTable)
+        throw new Error('object not found in debug')
+    }
+    return matches[0]
+}
 export const hasAttribute = (objectData, prop) => (
     objectData.props.hasOwnProperty(prop)
 )
@@ -20,25 +46,26 @@ export const returnWithContext = (state, name, attr, attrData, valueData, object
     }
     const hasInverse = hasAttribute(attrData, 'inverseAttribute') //if prop has inverse
     const inverseAttr = attrData.props.inverseAttribute
-    const { hash: parentHash, state: state1 } = getHash(state, objectData)
+    const parentHash = getHash(objectData)
+    addToObjectTable(parentHash, objectData)
     const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
     const inverseAttrs = Object.assign({ parentValue: parentHash }, inverse)
     const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
     const objectInverses = Object.assign({ $attr: attr }, valueData.inverses, inverseAttrs)
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash, inverses: objectInverses })
-    const { hash, state: state2 } = getHash(state1, objectDataWithoutHash)
+    const hash = getHash(objectDataWithoutHash)
+    addToObjectTable(hash, objectDataWithoutHash)
     const newProps = Object.assign({}, newPropsWithoutHash, { hash })
 
     return {
-        state: state2,
+        state: state,
         value: Object.assign({}, valueData, { props: newProps, inverses: objectInverses })
     }
 
 }
-export const objectFromHash = (hash) => {
-    console.log(hash, objectTable)
-    return objectTable[hash]
-}
+export const objectFromHash = (hash) => (
+    objectTable[hash]
+)
 
 export const getInverseAttr = (state, attr) => (
     getObject(state, attr).props.inverseAttribute
@@ -50,26 +77,45 @@ const isHash = (str) => (str.includes("$hash"))
 const objectValuesToHash = (hashData, entry) => {
     const prop = entry[0]
     const subTree = entry[1]
-    if (typeof subTree === 'string' || prop === 'jsPrimitive'){ //move this check to getHash eventually
+    if (typeof subTree === 'string' || prop === 'jsPrimitive'){ //move this check to get Hash eventually
         return Object.assign({}, hashData, { [prop]: subTree })
     } else {
-        return Object.assign({}, hashData, { [prop]: getHash('remove', subTree).hash })
+        return Object.assign({}, hashData, { [prop]: getHash(subTree) })
     }
 }
 
-export const getHash = (state, objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
+export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove inverse attributes from data to be hashed
     const inverseAttrs = objectData.inverses || {}
     const inverseKeys = Object.keys(inverseAttrs)
-    const expandedHashData = deleteKeys(objectData.props, ["hash", "parentValue", ...inverseKeys])
+    const exemptProps = ["hash", "parentValue", ...inverseKeys] //remove these props before hashing
+    const expandedHashData = deleteKeys(objectData.props, exemptProps)
     //convert values of props to hashes
     const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
-
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
     //if (objectData.type === 'group') { console.log(inverseKeys, JSON.stringify(hashData, null, 2))}
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
-    objectTable[digest] = objectData
-	return { state: 'remove', hash: digest }
+	return digest
+}
+
+const objToHashTable = (objectData) => { //get an object in tree form and return a flattened map of hashes to values
+    const inverseAttrs = objectData.inverses || {}
+    const inverseKeys = Object.keys(inverseAttrs)
+    const exemptProps = ["hash", "parentValue", ...inverseKeys]
+    const expandedHashData = deleteKeys(objectData.props, exemptProps)
+    const hashData = Object.entries(expandedHashData).reduce((hashTable, entry)=>{
+        const prop = entry[0]
+        const subTree = entry[1]
+        if (typeof subTree === 'string' || prop === 'jsPrimitive'){ //move this check to get Hash eventually
+            return Object.assign({}, hashData, { [prop]: subTree })
+        } else {
+            return Object.assign({}, hashData, { [prop]: getHash(subTree) })
+        }
+    },{})
+
+}
+export const addToObjectTable = (hash, objectData) => {
+    objectTable[hash] = objectData
 }
 
 export const getObject = function (state, id) {
@@ -99,6 +145,7 @@ export const getValue = (state, inverseProps, prop, objectData) => {
     const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		let inheritedData
+
 		if (!objectData.props.hasOwnProperty('instanceOf')) {
 			inheritedData = getObject(state, 'object')
 		} else {
@@ -119,7 +166,7 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 			let attrs = Object.keys(objectData.props)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
-			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)
+			const attrSet = objectLib.constructArray(`${objectData.props.id}Attrs`, attrs)//switch to set
             if (name === 'app'){ console.log(attrSet) }
 			return returnWithContext(state, name, prop,attrData, attrSet, objectData)
 		}
@@ -140,14 +187,11 @@ export const getValue = (state, inverseProps, prop, objectData) => {
 }
 
 const checkObjectData = (state, objectData, prop) => {
-    /*if (state !== getHash(state, objectData).state){
-        throw new Error('checking hash modified state')
-    }*/
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
-    } else if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(state, objectData).hash){
+    } else if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
         console.log('objectData', objectData)
-        console.log(objectData, getHash(state, objectData).hash, objectData.props.hash)
+        console.log(objectData, getHash(objectData), objectData.props.hash)
         throw new Error("hashes not equal")
     } else if (objectData === undefined){
 		throw new Error('must have object def for '+prop)
