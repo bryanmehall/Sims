@@ -1,12 +1,12 @@
 window = new group
-    name:"group"
+    name:"window"
     x:20
     childElement1: new text
         name:"txt"
         x:new get
             jsPrimitive:{get}
             rootObject: new object
-                op1:group.x
+                op1:window.x
             attribute: op1
         y:30
         innerText:"test"

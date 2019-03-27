@@ -1,16 +1,19 @@
 import React from "react"
 import { cardStyle } from './styles'
-import Trace from './Trace'
+import { getName, formatArg } from '../ducks/object/utils'
 import TreeVis from './TreeVis'
+import AstVis from './AstVis'
 
 class Debug extends React.Component {
     constructor(props){
         super(props)
-        this.state = {offset:{x:0, y:0}, active:{}}
+        this.state = {offset:{x:0, y:0}, activeNode:{object:{props:{}}}}
     }
 	render() {
         const setCenter =  (x,y)=>{this.setState({offset:{x,y}})}
-        const setActive = (ast) => { this.setState({ active: ast }) }
+        const setActive = (node) => {
+            this.setState({ activeNode: node })
+        }
         const offs = this.state.offset
         const mouseDownHandler = (e) => {
             const initialOffset = this.state.offset
@@ -27,43 +30,83 @@ class Debug extends React.Component {
             }
             treeVis.addEventListener('mousemove',mouseMoveHandler )
         }
-        const activeHash = this.state.active.hash
+        //const activeHash = this.state.active.object.hash
         const functionTable = this.props.functionTable
-        const functionString = functionTable.hasOwnProperty(activeHash) ? functionTable[activeHash].toString() :
-            activeHash === 'apphash' ? this.props.appString :
-            null
-        const functionDisplay = (
-            <pre style={{position:'absolute', backgroundColor:"white"}}>
-                {activeHash}:{functionString}
+        //const functionString = functionTable.hasOwnProperty(activeHash) ? functionTable[activeHash].toString() :
+            //activeHash === 'apphash' ? this.props.appString :
+           // null
+        const tableVis = this.props.loadState ==='loading'
+            ?''
+            :Object.keys(functionTable).map((func) => (
+
+                    `\n\n\n${func}:\n${functionTable[func].toString()}`
+              ))
+        const codeVis = (
+            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily:'courier new', padding:20, top: 347 }}>
+                {this.props.loadState ==='loading' ? "loading" : this.props.appString }
+                {tableVis}
             </pre>
         )
+        if(this.props.debugType === 'tree' || this.props.debugType === 'ast'){
+            return (
+                <div style={{...cardStyle, backgroundColor:"white", position:'absolute', padding:20, top:347}}>
+                    <ObjectData node={this.state.activeNode}></ObjectData>
+                    <svg
+                        id="treeVis"
+                        width={1000}
+                        height={600}
+                        onMouseDown = {mouseDownHandler}
+                        viewBox = {`${offs.x-300} ${offs.y-150} 600 600`}
 
+                        >
+                        {
+                            this.props.debugType === 'ast' ?
+                                <AstVis ast={this.props.ast} objectTable={this.props.objectTable} setActive={setActive}></AstVis>
+                                : <TreeVis
+                                      ast={this.props.ast}
+                                      objectTable={this.props.objectTable}
+                                      setActive={setActive}
+                                      activeNode={this.state.activeNode}></TreeVis>
+                        }
 
-        return (
-            <div style={{...cardStyle, backgroundColor:"white", position:'absolute', top:310, left:'26%'}}>
-                {functionDisplay}
-                <svg
-                    id="treeVis"
-                    width={1000}
-                    height={600}
-                    onMouseDown = {mouseDownHandler}
-                    viewBox = {`${offs.x-300} ${offs.y-150} 600 600`}
+                    </svg>
+                </div>
+            )
+        } else {
+            return codeVis
+        }
 
-                    >
-                    <TreeVis ast={this.props.ast} objectTable={this.props.objectTable} setActive={setActive}></TreeVis>
-                    {/*<Trace
-                        setCenter = {setCenter}
-                        setActive = {setActive}
-                        ast={this.props.ast}
-                        x={0}
-                        y={20}
-                        ></Trace>*/}
-                </svg>
-            </div>
-
-        )
 	}
 }
+const ObjectData = ({ node }) => {
+    let objectData = null
+    let astData = null
+    if (node.hasOwnProperty('object')){
+        const name = getName(node.object)
+        const hash = node.object.hash
+        objectData = <div>{name} : {hash}</div>
+    }
+    if( typeof node.ast !== 'undefined'){
+        console.log(node)
+        const varDefs = node.ast.variableDefs
+        const args = node.ast.args
+        astData = <div>
+                Args:
+                {Object.values(args).map((arg) => (
+                    <div>
+                        {formatArg(arg)}
+                        <pre>{JSON.stringify(arg.newContext, null, 2)}</pre>
+                    </div>
+                ))}
+            </div>
 
+    }
+    return (
+        <div style={{ position: 'absolute' }}>
+            {objectData}
+            {astData}
+        </div>
+    )
+}
 
 export default Debug

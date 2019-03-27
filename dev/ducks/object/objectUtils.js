@@ -49,7 +49,7 @@ export const returnWithContext = (state, name, attr, attrData, valueData, object
     const parentHash = getHash(objectData)
     addToObjectTable(parentHash, objectData)
     const inverse = hasInverse ? { [inverseAttr]: parentHash }: {} //get inverse value (parent)
-    const inverseAttrs = Object.assign({ parentValue: parentHash }, inverse)
+    const inverseAttrs = Object.assign({}, { parentValue: parentHash }, inverse)
     const newPropsWithoutHash = Object.assign({}, valueData.props, inverseAttrs)
     const objectInverses = Object.assign({ $attr: attr }, valueData.inverses, inverseAttrs)
     const objectDataWithoutHash = Object.assign({}, valueData, { props: newPropsWithoutHash, inverses: objectInverses })
@@ -86,15 +86,19 @@ const objectValuesToHash = (hashData, entry) => {
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove inverse attributes from data to be hashed
+
     const inverseAttrs = objectData.inverses || {}
     const inverseKeys = Object.keys(inverseAttrs)
-    const exemptProps = ["hash", "parentValue", ...inverseKeys] //remove these props before hashing
+    const exemptProps = ["hash", "parentValue",'id', ...inverseKeys] //remove these props before hashing
     const expandedHashData = deleteKeys(objectData.props, exemptProps)
     //convert values of props to hashes
     const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
     //if (objectData.type === 'group') { console.log(inverseKeys, JSON.stringify(hashData, null, 2))}
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
+    if(objectData.id === 'app'){ //use for debugging
+        //console.log(digest, JSON.stringify(objectData, null, 2))
+    }
 	return digest
 }
 
@@ -126,7 +130,6 @@ export const getObject = function (state, id) {
 		objectData.props.id = id
 		return objectData
 	} catch (e){
-
 		throw new Error("could not find object named "+JSON.stringify(id))
 	}
 }
@@ -203,13 +206,33 @@ const checkObjectData = (state, objectData, prop) => {
 }
 
 //getJSValue should always return an ast?
-export const getJSValue = (state, name, prop, objData) => {
-	const { value: valueData } = getValue(state, 'placeholder', prop, objData)
+export const getJSValue = (state, name, prop, objectData) => {
+	const { value: valueData } = getValue(state, 'placeholder', prop, objectData)
 	if (valueData.type === 'undef'){
 		return undefined
 	} else {
 		const { value: primitive } = getValue(state, 'placeholder' , 'jsPrimitive', valueData) //get Value of jsPrimitive works
-        return primitive
+        const inverseAttr = getInverseAttr(state, prop)
+        const contextAttr = typeof inverseAttr === 'undefined' ? 'g' : inverseAttr
+        const primitiveArgs = typeof primitive.args === 'undefined' ? {} : primitive.args
+        const argsWithContext = Object.entries(primitiveArgs)
+            .filter((arg) => arg[0] !== 'prim')
+            .reduce((args, arg) => {
+                const newContext = {
+                    debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${objectData.props.hash}`,
+                    attr: contextAttr,
+                    value: objectData.props.hash
+                }
+                const argWithContext = Object.assign({}, arg[1], {
+                    newContext: arg.newContext === undefined ? [newContext] : arg.newContext.concat(newContext)
+                })
+                return Object.assign({}, args, { [arg[0]]: argWithContext })
+            }, {})
+        if (primitiveArgs.hasOwnProperty('prim')) {
+            Object.assign(argsWithContext, { prim: true })
+            //get rid of prim when refactoring? it isn't part of the main rendering monad
+        }
+        const primitiveWithContext = Object.assign({}, primitive, { args: argsWithContext })
+        return primitiveWithContext
 	}
 }
-

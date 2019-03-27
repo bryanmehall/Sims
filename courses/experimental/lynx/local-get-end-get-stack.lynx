@@ -1,4 +1,5 @@
 window = new group
+    name:"window"
     childElement1: new text
         name:"text"
         x:20

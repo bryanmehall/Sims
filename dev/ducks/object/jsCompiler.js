@@ -1,4 +1,4 @@
-import { buildFunction } from './IRutils'
+import { buildFunction, getStateArgs } from './IRutils'
 
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
@@ -18,7 +18,7 @@ const varDefsToString = (varDefs) => (
         .join('')
 )
 
-const input = (ast) => ('inputs.'+ast.inputName)
+const input = (ast) => (`inputs.${ast.inputName}.value`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const array = (ast) => JSON.stringify(ast.value)
@@ -37,7 +37,10 @@ const contains = (ast) => {
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.variableDefs)
-    return `return function(prim, inputs) { //app\n${varDefs} ${programText}(prim)\n}`
+    const stateDefs = getStateArgs(ast)
+        .map((arg) => (`\tvar ${arg.hash} = inputs.${arg.hash}.value`))
+        .join('\n')
+    return `\t//app\n${varDefs}${stateDefs}\treturn function(prim) { ${programText}(prim) }`
 }
 
 const group = (ast) => {
@@ -47,7 +50,7 @@ const group = (ast) => {
     } else {
         const programText = buildChildren(ast, '(prim)\n')
         const varDefs = varDefsToString(ast.variableDefs)
-        return ` function(prim) { //group\n${varDefs} ${programText}(prim)\n}`
+        return `\t//group\n${varDefs}\treturn function(prim) { ${programText}(prim) }`
     }
 
 }
@@ -55,7 +58,7 @@ const group = (ast) => {
 const text = (ast) => {
     const programText = buildChildren(ast, ', ') //space is important for unit tests
     const varDefs = varDefsToString(ast.variableDefs)
-    return ` function(prim) { //text\n${varDefs} prim.text( ${programText}, 0, 0, 0 );\n}`//space is important for unit tests
+    return `\t//text\n${varDefs}\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
 }
 
 const get = (ast) => {
@@ -74,6 +77,10 @@ const get = (ast) => {
         return { varDefs: varDef, returnStatement: ret } //is this structure needed or can this just return a string?
     }
 
+}
+const stateNode = (ast) => {
+    console.log('state node', ast)
+    return ast.hash
 }
 const search = (ast) => (ast.hash)
 
@@ -97,7 +104,7 @@ const apply = (ast) => {
 //todo: combine the
 const ternary = (ast) => {
     const [condition, then, alt] = buildChildren(ast)
-    return `${condition} ? \n\t\t${then} : \n\t\t${alt}`
+    return `return ${condition} ? \n\t\t${then} : \n\t\t${alt}`
 }
 const addition       = () => ('+')
 const subtraction    = () => ('-')
@@ -108,6 +115,7 @@ const lessThan       = () => ('<')
 const greaterThan    = () => ('>')
 const and            = () => ('&&')
 const or             = () => ('||')
+const not            = () => ('!')
 
 const evaluate = () => ('evaluate()')
 
@@ -127,7 +135,7 @@ export const jsCompilers = {
     get,
     search,
     globalSearch,
-    //recursive,
+    stateNode,
     apply,
     addition,
     subtraction,
@@ -138,4 +146,5 @@ export const jsCompilers = {
     greaterThan,
     and,
     or,
+    not
 }

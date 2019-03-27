@@ -14,8 +14,8 @@ checkbox = new object
         isClicked: box.mouseOver && app.mouse.down
         isChecked: new ternary
             condition: box.isClicked
-            then: true
-            alt: false
+            then: !box.isChecked.previousState
+            alt:box.isChecked.previousState
         innerText: new ternary
             condition:box.isChecked
             then:"1"
@@ -23,6 +23,11 @@ checkbox = new object
         x:30
         y:30
 
+state = new object
+    name:"state"
+
+previousState = new attribute
+    name:"previousState"
 isChecked = new attribute
     name:"isChecked"
 mouseOver = new attribute

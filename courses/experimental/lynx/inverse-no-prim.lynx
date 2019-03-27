@@ -1,5 +1,5 @@
 window = new group
-    name:"group"
+    name:"window"
     childElement1: new text
         name:"txt"
         x:20
@@ -16,14 +16,10 @@ window = new group
                     result:factorial.caller.op1
                 op1:"test"
 
-dbSearch = new object
 equalTo = new attribute
+    name:"equalTo"
 funct = new object
 factorial = new funct
     name:"factorial"
     op1:4
     result:factorial.caller.op1
-
-fac = new dbSearch //(db:factorial, hash(factorial.caller.op1):$this.op1) "functionTable.factorialHash(hash(factorial.caller.op1))
-    jsPrimitive:{dbSearch}
-    query:"factorial"

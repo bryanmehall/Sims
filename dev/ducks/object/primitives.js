@@ -1,7 +1,7 @@
 import { getArgsAndVarDefs } from './selectors'
 import { getValue, getJSValue, getName } from './objectUtils'
 import { isUndefined } from './utils'
-import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
+import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH, STATE_ARG } from './constants'
 
 const input = (state, objectData) => {
     const hash = objectData.props.hash
@@ -15,6 +15,18 @@ const input = (state, objectData) => {
         inline: true
     }
 }
+const stateNode = (state, objectData) => {
+    const hash = objectData.props.hash
+    return {
+        hash,
+        args: {}, //combine args of x,y,text
+        children: {},
+        type: 'stateNode',
+        variableDefs: [],
+        inline: true
+    }
+}
+
 //data constants
 const number = (...args) => (primitive(...args))
 const bool =   (...args) => (primitive(...args))
@@ -31,9 +43,8 @@ const primitive = (state, objectData, valueData) => ({
 })
 
 //data structures
-const array = (state, objectData, valueData) => ({
+const array = (state, objectData) => ({
     hash: objectData.props.hash,
-    value: valueData.value,
     args: {},
     children: {},
     variableDefs: [],
@@ -44,6 +55,7 @@ const array = (state, objectData, valueData) => ({
 const set = (state, objectData) => {
 
 }
+const not           = (...args) => (binOp(...args))
 
 //operation primitives
 const addition       = (...args) => (binOp(...args))
@@ -101,8 +113,8 @@ const contains = (state, objectData) => { //eventually switch to set
 const get = (state, objectData) => {
     const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
-    let query
-    let getStack
+    let query = THIS
+    let getStack = []
     if (root.type === 'undef'){ //for implied root (only works for one level deep)
         //set query to THIS if root is left undefined
         query = THIS
@@ -112,9 +124,7 @@ const get = (state, objectData) => {
         //change to rootObject.type == new?
         const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
         const next = getJSValue(state, 'placeholder', attribute, root)
-        console.log(next, root)
         const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
-        console.log(args)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
             hash: objectData.props.hash,
@@ -194,28 +204,18 @@ const dbSearch = (state, objectData) => {
     }
 }
 
-/*const func = (state, objectData) => {
-	throw 'function primitive'
-    const paramNames = ["result"]
-    const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
-    ))
-    parameters[0].inline = false //refactor
-    //const foldedPrimitives = getArgsAndVarDefs(state, parameters, objectData)
-    return parameters[0]
-    //monad for requiring that function is in table or for placing function in table
-}*/
-
 const apply = (state, objectData) => {
-    const paramNames = ['op1','function', 'op2']//add support for binary op
+    const paramNames = ['op1','function', 'op2', 'op3']
     const parameters = paramNames.map((paramName) => (
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
-    const children = parameters[2] === undefined
-        ? { op1: parameters[0], function: parameters[1] }
-        : { op1: parameters[0], function: parameters[1], op2: parameters[2] }
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    console.log(parameters)
+    const children = parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
+        : parameters.length === 3 ? { op1: parameters[0], function: parameters[1], op2: parameters[2] } //binop
+        : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
+        : {} //error
     return {
         hash: objectData.props.hash,
         args,
@@ -231,7 +231,7 @@ const ternary = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
     return {
         hash: objectData.props.hash,
@@ -249,7 +249,7 @@ const text = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: objectData.props.hash,
         args: Object.assign(args, { prim: true }), //combine args of x,y,text
@@ -267,7 +267,8 @@ const group = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((child) => (child !== undefined))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    console.log(variableDefs)
     //need to sort by z-order
     const children = parameters.length ===1
         ? { childElement1: parameters[0] }
@@ -287,9 +288,9 @@ const app = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
-        hash: 'apphash',//change this to actual hash...whiy isn't it there?
+        hash: 'apphash',//change this to actual hash...why isn't it there?
         children: { graphicalRep: parameters[0] },
         args,
         inline: true,
@@ -302,13 +303,6 @@ const evaluate = () => ({
     //this is a lazy node wherewhen it is called, every non-ternary operator below it evaluates
 	type: 'evaluate'
 })
-
-/*const set = (state, objectData) => {
-    const set1 = getJSValue(state, 'placeholder', 'subset1', objectData)
-    const set2 = getJSValue(state, 'placeholder', 'subset2', objectData)
-    return [].concat(set1, set2)
-}*/
-//need to create primitives fo array and struct datatypes
 
 export const primitives = {
     input,
@@ -325,13 +319,14 @@ export const primitives = {
     greaterThan,
     and,
     or,
+    not,
     getIndex,
     contains,
     get,
     search,
     dbSearch,
     recursive,
-    //function: func,
+    state: stateNode, //avoid variable conflict with state
     apply,
     ternary,
     text,

@@ -1,5 +1,5 @@
 import { compile } from './selectors'
-import { logFunctionTable } from './utils'
+//import { logFunctionTable } from './utils'
 
 /*
     types of inputs:
@@ -44,8 +44,24 @@ export class Runtime {
         canvas.width = width
         canvas.height = height
         const ctx = canvas.getContext('2d')
-        const { renderMonad, functionTable } = compile(initState)
-
+        const { renderMonad, functionTable, stateArgs } = compile(initState)
+        const stateInputs = stateArgs.reduce((inputs, arg) => (
+            Object.assign(inputs, { [arg.hash]: { value: undefined, available: true } })
+        ), {})
+        const stateOutputs = stateArgs.reduce((outputs, arg) => (
+            Object.assign(outputs, {
+                [arg.hash]: {
+                    evaluation: 'lazy',
+                    open: true,
+                    value: () => (renderMonad(functionTable)), //take inputs as arg
+                    hook: (renderer) => {
+                        renderFunctions.clear()
+                        renderer(renderFunctions, runtime.inputs)
+                    },
+                    inputs: ['mouseX', 'mouseY', 'mouseDown', "$hash__3284533923"]
+                }
+            })
+        ), {})
         canvas.addEventListener('mousemove', (e) => {
             const mouseX = e.pageX - e.currentTarget.offsetLeft || 0
             const mouseY = e.pageY - e.currentTarget.offsetTop || 0
@@ -79,6 +95,7 @@ export class Runtime {
             }
         }
 
+
         this.inputs = {
             mouseX: {
                 available: true,
@@ -95,26 +112,20 @@ export class Runtime {
             time: {
                 avalilable: true,
                 value: () => (performance.now())
-            }
+            },
+            ...stateInputs
         }
         this.outputs = {
             //add other outputs from compile here
             render: {
                 evaluation: 'lazy',
                 open: true,
-                value: () => (renderMonad(functionTable)), //take inputs as arg
+                value: () => (renderMonad(functionTable, runtime.inputs)), //take inputs as arg
                 hook: (renderer) => {
-                    const inputs = {
-                        mouseX: runtime.inputs.mouseX.value,
-                        mouseY: runtime.inputs.mouseY.value,
-                        mouseDown: runtime.inputs.mouseDown.value
-                    }
                     renderFunctions.clear()
-                    logFunctionTable(functionTable)
-                    console.log(renderer)
-                    renderer(renderFunctions, inputs)
+                    renderer(renderFunctions)
                 },
-                inputs: ['mouseX', 'mouseY', 'mouseDown']
+                inputs: ['mouseX', 'mouseY', 'mouseDown', "$hash__3284533923"]
             }
         }
         this.checkOutputs()

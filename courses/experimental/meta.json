@@ -71,6 +71,13 @@
 					"length":10
 				},
                 {
+					"id": "primitive-context",
+					"title":"Primitive Context",
+					"text":"test for passing context of get to resulting value",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "vardef-in-get-append",
 					"title":"vardef-in-get-append",
 					"text":"",

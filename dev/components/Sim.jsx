@@ -22,7 +22,6 @@ class Sim extends React.Component {
 		this.loadSim = this.loadSim.bind(this)
         this.state = {
             offset: { x: 300, y: 0 },
-            inputs: { mouseX: 0, mouseY: 0, mouseDown: false },
              //each of these is a function
             objectTable: props.objectTable,
             ast: props.ast,
@@ -78,23 +77,13 @@ class Sim extends React.Component {
 			float: 'left',
 			backgroundColor: '#fff' 
 		}
-		//combine these into one file for importing children
         const functionTable = this.props.functionTable
-        const tableVis = this.props.loadState ==='loading'
-            ?'loading'
-            :Object.keys(functionTable).map((func) => (
-                  <pre key={func}>{func}:{functionTable[func].toString()}</pre>
-              ))
-        const codeVis = (
-            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', top: 300 }}>
-                {this.props.loadState ==='loading' ? "loading" : this.props.renderMonad.toString() }
-                {tableVis}
-            </pre>
-        )
-        const treeVis = this.props.loadState !=='loading' ?
+
+        const debug = this.props.loadState !=='loading' ?
               <Debug
                   functionTable={functionTable}
                   ast={this.props.ast}
+                  debugType={this.state.debugView}
                   objectTable={this.props.objectTable}
                   appString={this.props.renderMonad.toString()}
                 ></Debug> : null
@@ -102,10 +91,6 @@ class Sim extends React.Component {
         //const graphVis = <TreeDiagram objectTable={this.props.objectTable}></TreeDiagram>
 		return (
             <div>
-                <div style = {{backgroundColor:"white"}}>
-                    <span onClick={()=>{this.setState({debugView:"code"})}}>Tree</span>
-                    <span>code</span>
-                </div>
                 <canvas
                     id="canvas"
                     width="600"
@@ -113,8 +98,12 @@ class Sim extends React.Component {
                     style={simCardStyle}
                 >
                 </canvas>
-
-                {this.state.debugView === "tree" ? treeVis : codeVis}
+                <div style = {{...cardStyle, backgroundColor:'white', padding:10, top:305}}>
+                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"tree"})}}>tree</span> |
+                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"ast"})}}> ast</span> |
+                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"code"})}}> code</span>
+                </div>
+                {debug}
             </div>
         )
         /*(
@@ -132,24 +121,12 @@ class Sim extends React.Component {
 	}
 }
 
-const checkTypes = (type, vars) => {
-    vars.forEach((variable)=>{
-        if(typeof variable !== type){
-            console.log('variables', vars)
-            throw new Error(`Lynx typeError: type of ${variable} is not ${type}`)
-        }
-    })
-}
-
 function mapStateToProps(state) {
 	const loadState = getLoadState(state)
 	if (loadState === 'loading'){
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
-        console.time('draw')
 		const { renderMonad, functionTable, ast, objectTable } = compile(state)
-
-        console.timeEnd('draw')
 		return {
             state,
 			renderMonad,

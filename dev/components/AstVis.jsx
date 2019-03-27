@@ -66,6 +66,9 @@ class AstVis extends React.Component {
         })
 
     }
+    componentWillUnmount(){
+        this.simulation.stop()
+    }
 	render() {
         const { nodes, links } = this.state
         const nodesVis = nodes.map((node, i) => (
@@ -174,6 +177,7 @@ class Node extends React.Component {
                 >
                 {ast.hasOwnProperty('value') ? JSON.stringify(ast.value).slice(0,12) : ast.hasOwnProperty('vis') ? ast.vis.name : ast.type}
                 {(active ? displayArgs(ast) : "")}
+                {active ? ast.hash : null}
             </text>
         )
     }

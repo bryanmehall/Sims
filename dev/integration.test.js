@@ -7,42 +7,30 @@ var fs = require('fs');
 const runTest = (objects, done) => {
     const state = { sim: { object: objects } }
     const { renderMonad, functionTable } = compile(state)
-    const render = renderMonad(functionTable)
+    const render = renderMonad(functionTable, {})
     let xTest, yTest, innerTextTest
+    console.log(Object.keys(functionTable))
+    if (functionTable.hasOwnProperty('$hash__1677883599')){
+         console.log('abc', functionTable.$hash__1677883599.toString())
+    }
+
     const prim = {
         text: (x, y, innerText) => {
-           xTest = x
-           yTest = y
-           innerTextTest = innerText
+            xTest = x
+            console.log(xTest, x)
+            yTest = y
+            innerTextTest = innerText
         }
     }
-    render(prim, {})
-    /*console.log(xTest, yTest, innerTextTest)
-    let contains20 = false
-    let contains30 = false
-    let containsTest = false
-    let isNotUndef = true
 
-    Object.entries(functionTable).forEach((func) => {
-        const st = func.toString()
-        if (st.includes(' 20')){
-            contains20 = true
-        }
-        if (st.includes(' 30')){
-            contains30 = true
-        }
-        if (st.includes('test')){
-            containsTest = true
-        }
-        if (st.includes('undefined')){
-            isNotUndef = false
-        }
-    })
-    const pass = contains20 && contains30 && containsTest && isNotUndef*/
+    render(prim)
+
     if (xTest === 20 && yTest === 30 && innerTextTest === 'test'){
+        console.log('suc', xTest)
         done()
     } else {
-        done.fail('conditions not met'+[xTest, yTest, innerTextTest].join(', '))
+        console.log('fail', xTest)
+        done.fail('conditions not met '+[xTest, yTest, innerTextTest].join(', '))
     }
 }
 const loadAndRunTest = (testName, folder, done) => {
@@ -78,11 +66,13 @@ const coreTests = [
     'vardef-in-get-chain',
     'vardef-in-get-append',
     'parent-of-get',
+    'primitive-context',
     'local-new-object-get',
-    'local-get-end-get-stack'
+    'local-get-end-get-stack',
+    'parent-of-new-get'
 ]
 const dbTests = [
-    'simple-get',
+    //'simple-get',
     'direct-child',
     //'parent'
 ]

@@ -1,11 +1,11 @@
 window = new group
     name:"window"
-    x:20
     op1: new object
         name:"test"
-        textRepresentation:new text //parentObject: test, parentValue:test, parentSet:set
+        textRepresentation:new text
             name:"txt"
             innerText:txt.parentConcept.name
             x:txt.parentGroup.x
             y:30
     childElement1: window.op1.textRepresentation
+    x:20

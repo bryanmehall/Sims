@@ -24,6 +24,7 @@ export const formatArg = (arg) => {
     if (typeof arg === 'boolean') { //for prim
         return arg
     }
+
     switch (arg.type){
         case INVERSE:
             return formatInverseArg(arg.query, arg.getStack)
@@ -32,6 +33,7 @@ export const formatArg = (arg) => {
         case GLOBAL_SEARCH:
             return arg.query
         default:
+            console.log(arg)
             throw `type ${arg.type} not found`
     }
 }
@@ -103,6 +105,10 @@ export const compileToJS = (args, string) => {
             throw e
         }
     }
+}
+export const getName = (objectData) => {
+    const nameObject = objectData.props.name
+    return typeof nameObject === 'undefined' ? 'object' : nameObject.props.jsPrimitive.value
 }
 
 

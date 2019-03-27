@@ -1,5 +1,6 @@
 import { compileToJS } from './utils'
 import { jsCompilers } from './jsCompiler'
+import { STATE_ARG } from './constants'
 
 //build string of function from ast node and add that function to the function table
 export const buildFunction = (ast) => {
@@ -10,11 +11,10 @@ export const buildFunction = (ast) => {
     } else {
         const argsList = Object.keys(ast.args)
             .concat('functionTable')//list of child args
-
         try {
             const func = string.hasOwnProperty('varDefs') ?
                 compileToJS(argsList, `${string.varDefs} return ${string.returnStatement}`) :
-                compileToJS(argsList, '\t return '+string)
+                compileToJS(argsList, string)
             const newFunctionTable = { [ast.hash]: func }
             if (ast.isFunction){
                 return {
@@ -23,7 +23,7 @@ export const buildFunction = (ast) => {
                 }
             }
             return {
-                string: `\tfunctionTable.${ast.hash}(${argsList.join(",")})`,
+                string: `functionTable.${ast.hash}(${argsList.join(",")})`,
                 newFunctionTable
             }
         } catch (e) {
@@ -34,7 +34,6 @@ export const buildFunction = (ast) => {
 }
 
 export const astToFunctionTable = (ast) => {
-    console.log(ast)
     const children = ast.children
     const childASTs = Object.values(children)
     checkASTs(childASTs, ast)
@@ -48,6 +47,11 @@ export const astToFunctionTable = (ast) => {
     const newFunctionTable = ast.type === 'app' ? {} : buildFunction(ast).newFunctionTable
     const functionTable = Object.assign(newFunctionTable, ...varDefTables, ...childTables)
     return functionTable
+}
+
+export const getStateArgs = (ast) => {
+    const stateArgs = Object.values(ast.args).filter((arg) => (arg.type === STATE_ARG))
+    return stateArgs
 }
 
 const checkASTs = (asts, objectTable) => {

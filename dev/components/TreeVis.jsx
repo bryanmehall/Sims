@@ -1,27 +1,16 @@
 import React from "react"
 import * as d3 from "d3"
-import { formatArg } from '../ducks/object/utils'
-import { objectFromName } from '../ducks/object/objectUtils'
-import { LOCAL_SEARCH, THIS, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
+import { formatArg, getName } from '../ducks/object/utils'
+import { objectFromName, getHash } from '../ducks/object/objectUtils'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
 
 class TreeVis extends React.Component {
     constructor(props){
         super(props)
-        //const { nodes, links } = astToD3(this.props.ast)
-        //const { nodes, links } = bfsAST(this.props.ast)
-        console.log(this.props.ast)
         const appObject = objectFromName('app', this.props.objectTable)
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
-        console.log(nodes, links)
-        const vis = this
-        //console.log(nodes, links)
-        //throw 'here'
+        addAST(this.props.ast, { nodes, links })
         this.state = { nodes, links }
-        const isolate = (force, filter) => {
-          const initialize = force.initialize;
-          force.initialize = function() { initialize.call(force, nodes.filter(filter)); };
-          return force;
-        }
 
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
@@ -39,21 +28,15 @@ class TreeVis extends React.Component {
         const orderingForce = () => {
             for (var i = 0; i < vis.state.nodes.length; i++) {
                 const currNode = vis.state.nodes[i]
-                const prevNode = i === 0 ? {level: -1, x: 0 } : vis.state.nodes[i-1]
-                const nextNode = i === vis.state.nodes.length-1 ? {  level: -1 , x: 0 } : vis.state.nodes[i+1]
+                const prevNode = i === 0 ? { level: -1, x: 0 } : vis.state.nodes[i-1]
                 if (currNode.level === prevNode.level){
-                    if (currNode.x < prevNode.x+80){
-                        const acc = (80-(currNode.x-prevNode.x))
+                    if (currNode.x < prevNode.x+150){
+                        const acc = (150-(currNode.x-prevNode.x))
                         currNode.vx += acc
                         prevNode.vx -= acc
                     }
                 }
-                /*if (nextNode.ast.level === currNode.ast.level){
-                    if (nextNode.x < currNode.x+90){
-                        currNode.vx -= (90-(nextNode.x-currNode.x))
-                    }
-                }*/
-                const parNode = vis.state.nodes[currNode.object.parId] || {  level: -1, x: 0 }
+                const parNode = vis.state.nodes[currNode.object.parId] || { level: -1, x: 0 }
                 const x = parNode === undefined ? 0 : parNode.x
                 const diff = (x-currNode.x)
                 const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
@@ -71,8 +54,12 @@ class TreeVis extends React.Component {
         })
 
     }
+    componentWillUnmount(){
+        this.simulation.stop()
+    }
 	render() {
         const { nodes, links } = this.state
+        getPath(nodes, this.props.activeNode.object.hash)
         const nodesVis = nodes.map((node, i) => (
             <Node
                 x={node.x}
@@ -80,15 +67,15 @@ class TreeVis extends React.Component {
                 level={node.level}
                 id={i}
                 key={i}
+                ast={node.ast}
                 object={node.object}
+                activeNode={this.props.activeNode}
                 setActive={this.props.setActive}/>
-        ))
-        const linksVis = links.map((link, i) => (<Link source={link.source} target={link.target} key={i}></Link>))
+        ), this) //set this for context
+        const linksVis = links.map((link, i) => (<Link source={link.source} target={link.target} attr={link.attr} key={i}></Link>))
         return <g>{nodesVis}{linksVis}</g>
 	}
 }
-let id = 0
-let queue = []
 //sort nodes in bfs order to apply forces to them
 
 
@@ -101,41 +88,55 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     const i = d3Data.nodes.length
     const newD3Data = {
         nodes: d3Data.nodes.concat({ id: i, object: first, objQueue, level }),
-        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i })
+        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i, attr: first.attr })
     }
     const propList = first.hasOwnProperty('props') ? Object.entries(first.props) : []
     const entries = propList
         .filter((entry) => { //filter out hash and inverse properties
             const inverses = first.inverses || {}
-            return !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id'].includes(entry[0]) && !inverses.hasOwnProperty(entry[0])
-        }).map((entry) => (
-            typeof entry[1] === 'string' ? [entry[0], objectFromName(entry[1], objectTable)] : entry
-        ))
-    const children = entries.map((entry) => (Object.assign({}, entry[1], { attr: entry[0], parId:i, level:level+1 })))
+            return !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0]) && !inverses.hasOwnProperty(entry[0])
+        }).map((entry) => {
+            const result = typeof entry[1] === 'string'
+            ? [entry[0], objectFromName(entry[1], objectTable)]
+            : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
+            return result
+        })
 
-    const newQueue = [...objQueue, ...children]
+    const children = entries.map((entry) => (Object.assign({}, entry[1], { attr: entry[0], parId: i, level: level+1 })))
+
+    const newQueue = first.type === 'get' ? objQueue : [...objQueue, ...children]
     return bfsObjectTree(objectTable, first, newD3Data, newQueue)
 }
-const bfsAST = (ast, d3Data, queue) => {
-    queue = queue || [Object.assign({}, ast, { level: 0 })]
-    if (queue.length === 0) { return d3Data }
-    d3Data = d3Data || { nodes: [], links: [] }
 
-    const first = queue.shift()
-    const level = first.level
-    const i = d3Data.nodes.length
-    const newD3Data = {
-        nodes: d3Data.nodes.concat({ id: i, ast: first, queue }),
-        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i })
+const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (node.object.hash === hash)))
+
+const addAST = (ast, nodesAndLinks) => { //helper function for addAST
+    const { nodes, links } = nodesAndLinks
+    const astIndex = getNodeIndex(nodes, ast.hash)
+    if (astIndex !== -1){
+        const astNode = nodes[astIndex]
+        nodes[astIndex] = { ...astNode, ast }
     }
+    const children = Object.values(ast.children)
+    const varDefChildren = ast.variableDefs.map((varDef) => (varDef.ast))
 
-    const childrenASTs = Object.values(first.children)
-        .map((ast) => (Object.assign({}, ast, { parId: i, level: level+1 })))
-    const varDefASTs = first.variableDefs
-        .map((varDef) => (Object.assign({}, varDef.ast, { parId: i, level: level+1, varDef: true })))
+    return [...children, ...varDefChildren].reduce((nodesAndLinks, child) => (
+        addAST(child, nodesAndLinks)
+        ), { nodes, links })
+}
 
-    const newQueue = [...queue, ...childrenASTs, ...varDefASTs]
-    return bfsAST(first, newD3Data, newQueue)
+const getPath = (nodes, hash) => {
+    const defNode = nodes[getNodeIndex(nodes, hash)]
+    const rootNodes = nodes.filter((node) => {
+        const hasAST = node.hasOwnProperty('ast')
+        if (hasAST) {
+            return node.ast.variableDefs.some((varDef) => (varDef.key === hash))
+        } else {
+            return false
+        }
+    })
+
+    return { defNode, rootNodes }
 }
 
 const displayArgs = (ast) => {
@@ -148,7 +149,6 @@ const displayArg = (arg, argKey) => {
     if (arg === true){
         return <tspan key={"prim"} style={{ fill: 'gray' }}>{'prim'}</tspan>
     } else {
-        const getAttrs = arg.getStack.map((get) => (get.props.attribute))
         const color = (arg.type === LOCAL_SEARCH) ? "green" :
             arg.type === INVERSE ? 'red' :
             arg.type === GLOBAL_SEARCH ? 'purple' :
@@ -157,55 +157,66 @@ const displayArg = (arg, argKey) => {
     }
 }
 
-class Node extends React.Component {
-    constructor(props){
-        super(props)
-        this.state = { active: false }
+const Node = ({ x, y, object, setActive, ast, activeNode }) => {
+    const active = activeNode.object.hash === object.hash
+    const name = getName(object)
+    const isPrimitive = ast !== undefined
+    let label = ''
+    if (isPrimitive){
+        if (ast.hasOwnProperty('value')){
+            label = JSON.stringify(ast.value)
+        } else {
+            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
+        }
+        //const activeVarDefs = ast.variableDefs.filter((varDef) => {console.log(varDef)})
+    } else {
+        label = name
     }
-    render(){
-        const { x, y, object, setActive } = this.props
-        const self = this
-        const active = this.state.active
-        const nameObject = object.props.name
-        const name = typeof nameObject === 'undefined' ? 'object' : nameObject.props.jsPrimitive.value
-        const isPrimitive = object.props.hasOwnProperty('jsPrimitive')
-        const hasValue = isPrimitive ? object.props.jsPrimitive.hasOwnProperty('value') : false
-        const label = hasValue ? object.props.jsPrimitive.value : name
-        return (
-            <text
-                onMouseOver={function(){
-                    self.setState({ active: true })
-                    //setActive(ast)
-                }}
-                onMouseLeave={function(){
-                    self.setState({ active: false })
-                }}
-                textAnchor="middle"
-                fontWeight={active ? 600 : 400}
-                opacity = {active ? 1 : 0.7}
-                fill={isPrimitive? 'blue': 'black'}
-                x={x}
-                y={y}
-                >
-                {label}{active ? object.hash : null}
-            </text>
-        )
-    }
+
+    return (
+        <text
+            onMouseOver={function(){
+                setActive({ object, ast })
+            }}
+            onMouseLeave={function(){
+
+            }}
+            textAnchor="middle"
+            fontWeight={active ? 600 : 400}
+            opacity = {active ? 1 : 0.7}
+            fill={isPrimitive? 'blue': 'black'}
+            x={x}
+            y={y}
+            >
+            {label}
+        </text>
+    )
 }
 
-const Link = ({ source, target }) => (
-    <line
-        x1={source.x}
-        y1={source.y+5}
-        x2={target.x}
-        y2={target.y-15}
-        style={{
-          stroke: "#000",
-          strokeOpacity: ".9",
-          strokeWidth: 1.6
 
-        }}
-    />
+const Link = ({ source, target, attr }) => (
+    <g>
+        <line
+            x1={source.x}
+            y1={source.y+5}
+            x2={target.x}
+            y2={target.y-15}
+            style={{
+              stroke: "#000",
+              strokeOpacity: ".9",
+              strokeWidth: 1.6
+
+            }}
+        />
+        <text
+            x={source.x+(target.x-source.x)/2}
+            y={source.y+30}
+            textAnchor="middle"
+            opacity = {0.3}
+            >
+            {attr}
+        </text>
+    </g>
 )
 
 

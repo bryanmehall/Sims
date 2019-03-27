@@ -2,7 +2,7 @@ object = new object
     name:"object"
 
 accordianRepresentation = new group
-    name:"accordianRep"
+    name:"accordianRepresentation"
     pos: new coordinatePosition
         x:50+10
         y:100
@@ -51,6 +51,7 @@ childElement2 = new attribute
     inverseAttribute: parentGroup
 
 parentGroup = new attribute
+    name:"parentGroup"
 
 div = new group
     name:"div"
@@ -97,13 +98,13 @@ attributes = new attribute
 jsPrimitive = new attribute
     name:"jsPrimitive"
 childElements = new attribute
-    name:"a"
+    name:"childElements"
 name = new attribute
-    name:"a"
+    name:"name"
 parentValue = new attribute
     name:"parentValue"
 inverseAttribute = new attribute
-    name:"a"
+    name:"inverseAttribute"
 instanceOf = new attribute
     name:"instanceOf"
 prevVal = new attribute
@@ -167,6 +168,7 @@ height = new attribute
     name:"height"
 
 get = new object
+    name:"get"
 rootObject = new attribute
     name:"a"
 forEach = new attribute
@@ -175,11 +177,11 @@ forEach = new attribute
 ternary = new object
     jsPrimitive:{ternary}
 condition = new attribute
-    name:"a"
+    name:"condition"
 then = new attribute
-    name:"a"
+    name:"then"
 alt = new attribute
-    name:"a"
+    name:"alt"
 
 down = new attribute
     name:"down"
@@ -236,6 +238,11 @@ or = new func
     caller:or.parentValue
     jsPrimitive:{or}
 
+not = new func
+    name:"not"
+    caller:not.parentValue
+    jsPrimitive:{not}
+
 apply = new object
     name:"apply"
     jsPrimitive:{apply}
@@ -243,6 +250,9 @@ apply = new object
 op1 = new attribute
     name:"op1"
 op2 = new attribute
+    name:"op2"
+op3 = new attribute
+    name:"op3"
 result = new attribute
     name:"result"
 caller = new attribute
