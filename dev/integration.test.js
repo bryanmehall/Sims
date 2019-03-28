@@ -6,18 +6,13 @@ var fs = require('fs');
 
 const runTest = (objects, done) => {
     const state = { sim: { object: objects } }
-    const { renderMonad, functionTable } = compile(state)
+    const { renderMonad, functionTable } = compile(objects)
     const render = renderMonad(functionTable, {})
     let xTest, yTest, innerTextTest
-    console.log(Object.keys(functionTable))
-    if (functionTable.hasOwnProperty('$hash__1677883599')){
-         console.log('abc', functionTable.$hash__1677883599.toString())
-    }
 
     const prim = {
         text: (x, y, innerText) => {
             xTest = x
-            console.log(xTest, x)
             yTest = y
             innerTextTest = innerText
         }
@@ -26,10 +21,8 @@ const runTest = (objects, done) => {
     render(prim)
 
     if (xTest === 20 && yTest === 30 && innerTextTest === 'test'){
-        console.log('suc', xTest)
         done()
     } else {
-        console.log('fail', xTest)
         done.fail('conditions not met '+[xTest, yTest, innerTextTest].join(', '))
     }
 }

@@ -86,7 +86,6 @@ const objectValuesToHash = (hashData, entry) => {
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove inverse attributes from data to be hashed
-
     const inverseAttrs = objectData.inverses || {}
     const inverseKeys = Object.keys(inverseAttrs)
     const exemptProps = ["hash", "parentValue",'id', ...inverseKeys] //remove these props before hashing
@@ -94,7 +93,6 @@ export const getHash = (objectData) => { //this should check that all children a
     //convert values of props to hashes
     const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
-    //if (objectData.type === 'group') { console.log(inverseKeys, JSON.stringify(hashData, null, 2))}
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
@@ -124,7 +122,7 @@ export const addToObjectTable = (hash, objectData) => {
 
 export const getObject = function (state, id) {
 	//this should only be a shim for values defined in json
-	const objectState = state.sim.object
+	const objectState = state
 	try {
 		var objectData = Object.assign({}, objectState[id])
 		objectData.props.id = id

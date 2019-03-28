@@ -44,7 +44,8 @@ export class Runtime {
         canvas.width = width
         canvas.height = height
         const ctx = canvas.getContext('2d')
-        const { renderMonad, functionTable, stateArgs } = compile(initState)
+        const lynxState = initState.sim.object
+        const { renderMonad, functionTable, stateArgs } = compile(lynxState)
         const stateInputs = stateArgs.reduce((inputs, arg) => (
             Object.assign(inputs, { [arg.hash]: { value: undefined, available: true } })
         ), {})

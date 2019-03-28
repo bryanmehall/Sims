@@ -162,9 +162,6 @@ const get = (state, objectData) => {
     }
 }
 
-const recursive = () => {
-    throw 'here'
-}
 const search = (state, objectData, valueData) => { //search is get root (local Search) not dbSearch --rename to local and global
     const query = valueData.query
     const hash = objectData.props.hash
@@ -325,7 +322,6 @@ export const primitives = {
     get,
     search,
     dbSearch,
-    recursive,
     state: stateNode, //avoid variable conflict with state
     apply,
     ternary,

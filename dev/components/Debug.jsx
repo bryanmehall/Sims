@@ -86,16 +86,14 @@ const ObjectData = ({ node }) => {
         const hash = node.object.hash
         objectData = <div>{name} : {hash}</div>
     }
-    if( typeof node.ast !== 'undefined'){
-        console.log(node)
+    if (typeof node.ast !== 'undefined') {
+        //const args = node.ast.args
         const varDefs = node.ast.variableDefs
-        const args = node.ast.args
         astData = <div>
                 Args:
-                {Object.values(args).map((arg) => (
-                    <div>
-                        {formatArg(arg)}
-                        <pre>{JSON.stringify(arg.newContext, null, 2)}</pre>
+                {Object.values(varDefs).map((varDef, i) => (
+                    <div key={i}>
+                        <pre>{JSON.stringify(varDef.context, null, 2)}</pre>
                     </div>
                 ))}
             </div>

@@ -126,7 +126,7 @@ function mapStateToProps(state) {
 	if (loadState === 'loading'){
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
-		const { renderMonad, functionTable, ast, objectTable } = compile(state)
+		const { renderMonad, functionTable, ast, objectTable } = compile(state.sim.object)
 		return {
             state,
 			renderMonad,
