@@ -163,7 +163,7 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
     const name = getName(object)
     const isPrimitive = ast !== undefined
     let label = ''
-    if (isPrimitive){
+    if (isPrimitive) {
         const activeVarDefs = ast.variableDefs.filter((varDef) => (varDef.key === activeHash))
         const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
         if (ast.hasOwnProperty('value')){

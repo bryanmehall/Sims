@@ -36,7 +36,6 @@ sq = new func
     numericalEquiv:sq.op1+sq.op1
 
 list = new attribute
-funct = new object
 equalTo = new attribute
 appl = new object
 

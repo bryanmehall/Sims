@@ -14,7 +14,7 @@ export const objectFromName = (state, name) => {
     })
     if (matches.length !== 1) {
         console.log(matches, name)
-        throw new Error('object not found in debug')
+        throw new Error(`object "${name}" not found in debug, ${matches.length}`)
     }
     return matches[0]
 }
@@ -28,24 +28,10 @@ export const getName = (state, objectData) => {
     return namePrimitive === undefined ? null : namePrimitive.value//switch to comparing hashes?
 }
 
-export const returnWithContext = (state, attr, attrData, valueData, objectData) => {
-    //adds hash and
-	if (objectData.type === 'app'){ //special case for root in this case app
-        objectData = objectLib.undef
-    }
-    const hash = getHash(valueData)
-    addToObjectTable(hash, valueData)
-    const newProps = Object.assign({}, valueData.props, { hash })
-    return {
-        state: state,
-        value: Object.assign({}, valueData, { props: newProps })
-    }
-}
-
 export const objectFromHash = (state, hash) => (
     objectTable[hash]
 )
-
+//combine these
 export const getObject = function (state, hash) {
 	//this should only be a shim for values defined in json
 	try {
@@ -56,7 +42,7 @@ export const getObject = function (state, hash) {
 }
 
 export const getInverseAttr = (state, attr) => (
-    getObject(state, attr).props.inverseAttribute
+    objectFromName(state, attr).props.inverseAttribute
 )
 
 const isHash = (str) => (str.includes("$hash"))
@@ -89,23 +75,37 @@ export const addToObjectTable = (hash, objectData) => {
     objectTable[hash] = objectData
 }
 
+export const returnWithContext = (state, attr, attrData, valueData, objectData) => {
+    //adds hash and
+	if (objectData.type === 'app'){ //special case for root in this case app
+        objectData = objectLib.undef
+    }
+    const hash = getHash(valueData)
+    addToObjectTable(hash, valueData)
+    const newProps = Object.assign({}, valueData.props, { hash })
+    return {
+        state: state,
+        value: Object.assign({}, valueData, { props: newProps })
+    }
+}
+
 export const getValue = (state, prop, objectData) => {
     checkObjectData(state, objectData)
 	let def = objectData.props[prop]
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     }
-    const attrData = typeof prop === 'string' ? getObject(state, prop) : prop //pass prop data in
+    const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		let inheritedData
 		if (!objectData.props.hasOwnProperty('instanceOf')) {
-			inheritedData = getObject(state, 'object')
+			inheritedData = objectFromName(state, 'object')
 		} else {
 			inheritedData = getValue(state, 'instanceOf', objectData).value //parent is passed in?
 		}
         def = inheritedData.props[prop]
 	}
-	const valueData = typeof def === 'string' ? getObject(state, def) : def//consequences of making async?
+	const valueData = typeof def === 'string' ? objectFromName(state, def) : def
 	if (objectData === undefined) {
 		console.log('object data undefined for ', prop, 'ObjectData: ', objectData)
 		throw new Error()

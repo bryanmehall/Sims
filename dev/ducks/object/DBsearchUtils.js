@@ -1,4 +1,4 @@
-import { getObject, getHash, getValue, getJSValue } from './objectUtils'
+import { objectFromName, getHash, getValue, getJSValue } from './objectUtils'
 import { GLOBAL_SEARCH } from './constants'
 import { getArgsAndVarDefs } from './selectors'
 //import { buildFunction } from './IRutils'
@@ -7,7 +7,7 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
     return Object.values(combinedArgs)
         .filter((arg) => (arg.type === GLOBAL_SEARCH)) //combine these conditions
         .map((arg) => {
-            let root = getObject(state, arg.query)
+            let root = objectFromName(state, arg.query)
             //root.props.parentValue = 'parent' //this prop must be set before the hash prop to keep the order of props consistent
             root.props.hash = getHash(root) //formalize what hash means so it is consistent
             const rootProps = Object.assign({}, root.props, arg.searchContext)

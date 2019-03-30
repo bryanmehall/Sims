@@ -1,10 +1,11 @@
 window = new group
+    name:"window"
     childElement1: new dbSearch
         jsPrimitive:{dbSearch}
         query:"dbtext"
 
 dbtext = new text
-    name:"txt"
+    name:"dbtext"
     x:20
     y:30
     innerText:"test"

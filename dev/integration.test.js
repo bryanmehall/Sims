@@ -1,11 +1,10 @@
 import { lynxParser } from './lynxParser'
-import { compile } from './ducks/object/selectors'
+import { compile } from './ducks/object/compiler'
 console.group = function(){}
 console.groupEnd = function(){}
 var fs = require('fs');
 
 const runTest = (objects, done) => {
-    const state = { sim: { object: objects } }
     const { renderMonad, functionTable } = compile(objects)
     const render = renderMonad(functionTable, {})
     let xTest, yTest, innerTextTest

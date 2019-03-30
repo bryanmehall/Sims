@@ -17,7 +17,6 @@ window = new group
 
 dbSearch = new object
 
-funct = new object
 factorial = new funct
     name:"factorial"
     op1: factorial.caller.op1

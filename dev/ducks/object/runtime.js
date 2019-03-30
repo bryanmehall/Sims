@@ -1,4 +1,4 @@
-import { compile } from './selectors'
+import { compile } from './compiler'
 //import { logFunctionTable } from './utils'
 
 /*

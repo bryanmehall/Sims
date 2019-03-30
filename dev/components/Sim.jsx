@@ -3,7 +3,7 @@ import { connect } from "react-redux"
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { compile } from '../ducks/object/selectors'
+import { compile } from '../ducks/object/compiler'
 import Video from './Video'
 import { Runtime } from '../ducks/object/runtime'
 import Plot from './Plot'

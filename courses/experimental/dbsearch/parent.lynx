@@ -5,7 +5,7 @@ window = new group
         query:"dbtext"
 
 dbtext = new text
-    name:"txt"
+    name:"dbtext"
     x:txt.parentGroup.x
     y:30
     innerText:"test"

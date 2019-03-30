@@ -45,9 +45,11 @@ group = new object
     jsPrimitive:{group}
 
 childElement1 = new attribute
+    name:"childElement1"
     inverseAttribute: parentGroup
 
 childElement2 = new attribute
+    name:"childElement2"
     inverseAttribute: parentGroup
 
 parentGroup = new attribute
@@ -170,9 +172,9 @@ height = new attribute
 get = new object
     name:"get"
 rootObject = new attribute
-    name:"a"
+    name:"rootObject"
 forEach = new attribute
-    name:"a"
+    name:"forEach"
 
 ternary = new object
     jsPrimitive:{ternary}
@@ -186,11 +188,12 @@ alt = new attribute
 down = new attribute
     name:"down"
 query = new attribute
-    name:"a"
+    name:"query"
 search = new object
-    name:"a"
+    name:"search"
 
 func = new object
+    name:"func"
     jsPrimitive:{function}
 
 addition = new func
@@ -260,3 +263,5 @@ caller = new attribute
 function = new attribute
     name:"function"
     inverseAttribute:caller
+funct = new object
+    name:"funct"

@@ -18,7 +18,7 @@ window = new group
 
 equalTo = new attribute
     name:"equalTo"
-funct = new object
+
 factorial = new funct
     name:"factorial"
     op1:4
