@@ -265,7 +265,6 @@ const group = (state, objectData) => {
         ))
         .filter((child) => (child !== undefined))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
-    console.log(variableDefs)
     //need to sort by z-order
     const children = parameters.length ===1
         ? { childElement1: parameters[0] }

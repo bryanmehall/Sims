@@ -3,7 +3,7 @@ import { compileToJS, objectFromEntries } from './utils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED, STATE_ARG } from './constants'
 import { primitives } from './primitives'
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
-import { getValue, getName, getHash, getObject, hasAttribute, objectFromHash } from './objectUtils'
+import { getValue, getName, getHash, getObject, hasAttribute, objectFromHash, addContext, getInverseAttr } from './objectUtils'
 import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
 
 /*
@@ -79,7 +79,8 @@ const getNext = (state, currentObject, searchArgData) => {
     //search through context to see if the current attr from the get stack matches any of the first attrs from the context
     //if it does then return the
     const contextFunctionArray = newContext.map((contextPath) => {
-        if (contextPath.attr === attr){
+        console.log(contextPath, attr)
+        if (contextPath.attr === attr) {
             const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
             const nextValue = objectFromHash(contextPath.value)//todo: replace this with non objectTable version
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
@@ -91,29 +92,38 @@ const getNext = (state, currentObject, searchArgData) => {
         })
         .filter((contextFunctionData) => (typeof contextFunctionData !== 'undefined'))
     //if there is a change then return context function Data
+    //console.log('context array', contextFunctionArray)
     if (contextFunctionArray.length === 1) {
         return contextFunctionArray[0]
     } else if (contextFunctionArray.length > 1) {
         throw 'LynxError: handle context here'
     }
 
-    const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
-    if (isInverseAttr){
+    //const isInverseAttr = currentObject.hasOwnProperty('inverses') ? currentObject.inverses.hasOwnProperty(attr) : false
+
+    /*if (isInverseAttr){
+        console.log(searchName, attr, newContext)
         //if the attribute is inverse return an inverse arg that only matches
-        console.log('#########', currentObject, attr)
+        //console.log('#########', currentObject, attr, newContext)
         if (!hasAttribute(currentObject, attr)) {
             throw new Error('LynxError: attribute not found')
         }
         const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, newContext, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
         //does this indicate a bigger problem with off by one errors? some functions work on current, some work on next
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
-    } else if (attr === 'previousState'){
+    } else*/
+    if (attr === 'previousState'){
         return createStateArg(state, currentObject, argKey);
     }
 
     const { value: nextValue } = getValue(state, 'placeholder', attr, currentObject) //evaluate attr of currentobject
     const { value: nextJSValue } = getValue(state, 'placeholder', 'jsPrimitive', nextValue)
-    if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
+    //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
+    if (nextValue.type === 'undef') { //if the next value is not defined treat it as an inverse
+        //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
+        const newSearchArgs = { argKey: argKey, query: THIS, type: INVERSE, newContext, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
+        return { args: { [argKey]: newSearchArgs }, varDefs: [] }
+    } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
         const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
         const dbSearchArg = { [nextValue.props.hash]: {
@@ -121,6 +131,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 hash: nextValue.props.hash,
                 type: GLOBAL_SEARCH,
                 getStack: newGetStack,
+                newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
                 searchContext: nextValue.inverses //switch to contex t
             } }
         const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs }, attr)
@@ -145,7 +156,12 @@ const getNext = (state, currentObject, searchArgData) => {
         const { value: root } = getValue(state, 'placeholder', "rootObject", nextValue)
         if (root.type !== 'get' && root.type !== 'search') { //don't move conditions to get
             //needs larger scale refactoring
-            const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+            const newSearchArgs = {
+                ...searchArgData,
+                query: THIS,
+                newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
+                getStack: newGetStack
+            }
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
             return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
         }
@@ -165,11 +181,30 @@ const getNext = (state, currentObject, searchArgData) => {
         const getData = argsToVarDefs(state, currentObject, getFunctionData, attr)
         return getData
     } else {
-        const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+        const newSearchArgs = {
+            ...searchArgData,
+            query: THIS,
+            newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
+            getStack: newGetStack
+        }
         const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
         const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
         return returnFunctionData
     }
+}
+
+const addContextToGetStack = (state, context, attr, currentObject, nextValue ) => { //combine this with the context generator in objectUtils
+
+    const hash = currentObject.props.hash
+    const searchName = getName(state, currentObject) //remove for debug
+    const inverseAttr = getInverseAttr(state, attr)
+    const newContext = {
+        debug: `${searchName}.${attr} has inverse ${inverseAttr} = ${hash}`,
+        attr: inverseAttr,
+        value: hash,
+        source: nextValue.props.hash //remove for debug
+    }
+    return context.concat(newContext)
 }
 //the end of the get path is the target object
 
@@ -180,8 +215,9 @@ const createVarDef = (state, currentObject, searchArgData) => {
     const inverseAttr = newContext[0].attr //todo: need to loop through context
     //add context to all resulting arguments
     const args = typeof jsResult.args ==='undefined' ? {} : jsResult.args
+    console.log(jsResult)
     const argsWithContext = Object.entries(args)
-        .filter((arg) => arg[0] !== 'prim')
+        .filter((entry) => (entry[0] !== 'prim'))
         .reduce((args, entry) => {
             const targetContext = entry[1].newContext || [] //if newContext is undefined
             const appendedContext = targetContext.concat(newContext)
@@ -241,7 +277,7 @@ to searchArgs in the form:[{argKey, query, getStack}]
 */
 export const convertToSearchArgs = (args) => (
     Object.entries(args)
-        .filter((arg) => (arg[1].type === LOCAL_SEARCH))
+        .filter((arg) => (arg[1].type === LOCAL_SEARCH || arg[1].type === INVERSE))
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
             query: searchArg[1].query,
@@ -271,11 +307,11 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to variableDefs
-const argsToVarDefs = (state, currentObject, functionDataWithInverse, attr) => { //test if the args in functionData are resolved...return
+const argsToVarDefs = (state, currentObject, functionData, attr) => { //test if the args in functionData are resolved...return
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    const functionData = resolveInverses(state, functionDataWithInverse, attr)//varDefs just pass through
+    //const functionData = resolveInverses(state, functionDataWithInverse, attr)//varDefs just pass through
     const combinedArgs = functionData.args
     const searchArgs = convertToSearchArgs(combinedArgs)
     const resolvedFunctionData = searchArgs.map((searchArgData) => {
@@ -338,7 +374,6 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
 
 //compile a module...right now this only does app
 export const compile = (state) => {
-    console.log(state)
     const hashTable = Object.values(state).reduce((hashTable, obj) => {
         const hash = getHash(obj)
         const objWithHash = {...obj, hash}

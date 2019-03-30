@@ -158,17 +158,20 @@ const displayArg = (arg, argKey) => {
 }
 
 const Node = ({ x, y, object, setActive, ast, activeNode }) => {
-    const active = activeNode.object.hash === object.hash
+    const activeHash = activeNode.object.hash
+    const active = activeHash === object.hash
     const name = getName(object)
     const isPrimitive = ast !== undefined
     let label = ''
     if (isPrimitive){
+        const activeVarDefs = ast.variableDefs.filter((varDef) => (varDef.key === activeHash))
+        const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
         if (ast.hasOwnProperty('value')){
             label = JSON.stringify(ast.value)
         } else {
-            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
+            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}{context}</tspan>
         }
-        //const activeVarDefs = ast.variableDefs.filter((varDef) => {console.log(varDef)})
+
     } else {
         label = name
     }

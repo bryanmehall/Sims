@@ -1,6 +1,5 @@
 window = new group
     name:"window"
-    x:100
     childElement1: new text
         name:"txt"
         x:txt.function.x
@@ -10,8 +9,3 @@ window = new group
         r:20
         y:30
         innerText:"test"
-
-subset1 = new attribute
-    inverseAttribute:parentSet
-
-parentSet = new attribute

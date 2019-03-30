@@ -44,7 +44,7 @@ export const returnWithContext = (state, name, attr, attrData, valueData, object
 	if (objectData.type === 'app'){ //special case for root in this case app
         objectData = objectLib.undef
     }
-    const hasInverse = hasAttribute(attrData, 'inverseAttribute') //if prop has inverse
+    const hasInverse = false//hasAttribute(attrData, 'inverseAttribute') //if prop has inverse
     const inverseAttr = attrData.props.inverseAttribute
     const parentHash = getHash(objectData)
     addToObjectTable(parentHash, objectData)
@@ -203,6 +203,32 @@ const checkObjectData = (state, objectData, prop) => {
     }
 }
 
+//add context to args of ast (wraps output of getJSValue)
+export const addContext = (state, prop, primitive, objectData) => {
+    const inverseAttr = getInverseAttr(state, prop)
+    const contextAttr = typeof inverseAttr === 'undefined' ? 'g' : inverseAttr
+    const primitiveArgs = typeof primitive.args === 'undefined' ? {} : primitive.args
+    const argsWithContext = Object.entries(primitiveArgs)
+    .filter((arg) => arg[0] !== 'prim')
+    .reduce((args, arg) => {
+        const newContext = {
+            debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${objectData.props.hash}`,
+            attr: contextAttr,
+            value: objectData.props.hash
+        }
+        const argWithContext = Object.assign({}, arg[1], {
+            newContext: arg.newContext === undefined ? [newContext] : arg.newContext.concat([newContext, {}])
+        })
+        return Object.assign({}, args, { [arg[0]]: argWithContext })
+    }, {})
+    if (primitiveArgs.hasOwnProperty('prim')) {
+        Object.assign(argsWithContext, { prim: true })
+        //get rid of prim when refactoring? it isn't part of the main rendering monad
+    }
+    const primitiveWithContext = Object.assign({}, primitive, { args: argsWithContext })
+    return primitiveWithContext
+}
+
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objectData) => {
 	const { value: valueData } = getValue(state, 'placeholder', prop, objectData)
@@ -210,27 +236,7 @@ export const getJSValue = (state, name, prop, objectData) => {
 		return undefined
 	} else {
 		const { value: primitive } = getValue(state, 'placeholder' , 'jsPrimitive', valueData) //get Value of jsPrimitive works
-        const inverseAttr = getInverseAttr(state, prop)
-        const contextAttr = typeof inverseAttr === 'undefined' ? 'g' : inverseAttr
-        const primitiveArgs = typeof primitive.args === 'undefined' ? {} : primitive.args
-        const argsWithContext = Object.entries(primitiveArgs)
-            .filter((arg) => arg[0] !== 'prim')
-            .reduce((args, arg) => {
-                const newContext = {
-                    debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${objectData.props.hash}`,
-                    attr: contextAttr,
-                    value: objectData.props.hash
-                }
-                const argWithContext = Object.assign({}, arg[1], {
-                    newContext: arg.newContext === undefined ? [newContext] : arg.newContext.concat(newContext)
-                })
-                return Object.assign({}, args, { [arg[0]]: argWithContext })
-            }, {})
-        if (primitiveArgs.hasOwnProperty('prim')) {
-            Object.assign(argsWithContext, { prim: true })
-            //get rid of prim when refactoring? it isn't part of the main rendering monad
-        }
-        const primitiveWithContext = Object.assign({}, primitive, { args: argsWithContext })
+        const primitiveWithContext = addContext(state, prop, primitive, objectData)
         return primitiveWithContext
 	}
 }
