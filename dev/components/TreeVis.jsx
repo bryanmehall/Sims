@@ -7,7 +7,7 @@ import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
 class TreeVis extends React.Component {
     constructor(props){
         super(props)
-        const appObject = objectFromName('app', this.props.objectTable)
+        const appObject = objectFromName(this.props.objectTable, 'app')
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
         addAST(this.props.ast, { nodes, links })
         this.state = { nodes, links }
@@ -97,7 +97,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             return !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0]) && !inverses.hasOwnProperty(entry[0])
         }).map((entry) => {
             const result = typeof entry[1] === 'string'
-            ? [entry[0], objectFromName(entry[1], objectTable)]
+            ? [entry[0], objectFromName(objectTable, entry[1])]
             : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
             return result
         })

@@ -35,7 +35,7 @@ const getArgsAndVarDefs = (state, objectData, childArgs) => {
 const evaluatePath = (state, objectData, arg) => {
     const nextAttribute = getStack[0].props.attribute
     const newGetStack = getStack.slice(1)
-    const nextValue = getValue(state, 'placeholder', nextAttribute, objectData)
+    const nextValue = getValue(state, nextAttribute, objectData)
     if (getStack.length === 0){
         return { args: {}, varDefs: createVarDef() }
     } else if (isInverse (objectData, nextAttribute)) {

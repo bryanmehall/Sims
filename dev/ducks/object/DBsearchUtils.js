@@ -19,14 +19,14 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
             if (getStack.length > 1) { throw 'get stack length greater than one' }
             let ast, args1, variableDefs1
             if (getStack.length === 0){ //generalize for getStack of length n
-                ast = getValue(state, 'placeholder', 'jsPrimitive', root).value
+                ast = getValue(state, 'jsPrimitive', root).value
                 const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
                 args1 = args
                 variableDefs1 = variableDefs
             } else {
                 const attr = getStack[0].props.attribute
-                const nextValue = getValue(state, 'placeholder', attr, root).value
-                ast = getValue(state, 'placeholder', 'jsPrimitive', nextValue).value
+                const nextValue = getValue(state, attr, root).value
+                ast = getValue(state, 'jsPrimitive', nextValue).value
                 const { args, variableDefs } = getArgsAndVarDefs(state, [ast], nextValue)
                 args1 = args
                 variableDefs1 = variableDefs
@@ -69,7 +69,7 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     })
     if (getStack.length > 1) { throw 'get stack length greater than one' } //todo:make this work for longer paths
     if (getStack.length === 0){
-        const ast = getValue(state, 'placeholder', 'jsPrimitive', root).value
+        const ast = getValue(state, 'jsPrimitive', root).value
         const searchArgs = { query, root, ast }
         dbCache[hash] = searchArgs
         return searchArgs

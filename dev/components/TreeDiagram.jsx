@@ -70,7 +70,7 @@ const mapStateToProps = (state) => {
 			throw new Error('circular with threshold 20')
 		}
 		const id = objectData.props.id
-		const attributeSet = getValue(state, 'placeholder', 'attributes', objectData)
+		const attributeSet = getValue(state, 'attributes', objectData)
 		const attributes = getSetData(state, attributeSet)
 		if (attributes === undefined){
 			console.log('undefined attrs for '+id)
@@ -82,7 +82,7 @@ const mapStateToProps = (state) => {
 			let valueId = "undef"
 			let valueData = {}
 			try {
-				valueData = getValue(state, 'placeholder', attr, objectData) //replace with get js for name
+				valueData = getValue(state, attr, objectData) //replace with get js for name
 				//console.log(attr, valueData.props)
 				valueId = valueData.props.id
 			} catch (e){

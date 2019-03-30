@@ -111,7 +111,7 @@ const contains = (state, objectData) => { //eventually switch to set
 }
 
 const get = (state, objectData) => {
-    const { value: root } = getValue(state, 'placeholder', "rootObject", objectData)
+    const { value: root } = getValue(state, "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
     let query = THIS
     let getStack = []
@@ -122,7 +122,8 @@ const get = (state, objectData) => {
     } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
-        const attribute = getValue(state, 'placeholder', 'attribute', objectData).value.id
+        const attributeObject = getValue(state, 'attribute', objectData).value
+        const attribute = getName(state, attributeObject)
         const next = getJSValue(state, 'placeholder', attribute, root)
         const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }

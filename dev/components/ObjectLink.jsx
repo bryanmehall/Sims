@@ -59,7 +59,7 @@ const mapStateToProps = (state, props) => {
 			objectId: objectData
 		}
 	} else {
-		const prevVal = getValue(state, 'placeholder', 'prevVal', objectData)
+		const prevVal = getValue(state, 'prevVal', objectData)
 		const id = objectData.props.id
 		const displayText = props.magicPlaceholder ? `search(${id})` :
 							props.attrId === 'prevVal' ? <pre>{JSON.stringify(objectData, null, 2)}</pre>:
