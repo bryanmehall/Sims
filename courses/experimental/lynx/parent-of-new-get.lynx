@@ -1,7 +1,7 @@
 window = new group
     name:"window"
     childElement1: new text
-        name:"text"
+        name:"txt"
         x:20
         y:30
         op1:"test"
@@ -12,4 +12,4 @@ window = new group
             attribute:equalTo
             rootObject:new object
                 name:"apply"
-                equalTo: text.op1
+                equalTo: txt.op1

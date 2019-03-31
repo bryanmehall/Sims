@@ -1,10 +1,8 @@
 /* eslint pure/pure: 2 */
-import { compileToJS } from './utils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED, STATE_ARG } from './constants'
 import { primitives } from './primitives'
-import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
-import { getValue, getName, getHash, getObject, objectFromHash, getInverseAttr } from './objectUtils'
-import { getDBsearchAst, resolveDBSearches } from './DBsearchUtils'
+import { getValue, getName, objectFromHash, getInverseAttr } from './objectUtils'
+import { getDBsearchAst } from './DBsearchUtils'
 
 /*
 refactor todo:
@@ -14,7 +12,7 @@ refactor todo:
     -make objectTabl constant per evaluation cycle
 */
 
-const combineArgs = (childPrims, childArgs) => {
+const combineArgs = (childPrims) => {
     childPrims.forEach((arg) => {
         if (typeof arg === 'undefined'){
             throw new Error("LynxError: arg is undefined")
@@ -63,7 +61,7 @@ const getNext = (state, currentObject, searchArgData) => {
     const contextFunctionArray = newContext.map((contextPath) => {
         if (contextPath.attr === attr) {
             const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
-            const nextValue = objectFromHash(state, contextPath.value)//todo: replace this with non objectTable version
+            const nextValue = objectFromHash(state, contextPath.value)
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
             const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
             return returnFunctionData

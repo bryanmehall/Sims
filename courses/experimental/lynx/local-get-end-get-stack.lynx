@@ -1,10 +1,10 @@
 window = new group
     name:"window"
     childElement1: new text
-        name:"text"
+        name:"txt"
         x:20
         y:30
-        innerText:text.op1.value
+        innerText:txt.op1.value
         op1:new object
             value:new get
                 jsPrimitive:{get}

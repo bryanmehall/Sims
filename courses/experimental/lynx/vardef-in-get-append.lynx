@@ -1,7 +1,7 @@
 window = new group
     name:"window"
     childElement1: new text
-        name:"text"
+        name:"txt"
         x:new get
             jsPrimitive:{get}
             attribute: equalTo
@@ -9,7 +9,7 @@ window = new group
                 name:"apply"
                 x:10
                 equalTo:apply.op1
-                op1:text.op1
+                op1:txt.op1
         op1:20
         y:30
         innerText:"test"

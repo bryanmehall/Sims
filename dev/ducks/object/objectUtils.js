@@ -2,19 +2,19 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys } from './utils'
-let objectTable = {}
 
 export const objectFromName = (state, name) => {
     const values = Object.values(state)
     const matches = values.filter((obj) => {
         const nameObject = obj.props.name
-        if (typeof nameObject === 'undefined'){ return false}
+        if (typeof nameObject === 'undefined') { return false }
         const objName = nameObject.props.jsPrimitive.value //try is to replace wrapping this\
         return objName === name
     })
-    if (matches.length !== 1) {
-        console.log(matches, name)
-        throw new Error(`object "${name}" not found in debug, ${matches.length}`)
+    if (matches.length === 0) {
+        throw new Error(`LynxError: object "${name}" not found, ${matches.length}`)
+    } else if (matches.length > 1){
+        throw new Error(`LynxError: multiple objects named "${name}" found`)
     }
     return matches[0]
 }
@@ -28,9 +28,14 @@ export const getName = (state, objectData) => {
     return namePrimitive === undefined ? null : namePrimitive.value//switch to comparing hashes?
 }
 
-export const objectFromHash = (state, hash) => (
-    objectTable[hash]
-)
+export const objectFromHash = (state, hash) => {
+    const value = state[hash]
+    if (typeof value === 'undefined'){
+        throw new Error("could not find object named "+JSON.stringify(hash))
+    } else {
+        return value
+    }
+}
 //combine these
 export const getObject = function (state, hash) {
 	//this should only be a shim for values defined in json
@@ -45,7 +50,9 @@ export const getInverseAttr = (state, attr) => (
     objectFromName(state, attr).props.inverseAttribute
 )
 
-const isHash = (str) => (str.includes("$hash"))
+const isHash = (str) => (
+    str.includes("$hash")
+)
 
 //helper for converting each attribute to hash
 const objectValuesToHash = (hashData, entry) => {
@@ -59,20 +66,17 @@ const objectValuesToHash = (hashData, entry) => {
 }
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
-    const exemptProps = ["hash", "parentValue",'id'] //remove these props before hashing
+    //remove these attrs before hashing
+    const exemptProps = ["hash", "parentValue",'id']
     const expandedHashData = deleteKeys(objectData.props, exemptProps)
-    //convert values of props to hashes
-    const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
+    //convert remaining values to hashes
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
+    const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     //if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
     //}
 	return digest
-}
-
-export const addToObjectTable = (hash, objectData) => {
-    objectTable[hash] = objectData
 }
 
 export const returnWithContext = (state, attr, attrData, valueData, objectData) => {
@@ -81,7 +85,6 @@ export const returnWithContext = (state, attr, attrData, valueData, objectData) 
         objectData = objectLib.undef
     }
     const hash = getHash(valueData)
-    addToObjectTable(hash, valueData)
     const newProps = Object.assign({}, valueData.props, { hash })
     return {
         state: state,
@@ -97,18 +100,15 @@ export const getValue = (state, prop, objectData) => {
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
-		let inheritedData
-		if (!objectData.props.hasOwnProperty('instanceOf')) {
-			inheritedData = objectFromName(state, 'object')
-		} else {
-			inheritedData = getValue(state, 'instanceOf', objectData).value //parent is passed in?
-		}
+		const isInstance = objectData.props.hasOwnProperty('instanceOf')
+        const inheritedData = isInstance
+            ? getValue(state, 'instanceOf', objectData).value
+            : objectFromName(state, 'object')
         def = inheritedData.props[prop]
 	}
 	const valueData = typeof def === 'string' ? objectFromName(state, def) : def
 	if (objectData === undefined) {
-		console.log('object data undefined for ', prop, 'ObjectData: ', objectData)
-		throw new Error()
+		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
 		if (objectData.props.hasOwnProperty('attributes')){
 			return returnWithContext(state, prop, attrData, valueData, objectData)
@@ -139,8 +139,8 @@ const checkObjectData = (state, objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
-        console.log('objectData', objectData)
-        console.log(objectData, getHash(objectData), objectData.props.hash)
+        //console.log('objectData', objectData)
+        //console.log(objectData, getHash(objectData), objectData.props.hash)
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'

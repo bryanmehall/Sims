@@ -1,6 +1,6 @@
 import { compileToJS } from './utils'
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
-import { getValue, getHash, getObject, objectFromName } from './objectUtils'
+import { getValue, getHash, objectFromName } from './objectUtils'
 import { resolveDBSearches } from './DBsearchUtils'
 
 /*returns:
@@ -39,14 +39,39 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
     ), {})
 )
 
-
-//compile a module...right now this only does app
-export const compile = (state) => {
+//take state indexed by name and return a hash table
+//for every nested tree, flatten the tree and index by hash
+const flattenState = (state) => {
     const hashTable = Object.values(state).reduce((hashTable, obj) => {
         const hash = getHash(obj)
         const objWithHash = { ...obj, hash }
-        return Object.assign(hashTable, { [hash]: objWithHash })
+        const hashes = getHashesFromTree(obj)
+        return Object.assign(hashTable, hashes, { [hash]: objWithHash })
     }, {})
+    return hashTable
+}
+const getHashesFromTree = (objectData) => (
+    Object.entries(objectData.props)
+        .filter((entry) => (
+            entry[0] !== 'jsPrimitive' && typeof entry[1] !== 'string' //is this filter needed? test without
+        ))
+        .reduce((hashTable, entry) => {
+            const prop = entry[0]
+            const value = entry[1]
+            const hash = getHash(value)
+            if (typeof value === 'string') {
+                return hashTable
+            } else if (prop === 'jsPrimitive') {
+                return Object.assign(hashTable, { [hash]: value })
+            } else {
+                return Object.assign(hashTable, getHashesFromTree(value), { [hash]: value })
+            }
+        }, {})
+)
+
+//compile a module
+export const compile = (state) => {
+    const hashTable = flattenState(state)
     const appData = objectFromName(hashTable, 'app')
     //const appDataWithHash = Object.assign({}, appData, { props: Object.assign({}, appData.props, { hash: appHash }) })
     const { value: appAST } = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
@@ -58,5 +83,6 @@ export const compile = (state) => {
         functionTable,
         ast: outputs.apphash.ast,
         objectTable: hashTable,
-        stateArgs: outputs.apphash.stateArgs }
+        stateArgs: outputs.apphash.stateArgs
+    }
 }
