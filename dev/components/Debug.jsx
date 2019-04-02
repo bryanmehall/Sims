@@ -94,7 +94,7 @@ const ObjectData = ({ node }) => {
                 {Object.values(args).map((arg) => (
                     <div>
                         {formatArg(arg)}
-                        <pre>{/*JSON.stringify(arg.newContext, null, 2)*/}</pre>
+                        <pre>{/*JSON.stringify(arg.context, null, 2)*/}</pre>
                     </div>
                 ))}
             </div>

@@ -6,6 +6,7 @@ import { STATE_ARG } from './constants'
 export const buildFunction = (ast) => {
     checkAST(ast)
     const string = jsCompilers[ast.type](ast)
+
     if (ast.inline && !ast.isFunction){
         return { string , newFunctionTable: {} }
     } else {

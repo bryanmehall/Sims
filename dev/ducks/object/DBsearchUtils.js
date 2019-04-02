@@ -46,7 +46,7 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
 
 /*****************
 handling recursion
-for recursive functions the pure version of getDBsearchAst results in an infinite loop in the compiler because the ast of the function needs the arguments of itself to compile
+for recursive functions the pure version of getDBsearchAst results in an infinite loop in the compiler because the ast of the function needs the arguments of itself to compile. Should this, and the whole compiler, be lazily evaluated instead?
 *****************/
 let dbCache = {}//switch this to cache all ASTs
 //this gets the ast of the primitive at the end of the get stack not the root object
@@ -61,7 +61,7 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
         ast: { type: 'recursive', args: {}, variableDefs: [], children: {}, context: {} }
     }
     const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
-    const rootWithoutInverses = getObject(state, query)
+    const rootWithoutInverses = objectFromName(state, query)
     const rootProps = Object.assign({}, rootWithoutInverses.props, dbSearchObject.inverses)
     const root = Object.assign({}, rootWithoutInverses, {
         props: rootProps,

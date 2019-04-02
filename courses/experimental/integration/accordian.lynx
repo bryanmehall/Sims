@@ -3,15 +3,15 @@ window = new group
     x:10 //referencing here instead of inner group
     childElement1: window.accordianRep
     accordianRep: new group
-        name:"accordianRep"
+        name:"accordianRepresentation"
         pos: new coordinatePosition
-            x:20
-            y:20
+            x:20+20
+            y:20+30
         childElement1: new text
             name:"objectName"
-            x:accordianRep.pos.x
-            y:accordianRep.pos.y
-            innerText:accordianRep.parentConcept.name
+            x:accordianRepresentation.pos.x
+            y:accordianRepresentation.pos.y
+            innerText:accordianRepresentation.parentConcept.name
         childElement2:new group
             name:"objectAttributes"
             x:100

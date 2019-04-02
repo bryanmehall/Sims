@@ -59,6 +59,8 @@ module.exports = (function(){
         "Int": parse_Int,
         "Float": parse_Float,
         "String": parse_String,
+        "ArrayElement": parse_ArrayElement,
+        "Array": parse_Array,
         "Bool": parse_Bool,
         "Primitive": parse_Primitive,
         "_": parse__,
@@ -614,6 +616,9 @@ module.exports = (function(){
         result0 = parse_Ternary();
         if (result0 === null) {
           result0 = parse_Or();
+          if (result0 === null) {
+            result0 = parse_Array();
+          }
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -1910,6 +1915,174 @@ module.exports = (function(){
         return result0;
       }
 
+      function parse_ArrayElement() {
+        var cacheKey = "ArrayElement@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+
+        var result0;
+
+        reportFailures++;
+        result0 = parse_Object();
+        if (result0 === null) {
+          result0 = parse_Expression();
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("array element");
+        }
+
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+
+      function parse_Array() {
+        var cacheKey = "Array@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+
+        var result0, result1, result2, result3, result4, result5, result6;
+        var pos0, pos1, pos2;
+
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 91) {
+          result0 = "[";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"[\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse__();
+          if (result1 !== null) {
+            result2 = parse_ArrayElement();
+            if (result2 !== null) {
+              result3 = [];
+              pos2 = pos;
+              if (input.charCodeAt(pos) === 44) {
+                result4 = ",";
+                pos++;
+              } else {
+                result4 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\",\"");
+                }
+              }
+              if (result4 !== null) {
+                result5 = parse__();
+                if (result5 !== null) {
+                  result6 = parse_ArrayElement();
+                  if (result6 !== null) {
+                    result4 = [result4, result5, result6];
+                  } else {
+                    result4 = null;
+                    pos = pos2;
+                  }
+                } else {
+                  result4 = null;
+                  pos = pos2;
+                }
+              } else {
+                result4 = null;
+                pos = pos2;
+              }
+              while (result4 !== null) {
+                result3.push(result4);
+                pos2 = pos;
+                if (input.charCodeAt(pos) === 44) {
+                  result4 = ",";
+                  pos++;
+                } else {
+                  result4 = null;
+                  if (reportFailures === 0) {
+                    matchFailed("\",\"");
+                  }
+                }
+                if (result4 !== null) {
+                  result5 = parse__();
+                  if (result5 !== null) {
+                    result6 = parse_ArrayElement();
+                    if (result6 !== null) {
+                      result4 = [result4, result5, result6];
+                    } else {
+                      result4 = null;
+                      pos = pos2;
+                    }
+                  } else {
+                    result4 = null;
+                    pos = pos2;
+                  }
+                } else {
+                  result4 = null;
+                  pos = pos2;
+                }
+              }
+              if (result3 !== null) {
+                if (input.charCodeAt(pos) === 93) {
+                  result4 = "]";
+                  pos++;
+                } else {
+                  result4 = null;
+                  if (reportFailures === 0) {
+                    matchFailed("\"]\"");
+                  }
+                }
+                if (result4 !== null) {
+                  result0 = [result0, result1, result2, result3, result4];
+                } else {
+                  result0 = null;
+                  pos = pos1;
+                }
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, head, tail) {
+            	var remaining = tail.map(function(expr){return expr[2]})
+            	return createArray([head].concat(remaining))
+            })(pos0, result0[2], result0[3]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("array");
+        }
+
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+
       function parse_Bool() {
         var cacheKey = "Bool@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2330,7 +2503,7 @@ module.exports = (function(){
       }
 
 
-      //from dev folder run pegjs parser.peg
+      //from dev folder run $pegjs --cache parser.peg
       var symbolTable = {
       	"+":"addition",
           "*":"multiplication",
@@ -2356,7 +2529,6 @@ module.exports = (function(){
           	type:"apply",
               props:{
                   jsPrimitive:{type:"apply"},
-                  name:createString("apply"),
                   op1:left,
                   op2:right,
                   function:symbolTable[op]
@@ -2379,6 +2551,15 @@ module.exports = (function(){
               props:{
               	name:createString(name),
               	jsPrimitive:{type:"function"}
+              }
+          }
+      }
+      function createArray(elements){
+          return {
+              type:"array",
+              props:{
+                  instanceOf:"array",
+                  jsPrimitive:{ type:"array", value:elements}
               }
           }
       }

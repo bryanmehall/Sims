@@ -14,7 +14,8 @@ export const objectFromName = (state, name) => {
     if (matches.length === 0) {
         throw new Error(`LynxError: object "${name}" not found, ${matches.length}`)
     } else if (matches.length > 1){
-        throw new Error(`LynxError: multiple objects named "${name}" found`)
+        console.log(matches)
+        throw new Error(`LynxError: multiple objects named "${name}" found (${matches.length})`)
     }
     return matches[0]
 }
@@ -110,8 +111,11 @@ export const getValue = (state, prop, objectData) => {
 	if (objectData === undefined) {
 		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
+        console.log('getting attributes', objectData)
 		if (objectData.props.hasOwnProperty('attributes')){
+
 			return returnWithContext(state, prop, attrData, valueData, objectData)
+
 		} else {
 			let attrs = Object.keys(objectData.props)
 			attrs.unshift('prevVal')
@@ -161,7 +165,7 @@ export const addContext = (state, prop, primitive, objectData) => {
             value: objectData.props.hash
         }
         const argWithContext = Object.assign({}, arg[1], {
-            newContext: arg.newContext === undefined ? [newContext] : arg.newContext.concat([newContext, {}])
+            context: arg.context === undefined ? [newContext] : arg.context.concat([newContext, {}])
         })
         return Object.assign({}, args, { [arg[0]]: argWithContext })
     }, {})

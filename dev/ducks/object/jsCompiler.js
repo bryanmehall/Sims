@@ -22,7 +22,7 @@ const input = (ast) => (`inputs.${ast.inputName}.value`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const array = (ast) => JSON.stringify(ast.value)
-const string = (ast) => (JSON.stringify(ast.value))//!!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
+const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
 
 const getIndex = (ast) => {
     const programText = buildChildren(ast)

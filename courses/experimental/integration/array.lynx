@@ -1,15 +1,15 @@
 window = new group
     name:"window"
     childElement1: new text
-        name:"text"
+        name:"txt"
         x:30
         y:20
-        innerText:text.attributes.firstElement.value
+        innerText:txt.attributes.firstElement.value
 
 array = new object
     name:"array"
     firstElement:new element
-        name:"firstElement"
+        name:"firstElem"
         value:new get
             jsPrimitive:{get}
             attribute:equalTo

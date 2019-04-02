@@ -51,23 +51,24 @@ function createStateArg(state, currentObject, argKey) {
 }
 
 const getNext = (state, currentObject, searchArgData) => {
-    const { argKey, getStack, newContext } = searchArgData
+    const { argKey, getStack, context } = searchArgData
     const searchName = getName(state, currentObject) //remove for debug
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
     const attr = nextGet.props.attribute//attribute to go to
     //search through context to see if the current attr from the get stack matches any of the first attrs from the context
     //if it does then return the
-    const contextFunctionArray = newContext.map((contextPath) => {
-        if (contextPath.attr === attr) {
-            const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
-            const nextValue = objectFromHash(state, contextPath.value)
-            const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-            const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
-            return returnFunctionData
-        } else {
-            return undefined
-        }
+    const contextFunctionArray = context.map(
+        (contextPath) => {
+            if (contextPath.attr === attr) {
+                const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
+                const nextValue = objectFromHash(state, contextPath.value)
+                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
+                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+                return returnFunctionData
+            } else {
+                return undefined
+            }
         })
         .filter((contextFunctionData) => (typeof contextFunctionData !== 'undefined'))
     //if there is a change then return context function Data
@@ -86,7 +87,7 @@ const getNext = (state, currentObject, searchArgData) => {
     //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
     if (nextValue.type === 'undef') { //if the next value is not defined treat it as an inverse
         //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
-        const newSearchArgs = { argKey: argKey, query: THIS, type: INVERSE, newContext, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
+        const newSearchArgs = { argKey: argKey, query: THIS, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
     } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
@@ -96,7 +97,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 hash: nextValue.props.hash,
                 type: GLOBAL_SEARCH,
                 getStack: newGetStack,
-                newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
+                context: addContextToGetStack(state, context, attr, currentObject, nextValue),
                 searchContext: nextValue.inverses //switch to contex t
             } }
         const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs }, attr)
@@ -124,7 +125,7 @@ const getNext = (state, currentObject, searchArgData) => {
             const newSearchArgs = {
                 ...searchArgData,
                 query: THIS,
-                newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
+                context: addContextToGetStack(state, context, attr, currentObject, nextValue),
                 getStack: newGetStack
             }
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
@@ -149,7 +150,7 @@ const getNext = (state, currentObject, searchArgData) => {
         const newSearchArgs = {
             ...searchArgData,
             query: THIS,
-            newContext: addContextToGetStack(state, newContext, attr, currentObject, nextValue),
+            context: addContextToGetStack(state, context, attr, currentObject, nextValue),
             getStack: newGetStack
         }
         const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
@@ -174,18 +175,18 @@ const addContextToGetStack = (state, context, attr, currentObject, nextValue) =>
 //the end of the get path is the target object
 
 const createVarDef = (state, currentObject, searchArgData) => {
-    const { argKey, newContext } = searchArgData
-    //get primitve of
+    const { argKey, context } = searchArgData
+    //get primitve of the end of the get stack
     const { value: jsResult } = getValue(state, 'jsPrimitive', currentObject)
-    const inverseAttr = newContext[0].attr //todo: need to loop through context
+    const inverseAttr = context[0].attr //todo: need to loop through context
     //add context to all resulting arguments
     const args = typeof jsResult.args ==='undefined' ? {} : jsResult.args
     const argsWithContext = Object.entries(args)
         .filter((entry) => (entry[0] !== 'prim'))
         .reduce((args, entry) => {
-            const targetContext = entry[1].newContext || [] //if newContext is undefined
-            const appendedContext = targetContext.concat(newContext)
-            const argWithAppendedContext = { ...{}, ...entry[1], newContext: appendedContext }
+            const targetContext = entry[1].context || [] //if context is undefined
+            const appendedContext = targetContext.concat(context)
+            const argWithAppendedContext = { ...{}, ...entry[1], context: appendedContext }
             return { ...{}, ...args, [entry[0]]: argWithAppendedContext }
         }, {})
     if (args.hasOwnProperty('prim')) {
@@ -193,7 +194,6 @@ const createVarDef = (state, currentObject, searchArgData) => {
         //get rid of prim when refactoring? it isn't part of the main rendering monad
     }
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.variableDefs }
-    //console.log(argKey, newContext, currentObject, targetFunctionData)
 
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, inverseAttr)
     const searchName = getName(state, currentObject) //remove for debug
@@ -207,7 +207,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
             ast: Object.assign({}, jsResult, { args, varDefs: inverseFunctionData.varDefs }),
             string: jsResult.string,
             comment: `//${searchName}`,
-            context: newContext
+            context: context
         }
         return { args: inverseFunctionData.args, varDefs: [variableDefinition, ...inverseFunctionData.varDefs] }
     }
@@ -242,7 +242,7 @@ export const convertToSearchArgs = (args) => (
             argKey: searchArg[0],
             query: searchArg[1].query,
             getStack: searchArg[1].getStack,
-            newContext: searchArg[1].newContext,
+            context: searchArg[1].context,
             type: searchArg[1].type
         }))
 )

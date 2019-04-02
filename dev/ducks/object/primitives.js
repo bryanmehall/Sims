@@ -43,14 +43,16 @@ const primitive = (state, objectData, valueData) => ({
 })
 
 //data structures
-const array = (state, objectData) => ({
+const array = (state, objectData, valueData) => {
+    return {
     hash: objectData.props.hash,
+    value: valueData.value,
     args: {},
     children: {},
     variableDefs: [],
     type: 'array',
     inline: true
-})
+}}
 
 const set = (state, objectData) => {
 
@@ -143,11 +145,9 @@ const get = (state, objectData) => {
         getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
     const hash = objectData.props.hash
-    //console.log('adding context to ',objectData, objectData.inverses)
     const args = {
         [hash]: {
             query,
-            context: objectData.inverses,
             type: LOCAL_SEARCH,
             getStack: [...getStack, objectData]
         }

@@ -25,7 +25,6 @@ function createBinOp(left, right, op){
     	type:"apply",
         props:{
             jsPrimitive:{type:"apply"},
-            name:createString("apply"),
             op1:left,
             op2:right,
             function:symbolTable[op]
@@ -48,6 +47,15 @@ function createFunction(name){
         props:{
         	name:createString(name),
         	jsPrimitive:{type:"function"}
+        }
+    }
+}
+function createArray(elements){
+    return {
+        type:"array",
+        props:{
+            instanceOf:"array",
+            jsPrimitive:{ type:"array", value:elements}
         }
     }
 }
@@ -89,7 +97,7 @@ Attribute
        }
    }
 Expression "expression"
-	= Ternary /  Or
+	= Ternary /  Or / Array
     
 Value "value"
 	=  Primitive /Bool/ Number / String / Get / Object / Name
@@ -186,6 +194,16 @@ String "string"
          var value = characters.join("")
          return createString(value)
      }
+
+ArrayElement "array element"
+	= Object / Expression
+    
+Array "array"
+    ='['_ head:ArrayElement tail:(','_ ArrayElement)*']' {
+    	var remaining = tail.map(function(expr){return expr[2]})
+    	return createArray([head].concat(remaining))
+    }
+
 Bool "bool"
 	= value:("true" / "false") {
     return {

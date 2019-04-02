@@ -8,8 +8,8 @@ window = new group
             jsPrimitive:{get}
             attribute:equalTo
             rootObject: new object
-                name:"apply"
-                equalTo:apply.function.result
+                name:"appl"
+                equalTo:appl.function.result
                 function: new dbSearch
                     jsPrimitive:{dbSearch}
                     query:"factorial"
@@ -26,12 +26,12 @@ factorial = new funct
         alt:new apply
             function:multiplication
             op1:factorial.op1
-            op2:new get 
+            op2:new get
                 jsPrimitive:{get}
                 attribute:equalTo
                 rootObject: new object
-                    name:"apply"
-                    equalTo:apply.function.result
+                    name:"appy"
+                    equalTo:appy.function.result
                     function: new dbSearch
                         jsPrimitive:{dbSearch}
                         query:"factorial"

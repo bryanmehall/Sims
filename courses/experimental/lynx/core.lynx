@@ -1,24 +1,6 @@
 object = new object
     name:"object"
 
-accordianRepresentation = new group
-    name:"accordianRepresentation"
-    pos: new coordinatePosition
-        x:50+10
-        y:100
-    r: new array
-        firstElement:new text
-            innerText:"test"
-            x:50
-            y:60
-            nextElement:new text
-                innerText:"def"
-    childElement1: new text
-        x:accordianRep.pos.x
-        y:accordianRep.pos.y
-        innerText:"test"
-
-
 attribute = new object
     name:"attribute"
 
@@ -177,7 +159,9 @@ forEach = new attribute
     name:"forEach"
 
 ternary = new object
+    name:"ternary"
     jsPrimitive:{ternary}
+
 condition = new attribute
     name:"condition"
 then = new attribute
