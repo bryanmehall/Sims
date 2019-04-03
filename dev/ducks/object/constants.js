@@ -7,5 +7,4 @@ export const STATE_ARG = 'STATE_ARG'
 //undefined
 export const UNDEFINED = 'undef'
 
-
 export const THIS = '$this'

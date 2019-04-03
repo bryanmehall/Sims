@@ -216,7 +216,9 @@ module.exports = (function(){
           result0 = (function(offset, declarations) {
             	var objects = {}
                 declarations.forEach(function(declaration){
-                	objects[declaration[0].id]  = declaration[0]
+                    var object = declaration[0].object
+                    var id = declaration[0].id
+                	objects[id] = object
                 })
 
                 return objects
@@ -313,7 +315,7 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, id, object) {return Object.assign({}, object, {id:id})})(pos0, result0[1], result0[5]);
+          result0 = (function(offset, id, object) {return {object:object, id:id}})(pos0, result0[1], result0[5]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -495,7 +497,6 @@ module.exports = (function(){
                 var type = props.hasOwnProperty('type') ? props.type : value //override type property
                 //--get rid of this when switching type system
             	return {
-                	type:type,
                     props:props
                 }
             })(pos0, result0[0], result0[2]);
@@ -1354,7 +1355,6 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, query) {
         	return {
-        		type:"search",
                 props:{
                     jsPrimitive:{type:"search", "query":query}
                 }
@@ -1455,7 +1455,6 @@ module.exports = (function(){
           result0 = (function(offset, root, attributes) {
             function buildPath(rootObject, attr){
               var getData = {
-                  type:"get",
                   props:{
                       jsPrimitive:{type:"get"},
                       attribute:attr[1]
@@ -1592,7 +1591,6 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, condition, then, alt) {
             return {
-                type:"ternary",
                 props:{
                 	instanceOf:"ternary",
                 	condition:condition,
@@ -1635,7 +1633,6 @@ module.exports = (function(){
           if (result0 !== null) {
             result0 = (function(offset, value) {
                   return {
-                   	type:"number",
                       props:{
                       	jsPrimitive:{type:"number", value:value}
                       }
@@ -2119,7 +2116,6 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
             return {
-            	type:"bool",
                 "props":{
                 	jsPrimitive:{type:"bool", value:value==="true"}
                 }
@@ -2518,7 +2514,6 @@ module.exports = (function(){
 
       function createString(str){
       	return {
-              type:"string",
               props:{
                   jsPrimitive:{type:"string", value:str}
               }
@@ -2526,7 +2521,6 @@ module.exports = (function(){
       }
       function createBinOp(left, right, op){
       	return {
-          	type:"apply",
               props:{
                   jsPrimitive:{type:"apply"},
                   op1:left,
@@ -2537,7 +2531,6 @@ module.exports = (function(){
       }
       function createApply(arg, op){
       	return {
-          	type:"apply",
               props:{
                   jsPrimitive:{type:"apply"},
                   op1:arg,
@@ -2547,7 +2540,6 @@ module.exports = (function(){
       }
       function createFunction(name){
       	return {
-          	type:"function",
               props:{
               	name:createString(name),
               	jsPrimitive:{type:"function"}
@@ -2556,7 +2548,6 @@ module.exports = (function(){
       }
       function createArray(elements){
           return {
-              type:"array",
               props:{
                   instanceOf:"array",
                   jsPrimitive:{ type:"array", value:elements}

@@ -1,7 +1,8 @@
 /* eslint pure/pure: 2 */
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED, STATE_ARG } from './constants'
 import { primitives } from './primitives'
-import { getValue, getName, objectFromHash, getInverseAttr } from './objectUtils'
+import { isUndefined } from './utils'
+import { getValue, getName, objectFromHash, getInverseAttr, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
 
 /*
@@ -27,7 +28,7 @@ const combineArgs = (childPrims) => {
 
 function createStateArg(state, currentObject, argKey) {
     const statePrimitive = primitives.state(state, currentObject)
-    const hash = currentObject.props.hash
+    const hash = getAttr(currentObject, 'hash')
     const ast = getValue(state, 'jsPrimitive', currentObject).value
     const varDef = { //reassign value defined by get hash to the hash of curentObject
         key: argKey,
@@ -55,7 +56,7 @@ const getNext = (state, currentObject, searchArgData) => {
     const searchName = getName(state, currentObject) //remove for debug
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
-    const attr = nextGet.props.attribute//attribute to go to
+    const attr = getAttr(nextGet, 'attribute')//attribute to go to
     //search through context to see if the current attr from the get stack matches any of the first attrs from the context
     //if it does then return the
     const contextFunctionArray = context.map(
@@ -85,16 +86,17 @@ const getNext = (state, currentObject, searchArgData) => {
     const { value: nextValue } = getValue(state, attr, currentObject) //evaluate attr of currentobject
     const { value: nextJSValue } = getValue(state, 'jsPrimitive', nextValue)
     //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
-    if (nextValue.type === 'undef') { //if the next value is not defined treat it as an inverse
+    if (isUndefined(nextValue)) { //if the next value is not defined treat it as an inverse
         //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
         const newSearchArgs = { argKey: argKey, query: THIS, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
     } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
         const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
-        const dbSearchArg = { [nextValue.props.hash]: {
+        const hash = getAttr(nextValue, 'hash')
+        const dbSearchArg = { [hash]: {
                 query,
-                hash: nextValue.props.hash,
+                hash,
                 type: GLOBAL_SEARCH,
                 getStack: newGetStack,
                 context: addContextToGetStack(state, context, attr, currentObject, nextValue),
@@ -120,7 +122,8 @@ const getNext = (state, currentObject, searchArgData) => {
     } else if (nextJSValue.type === 'get') {
         //for direct get: if root is not search or get
         const { value: root } = getValue(state, "rootObject", nextValue)
-        if (root.type !== 'get' && root.type !== 'search') { //don't move conditions to get
+        const rootType = getPrimitiveType(root)
+        if (rootType !== 'get' && rootType !== 'search') { //don't move conditions to get
             //needs larger scale refactoring
             const newSearchArgs = {
                 ...searchArgData,
@@ -161,14 +164,14 @@ const getNext = (state, currentObject, searchArgData) => {
 
 const addContextToGetStack = (state, context, attr, currentObject, nextValue) => { //combine this with the context generator in objectUtils
 
-    const hash = currentObject.props.hash
+    const hash = getAttr(currentObject, 'hash')
     const searchName = getName(state, currentObject) //remove for debug
     const inverseAttr = getInverseAttr(state, attr)
     const newContext = {
         debug: `${searchName}.${attr} has inverse ${inverseAttr} = ${hash}`,
         attr: inverseAttr,
         value: hash,
-        source: nextValue.props.hash //remove for debug
+        source: getAttr(nextValue, 'hash') //remove for debug
     }
     return context.concat(newContext)
 }
@@ -197,7 +200,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
 
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, inverseAttr)
     const searchName = getName(state, currentObject) //remove for debug
-    if (jsResult.type === UNDEFINED) {
+    if (isUndefined(jsResult)) {
         console.warn('adding recursive function at varDef', currentObject, searchName)
         return { args: {}, varDefs: [] }
     } else {

@@ -8,7 +8,6 @@ import TreeNode from './TreeDiagram'
 export default class TreeDiagram extends React.Component {
 	constructor(props){
 		super(props)
-        console.log(props.objectTable)
 		this.state = {filters:{object:true, primitive:true}}
 	}
 

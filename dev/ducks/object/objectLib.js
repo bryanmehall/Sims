@@ -1,3 +1,4 @@
+import { UNDEFINED } from './constants'
 const constructString = (string) => ({
     type: "string",
     props: {
@@ -6,20 +7,16 @@ const constructString = (string) => ({
 })
 export const objectLib = {
 	id: (id) => ({
-		type: 'id',
 		props: {
 			jsPrimitive: { type: 'id', id }
 		}
 	}),
 	undef: {
-		type: 'undef',
 		props: {
-			id: 'undef',
-            name: constructString("undefined")
+            name: constructString(UNDEFINED)
 		}
 	},
 	union: (set1, set2, scope) => ({
-		type: 'apply',
 		props: {
 			set1: set1,
 			set2: set2,
@@ -32,7 +29,6 @@ export const objectLib = {
 	find: (attrList) => { //switch this to get?
 		if (attrList.length === 1){
 			return {
-				type: "find",
 				props: {
 					jsPrimitive: { type: "find" },
 					attribute: attrList[0]
@@ -51,7 +47,6 @@ export const objectLib = {
 		}
 	},
 	constructSearch: (query) => ({ //add support for searching different databases
-		type: 'search',
 		props: {
 			query,
 			id: 'search'+query,
@@ -61,7 +56,6 @@ export const objectLib = {
     constructString,
     constructArray: function(name, elements){
         return {
-            type: 'array',
             props: {
                 name: "array",
                 instanceOf: "array",

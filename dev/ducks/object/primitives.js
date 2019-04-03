@@ -1,10 +1,10 @@
 import { getArgsAndVarDefs } from './selectors'
-import { getValue, getJSValue, getName } from './objectUtils'
+import { getValue, getJSValue, getName, getAttr, getPrimitiveType } from './objectUtils'
 import { isUndefined } from './utils'
-import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH, STATE_ARG } from './constants'
+import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
 const input = (state, objectData) => {
-    const hash = objectData.props.hash
+    const hash = getAttr(objectData, 'hash')
     const name = getName(state, objectData)
     return {
         hash,
@@ -16,7 +16,7 @@ const input = (state, objectData) => {
     }
 }
 const stateNode = (state, objectData) => {
-    const hash = objectData.props.hash
+    const hash = getAttr(objectData, 'hash')
     return {
         hash,
         args: {}, //combine args of x,y,text
@@ -33,7 +33,7 @@ const bool =   (...args) => (primitive(...args))
 //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!security risk if brackets are allowed in string
 const string = (...args) => (primitive(...args))
 const primitive = (state, objectData, valueData) => ({
-    hash: objectData.props.hash,
+    hash: getAttr(objectData, 'hash'),
     value: valueData.value,
     args: {},
     children: {},
@@ -45,7 +45,7 @@ const primitive = (state, objectData, valueData) => ({
 //data structures
 const array = (state, objectData, valueData) => {
     return {
-    hash: objectData.props.hash,
+    hash: getAttr(objectData, 'hash'),
     value: valueData.value,
     args: {},
     children: {},
@@ -70,7 +70,7 @@ const greaterThan    = (...args) => (binOp(...args))
 const and            = (...args) => (binOp(...args))
 const or             = (...args) => (binOp(...args))
 const binOp = (state, objectData, valueData) => ({
-    hash: objectData.props.hash,
+    hash: getAttr(objectData, 'hash'),
     type: valueData.type,
     variableDefs: [],
     children: {},
@@ -85,7 +85,7 @@ const getIndex = (state, objectData) => {
     ))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         args: args, //combine args of x,y,text
         children: { array: parameters[0], index: parameters[1] },
         type: 'getIndex',
@@ -102,7 +102,7 @@ const contains = (state, objectData) => { //eventually switch to set
     ))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         args: args, //combine args of x,y,text
         children: { array: parameters[0], index: parameters[1] },
         type: 'contains',
@@ -117,7 +117,7 @@ const get = (state, objectData) => {
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
     let query = THIS
     let getStack = []
-    if (root.type === 'undef'){ //for implied root (only works for one level deep)
+    if (isUndefined(root)){ //for implied root (only works for one level deep)
         //set query to THIS if root is left undefined
         query = THIS
         getStack = []
@@ -130,7 +130,7 @@ const get = (state, objectData) => {
         const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
-            hash: objectData.props.hash,
+            hash: getAttr(objectData, 'hash'),
             //value: next.hash,
             inline: false,
             args,
@@ -144,7 +144,7 @@ const get = (state, objectData) => {
         query = searchArgs[0][1].query
         getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
     }
-    const hash = objectData.props.hash
+    const hash = getAttr(objectData, 'hash')
     const args = {
         [hash]: {
             query,
@@ -165,7 +165,7 @@ const get = (state, objectData) => {
 
 const search = (state, objectData, valueData) => { //search is get root (local Search) not dbSearch --rename to local and global
     const query = valueData.query
-    const hash = objectData.props.hash
+    const hash = getAttr(objectData, 'hash')
     return {
         hash,
         type: "search",
@@ -176,8 +176,8 @@ const search = (state, objectData, valueData) => { //search is get root (local S
 }
 
 const dbSearch = (state, objectData) => {
-    const query = objectData.props.query.props.jsPrimitive.value //refactor --get from dbSerachast
-    const hash = objectData.props.hash
+    const query = getAttr(getAttr(objectData, 'query'), 'jsPrimitive').value //refactor --get from dbSerachast
+    const hash = getAttr(objectData, 'hash')
     //const { ast } = getDBsearchAst(state, objectData, [])
     //console.log(ast)
     //const astArgs = isUndefined(ast) ? {} : ast.args
@@ -215,7 +215,7 @@ const apply = (state, objectData) => {
         : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
         : {} //error
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         args,
         children,
         variableDefs,
@@ -232,7 +232,7 @@ const ternary = (state, objectData) => {
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         type: 'ternary',
         children: { condition: parameters[0],then: parameters[1], alt: parameters[2] },
         args,
@@ -249,7 +249,7 @@ const text = (state, objectData) => {
     ))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         args: Object.assign(args, { prim: true }), //combine args of x,y,text
         children: { x: parameters[0], y: parameters[1], innerText: parameters[2] },
         type: 'text',
@@ -271,7 +271,7 @@ const group = (state, objectData) => {
         ? { childElement1: parameters[0] }
         :{ childElement1: parameters[0], childElement2: parameters[1] }
     return {
-        hash: objectData.props.hash,
+        hash: getAttr(objectData, 'hash'),
         type: 'group',
         children,
         args,

@@ -1,5 +1,5 @@
 import { combineArgs, getName, convertToSearchArgs } from './selectors'
-import { getValue } from './objectUtils'
+import { getValue, getAttr } from './objectUtils'
 import { THIS } from './constants'
 
 const isNotPrimitive = (objectData) => (
@@ -33,7 +33,7 @@ const getArgsAndVarDefs = (state, objectData, childArgs) => {
 }
 
 const evaluatePath = (state, objectData, arg) => {
-    const nextAttribute = getStack[0].props.attribute
+    const nextAttribute = getAttr(getStack[0], 'attribute')
     const newGetStack = getStack.slice(1)
     const nextValue = getValue(state, nextAttribute, objectData)
     if (getStack.length === 0){

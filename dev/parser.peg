@@ -14,7 +14,6 @@ var symbolTable = {
 
 function createString(str){
 	return {
-        type:"string",
         props:{
             jsPrimitive:{type:"string", value:str}
         }
@@ -22,7 +21,6 @@ function createString(str){
 }
 function createBinOp(left, right, op){
 	return {
-    	type:"apply",
         props:{
             jsPrimitive:{type:"apply"},
             op1:left,
@@ -33,7 +31,6 @@ function createBinOp(left, right, op){
 }
 function createApply(arg, op){
 	return {
-    	type:"apply",
         props:{
             jsPrimitive:{type:"apply"},
             op1:arg,
@@ -43,7 +40,6 @@ function createApply(arg, op){
 }
 function createFunction(name){
 	return {
-    	type:"function",
         props:{
         	name:createString(name),
         	jsPrimitive:{type:"function"}
@@ -52,7 +48,6 @@ function createFunction(name){
 }
 function createArray(elements){
     return {
-        type:"array",
         props:{
             instanceOf:"array",
             jsPrimitive:{ type:"array", value:elements}
@@ -67,13 +62,15 @@ Module
 	= declarations:(Declaration "\n"*)+ {
     	var objects = {}
         declarations.forEach(function(declaration){
-        	objects[declaration[0].id]  = declaration[0]
+            var object = declaration[0].object
+            var id = declaration[0].id
+        	objects[id] = object
         })
         
         return objects
     }
 Declaration
-	= "\n"*id:Name _ "="_ object:Object {return Object.assign({}, object, {id:id})}
+	= "\n"*id:Name _ "="_ object:Object {return {object:object, id:id}}
     / BlockComment
 
 Object "object"
@@ -84,7 +81,6 @@ Object "object"
         var type = props.hasOwnProperty('type') ? props.type : value //override type property 
         //--get rid of this when switching type system
     	return {
-        	type:type,
             props:props
         } 
     }
@@ -131,7 +127,6 @@ Name "name"
 New = "new "name:Name _ Comment? {return name}
 Search = query:Name {
 	return {
-		type:"search",
         props:{
             jsPrimitive:{type:"search", "query":query}
         }
@@ -142,7 +137,6 @@ Get "get"
     = root:Search? attributes:("."Name)+ {
     function buildPath(rootObject, attr){
       var getData = {
-          type:"get",
           props:{
               jsPrimitive:{type:"get"},
               attribute:attr[1]
@@ -159,7 +153,6 @@ Get "get"
 Ternary "ternary"
     = "if" _ condition:Value _ "then"_ then:Value _"else"_ alt:Value {
     return {
-        type:"ternary",
         props:{
         	instanceOf:"ternary",
         	condition:condition,
@@ -173,7 +166,6 @@ Ternary "ternary"
 Number 
 	= value:Float / value:Int {
         return {
-         	type:"number",
             props:{
             	jsPrimitive:{type:"number", value:value}
             }
@@ -207,7 +199,6 @@ Array "array"
 Bool "bool"
 	= value:("true" / "false") {
     return {
-    	type:"bool",
         "props":{
         	jsPrimitive:{type:"bool", value:value==="true"}
         }

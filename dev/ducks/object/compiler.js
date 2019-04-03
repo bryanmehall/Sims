@@ -44,14 +44,14 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
 const flattenState = (state) => {
     const hashTable = Object.values(state).reduce((hashTable, obj) => {
         const hash = getHash(obj)
-        const objWithHash = { ...obj, hash }
+        const objWithHash = obj//{ ...obj, hash }
         const hashes = getHashesFromTree(obj)
         return Object.assign(hashTable, hashes, { [hash]: objWithHash })
     }, {})
     return hashTable
 }
 const getHashesFromTree = (objectData) => (
-    Object.entries(objectData.props)
+    Object.entries(objectData.props) //remove prop here
         .filter((entry) => (
             entry[0] !== 'jsPrimitive' && typeof entry[1] !== 'string' //is this filter needed? test without
         ))
@@ -73,7 +73,7 @@ const getHashesFromTree = (objectData) => (
 export const compile = (state) => {
     const hashTable = flattenState(state)
     const appData = objectFromName(hashTable, 'app')
-    //const appDataWithHash = Object.assign({}, appData, { props: Object.assign({}, appData.props, { hash: appHash }) })
+    //const appDataWithHash = Object.assign({}, appData, { props: Object.assign({}, appData.props, { hash: appHash }) })//remove prop here
     const { value: appAST } = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
     const outputs = compileOutput(hashTable, appAST, {})
     const functionTable = combineFunctionTables(outputs)

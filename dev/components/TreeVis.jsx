@@ -1,8 +1,9 @@
 import React from "react"
 import * as d3 from "d3"
-import { formatArg, getName } from '../ducks/object/utils'
-import { objectFromName, getHash } from '../ducks/object/objectUtils'
+import { formatArg } from '../ducks/object/utils'
+import { objectFromName, getHash, getPrimitiveType, getAttr } from '../ducks/object/objectUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
+import { getName } from './Debug'
 
 class TreeVis extends React.Component {
     constructor(props){
@@ -90,7 +91,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
         nodes: d3Data.nodes.concat({ id: i, object: first, objQueue, level }),
         links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i, attr: first.attr })
     }
-    const propList = first.hasOwnProperty('props') ? Object.entries(first.props) : []
+    const propList = first.hasOwnProperty('props') ? Object.entries(first.props) : [] //remove props here
     const entries = propList
         .filter((entry) => { //filter out hash and inverse properties
             const inverses = first.inverses || {}
@@ -104,11 +105,11 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 
     const children = entries.map((entry) => (Object.assign({}, entry[1], { attr: entry[0], parId: i, level: level+1 })))
 
-    const newQueue = first.type === 'get' ? objQueue : [...objQueue, ...children]
+    const newQueue = getPrimitiveType(first) === 'get' ? objQueue : [...objQueue, ...children]
     return bfsObjectTree(objectTable, first, newD3Data, newQueue)
 }
 
-const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (node.object.hash === hash)))
+const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.object) === hash)))
 
 const addAST = (ast, nodesAndLinks) => { //helper function for addAST
     const { nodes, links } = nodesAndLinks

@@ -1,14 +1,14 @@
 import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
-import { deleteKeys } from './utils'
+import { deleteKeys, isUndefined } from './utils'
 
 export const objectFromName = (state, name) => {
     const values = Object.values(state)
     const matches = values.filter((obj) => {
-        const nameObject = obj.props.name
+        const nameObject = getAttr(obj, 'name')
         if (typeof nameObject === 'undefined') { return false }
-        const objName = nameObject.props.jsPrimitive.value //try is to replace wrapping this\
+        const objName = getAttr(nameObject, 'jsPrimitive').value //try is to replace wrapping this\
         return objName === name
     })
     if (matches.length === 0) {
@@ -20,8 +20,12 @@ export const objectFromName = (state, name) => {
     return matches[0]
 }
 
+export const getAttr = (objectData, attr) => (
+    objectData.props[attr] //remove prop here
+)
+
 export const hasAttribute = (objectData, prop) => (
-    objectData.props.hasOwnProperty(prop)
+    objectData.props.hasOwnProperty(prop) //remove prop here
 )
 
 export const getName = (state, objectData) => {
@@ -48,8 +52,20 @@ export const getObject = function (state, hash) {
 }
 
 export const getInverseAttr = (state, attr) => (
-    objectFromName(state, attr).props.inverseAttribute
+    getAttr(objectFromName(state, attr), 'inverseAttribute')
 )
+ export const getPrimitiveType = (objectData) => {
+    if (objectData.props === undefined){
+        return undefined
+    } else {
+        const jsPrim = getAttr(objectData, 'jsPrimitive')
+        if (jsPrim === undefined){
+            return undefined
+        } else {
+            return jsPrim.type
+        }
+    }
+}
 
 const isHash = (str) => (
     str.includes("$hash")
@@ -68,11 +84,11 @@ const objectValuesToHash = (hashData, entry) => {
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove these attrs before hashing
-    const exemptProps = ["hash", "parentValue",'id']
-    const expandedHashData = deleteKeys(objectData.props, exemptProps)
+    const exemptProps = ["hash", "parentValue"]
+    const expandedHashData = deleteKeys(objectData.props, exemptProps) //remove prop here
     //convert remaining values to hashes
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
-    const name = objectData.props.hasOwnProperty('jsPrimitive') ? objectData.props.jsPrimitive.type : ''
+    const name = hasAttribute(objectData, 'jsPrimitive') ? getAttr(objectData, 'jsPrimitive').type : ''
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     //if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
@@ -86,41 +102,41 @@ export const returnWithContext = (state, attr, attrData, valueData, objectData) 
         objectData = objectLib.undef
     }
     const hash = getHash(valueData)
-    const newProps = Object.assign({}, valueData.props, { hash })
+    const newProps = Object.assign({}, valueData.props, { hash }) //remove prop here
     return {
         state: state,
-        value: Object.assign({}, valueData, { props: newProps })
+        value: Object.assign({}, valueData, { props: newProps }) //remove prop here
     }
 }
 
 export const getValue = (state, prop, objectData) => {
     checkObjectData(state, objectData)
-	let def = objectData.props[prop]
+	let def = getAttr(objectData, prop)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
-		const isInstance = objectData.props.hasOwnProperty('instanceOf')
+		const isInstance = hasAttribute(objectData, 'instanceOf')
         const inheritedData = isInstance
             ? getValue(state, 'instanceOf', objectData).value
             : objectFromName(state, 'object')
-        def = inheritedData.props[prop]
+        def = getAttr(inheritedData, prop)
 	}
 	const valueData = typeof def === 'string' ? objectFromName(state, def) : def
 	if (objectData === undefined) {
 		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         console.log('getting attributes', objectData)
-		if (objectData.props.hasOwnProperty('attributes')){
+		if (hasAttribute(objectData, 'attributes')){
 
 			return returnWithContext(state, prop, attrData, valueData, objectData)
 
 		} else {
-			let attrs = Object.keys(objectData.props)
+			let attrs = Object.keys(objectData.props) //remove prop here
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
-			const attrSet = objectLib.constructArray(`${objectData.props.hash}Attrs`, attrs)//switch to set
+			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrs)//switch to set
 			return returnWithContext(state, prop,attrData, attrSet, objectData)
 		}
 	} else if (def === undefined) {
@@ -142,9 +158,8 @@ export const getValue = (state, prop, objectData) => {
 const checkObjectData = (state, objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
-    } else if (objectData.props.hasOwnProperty('hash') && objectData.props.hash !== getHash(objectData)){
+    } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
         //console.log('objectData', objectData)
-        //console.log(objectData, getHash(objectData), objectData.props.hash)
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'
@@ -159,10 +174,11 @@ export const addContext = (state, prop, primitive, objectData) => {
     const argsWithContext = Object.entries(primitiveArgs)
     .filter((arg) => arg[0] !== 'prim')
     .reduce((args, arg) => {
+        const hash = getAttr(objectData, 'hash')
         const newContext = {
-            debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${objectData.props.hash}`,
+            debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${hash}`,
             attr: contextAttr,
-            value: objectData.props.hash
+            value: hash
         }
         const argWithContext = Object.assign({}, arg[1], {
             context: arg.context === undefined ? [newContext] : arg.context.concat([newContext, {}])
@@ -180,7 +196,7 @@ export const addContext = (state, prop, primitive, objectData) => {
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objectData) => {
 	const { value: valueData } = getValue(state, prop, objectData)
-	if (valueData.type === 'undef'){
+	if (isUndefined(valueData)){
 		return undefined
 	} else {
 		const { value: primitive } = getValue(state , 'jsPrimitive', valueData) //get Value of jsPrimitive works

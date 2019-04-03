@@ -1,10 +1,11 @@
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, UNDEFINED } from './constants'
+import { getAttr, getName } from './objectUtils'
 
 export const formatGetLog = (query, getStack) => (
-    query+'.'+getStack.map((get) => (get.props.attribute)).join('.')
+    query+'.'+getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
 )
 export const formatInverseArg = (query, getStack) => (
-    getStack.map((get) => (get.props.attribute)).join('.')
+    getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
 )
 
 export const formatDBSearchLog = (dbSearches) => (
@@ -83,9 +84,20 @@ export const logFunctionTable = (functionTable) => {
     })
 }
 
-export const isUndefined = (objectData) => (
-    objectData.type === 'undef'
-)
+export const isUndefined = (objectData) => {
+    const old = objectData.type === UNDEFINED
+
+    if (!objectData.hasOwnProperty('props')){ //if is ast //remove prop here
+        return false
+    }
+    const nameObject = getAttr(objectData, 'name')
+    if (nameObject === undefined){
+        return false
+    } else {
+        const new1 = getAttr(nameObject, 'jsPrimitive').value === UNDEFINED
+        return new1
+    }
+}
 
 export const deleteKeys = (object, keys) => { //careful, this is a shallow copy... does this matter if just deleting keys?
 	let objCopy = Object.assign({}, object)
@@ -106,10 +118,7 @@ export const compileToJS = (args, string) => {
         }
     }
 }
-export const getName = (objectData) => {
-    const nameObject = objectData.props.name
-    return typeof nameObject === 'undefined' ? 'object' : nameObject.props.jsPrimitive.value
-}
+
 
 
 /*let timer = performance.now()|| 0

@@ -1,13 +1,14 @@
 import React from "react"
 import { cardStyle } from './styles'
-import { getName, formatArg } from '../ducks/object/utils'
+import { getAttr } from '../ducks/object/objectUtils'
+import { formatArg } from '../ducks/object/utils'
 import TreeVis from './TreeVis'
 import AstVis from './AstVis'
 
 class Debug extends React.Component {
     constructor(props){
         super(props)
-        this.state = {offset:{x:0, y:0}, activeNode:{object:{props:{}}}}
+        this.state = {offset:{x:0, y:0}, activeNode:{object:{props:{}}}} //remove prop here
     }
 	render() {
         const setCenter =  (x,y)=>{this.setState({offset:{x,y}})}
@@ -78,6 +79,11 @@ class Debug extends React.Component {
 
 	}
 }
+export const getName = (objectData) => {
+    const nameObject = getAttr(objectData, 'name')
+    return typeof nameObject === 'undefined' ? 'object' : getAttr(nameObject, 'jsPrimitive').value
+}
+
 const ObjectData = ({ node }) => {
     let objectData = null
     let astData = null
