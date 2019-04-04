@@ -16,9 +16,9 @@ export const lynxParser = (lynxString) => {
         if (change === 0){
             outString += ("\n"+line)
         } else if (change >= 1){
-            outString += ("{{".repeat(change)+"\n"+line)
+            outString += ("{#{".repeat(change)+"\n"+line)
         } else if (change <= -1){
-            outString += ("}}".repeat(Math.abs(change))+"\n"+line)
+            outString += ("}#}".repeat(Math.abs(change))+"\n"+line)
         }
     })
     try {

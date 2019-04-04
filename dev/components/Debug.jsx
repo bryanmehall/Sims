@@ -8,7 +8,7 @@ import AstVis from './AstVis'
 class Debug extends React.Component {
     constructor(props){
         super(props)
-        this.state = {offset:{x:0, y:0}, activeNode:{object:{props:{}}}} //remove prop here
+        this.state = {offset:{x:0, y:0}, activeNode:{object:{}}}
     }
 	render() {
         const setCenter =  (x,y)=>{this.setState({offset:{x,y}})}

@@ -21,11 +21,11 @@ export const objectFromName = (state, name) => {
 }
 
 export const getAttr = (objectData, attr) => (
-    objectData.props[attr] //remove prop here
+    objectData[attr]
 )
 
 export const hasAttribute = (objectData, prop) => (
-    objectData.props.hasOwnProperty(prop) //remove prop here
+    objectData.hasOwnProperty(prop)
 )
 
 export const getName = (state, objectData) => {
@@ -55,16 +55,13 @@ export const getInverseAttr = (state, attr) => (
     getAttr(objectFromName(state, attr), 'inverseAttribute')
 )
  export const getPrimitiveType = (objectData) => {
-    if (objectData.props === undefined){
+    const jsPrim = getAttr(objectData, 'jsPrimitive')
+    if (jsPrim === undefined){
         return undefined
     } else {
-        const jsPrim = getAttr(objectData, 'jsPrimitive')
-        if (jsPrim === undefined){
-            return undefined
-        } else {
-            return jsPrim.type
-        }
+        return jsPrim.type
     }
+
 }
 
 const isHash = (str) => (
@@ -85,7 +82,7 @@ const objectValuesToHash = (hashData, entry) => {
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove these attrs before hashing
     const exemptProps = ["hash", "parentValue"]
-    const expandedHashData = deleteKeys(objectData.props, exemptProps) //remove prop here
+    const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
     const name = hasAttribute(objectData, 'jsPrimitive') ? getAttr(objectData, 'jsPrimitive').type : ''
@@ -102,10 +99,10 @@ export const returnWithContext = (state, attr, attrData, valueData, objectData) 
         objectData = objectLib.undef
     }
     const hash = getHash(valueData)
-    const newProps = Object.assign({}, valueData.props, { hash }) //remove prop here
+    const newProps = Object.assign({}, valueData, { hash }) //only calculate hash in first state transform
     return {
         state: state,
-        value: Object.assign({}, valueData, { props: newProps }) //remove prop here
+        value: Object.assign({}, newProps)
     }
 }
 
@@ -133,7 +130,7 @@ export const getValue = (state, prop, objectData) => {
 			return returnWithContext(state, prop, attrData, valueData, objectData)
 
 		} else {
-			let attrs = Object.keys(objectData.props) //remove prop here
+			let attrs = Object.keys(objectData)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrs)//switch to set

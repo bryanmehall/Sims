@@ -14,44 +14,34 @@ var symbolTable = {
 
 function createString(str){
 	return {
-        props:{
             jsPrimitive:{type:"string", value:str}
-        }
 	}
 }
 function createBinOp(left, right, op){
 	return {
-        props:{
             jsPrimitive:{type:"apply"},
             op1:left,
             op2:right,
             function:symbolTable[op]
-        }
     } 
 }
 function createApply(arg, op){
 	return {
-        props:{
             jsPrimitive:{type:"apply"},
             op1:arg,
             function:op
-        }
     }
 }
 function createFunction(name){
 	return {
-        props:{
         	name:createString(name),
         	jsPrimitive:{type:"function"}
-        }
     }
 }
 function createArray(elements){
     return {
-        props:{
             instanceOf:"array",
             jsPrimitive:{ type:"array", value:elements}
-        }
     }
 }
 }
@@ -70,19 +60,17 @@ Module
         return objects
     }
 Declaration
-	= "\n"*id:Name _ "="_ object:Object {return {object:object, id:id}}
+	= "\n"*id:Name _ "="_ object:Object { return { object: object, id: id } }
     / BlockComment
 
 Object "object"
-	= value:New "{{"?attributes:("\n""    "*Attribute)*"}}"? {
+	= value:New "{#{"?attributes:("\n""    "*Attribute)*"}#}"? {
     	var props = {}
     	attributes.forEach(function(attr){props[attr[2].name] = attr[2].value})
         props.instanceOf = props.hasOwnProperty('instanceOf') ? props.instanceOf : value
         var type = props.hasOwnProperty('type') ? props.type : value //override type property 
         //--get rid of this when switching type system
-    	return {
-            props:props
-        } 
+    	return props
     }
 
 Attribute 
@@ -127,9 +115,7 @@ Name "name"
 New = "new "name:Name _ Comment? {return name}
 Search = query:Name {
 	return {
-        props:{
             jsPrimitive:{type:"search", "query":query}
-        }
         }
     }
 ////////references
@@ -137,13 +123,11 @@ Get "get"
     = root:Search? attributes:("."Name)+ {
     function buildPath(rootObject, attr){
       var getData = {
-          props:{
               jsPrimitive:{type:"get"},
               attribute:attr[1]
-          }
       }
       if (rootObject !== null){
-      	  getData.props.rootObject = rootObject
+      	  getData.rootObject = rootObject
       }
       return getData
     }
@@ -153,12 +137,10 @@ Get "get"
 Ternary "ternary"
     = "if" _ condition:Value _ "then"_ then:Value _"else"_ alt:Value {
     return {
-        props:{
         	instanceOf:"ternary",
         	condition:condition,
         	then:then,
         	alt:alt
-        }
     }
     }
      
@@ -166,9 +148,7 @@ Ternary "ternary"
 Number 
 	= value:Float / value:Int {
         return {
-            props:{
             	jsPrimitive:{type:"number", value:value}
-            }
         }
     }
     
@@ -196,12 +176,13 @@ Array "array"
     	return createArray([head].concat(remaining))
     }
 
+Map "map"
+    = '{'_ firstKey:ArrayElement ':'_ firstValue:ArrayElement _"}"
+
 Bool "bool"
 	= value:("true" / "false") {
     return {
-        "props":{
         	jsPrimitive:{type:"bool", value:value==="true"}
-        }
        }
     }
 Primitive "static primitive"

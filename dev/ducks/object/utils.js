@@ -85,17 +85,11 @@ export const logFunctionTable = (functionTable) => {
 }
 
 export const isUndefined = (objectData) => {
-    const old = objectData.type === UNDEFINED
-
-    if (!objectData.hasOwnProperty('props')){ //if is ast //remove prop here
-        return false
-    }
     const nameObject = getAttr(objectData, 'name')
     if (nameObject === undefined){
         return false
     } else {
-        const new1 = getAttr(nameObject, 'jsPrimitive').value === UNDEFINED
-        return new1
+        return getAttr(nameObject, 'jsPrimitive').value === UNDEFINED
     }
 }
 

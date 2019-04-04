@@ -81,32 +81,32 @@ class TreeVis extends React.Component {
 
 
 const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
-    objQueue = objQueue || [Object.assign({}, currentObj, { level: 0 })]
+    objQueue = objQueue || [{object: currentObj, level: 0 }]
     if (objQueue.length === 0) { return d3Data }
     d3Data = d3Data || { nodes: [], links: [] }
     const first = objQueue.shift()
     const level = first.level
     const i = d3Data.nodes.length
     const newD3Data = {
-        nodes: d3Data.nodes.concat({ id: i, object: first, objQueue, level }),
+        nodes: d3Data.nodes.concat({ id: i, object: first.object, objQueue, level }),
         links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i, attr: first.attr })
     }
-    const propList = first.hasOwnProperty('props') ? Object.entries(first.props) : [] //remove props here
+    const propList =  Object.entries(first.object)
+
     const entries = propList
-        .filter((entry) => { //filter out hash and inverse properties
-            const inverses = first.inverses || {}
-            return !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0]) && !inverses.hasOwnProperty(entry[0])
-        }).map((entry) => {
+        .filter((entry) => ( //filter out hash and inverse properties
+            !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0])
+        )).map((entry) => {
             const result = typeof entry[1] === 'string'
             ? [entry[0], objectFromName(objectTable, entry[1])]
             : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
             return result
         })
 
-    const children = entries.map((entry) => (Object.assign({}, entry[1], { attr: entry[0], parId: i, level: level+1 })))
+    const children = entries.map((entry) => (Object.assign({}, { object: entry[1] }, { attr: entry[0], parId: i, level: level+1 })))
 
-    const newQueue = getPrimitiveType(first) === 'get' ? objQueue : [...objQueue, ...children]
-    return bfsObjectTree(objectTable, first, newD3Data, newQueue)
+    const newQueue = getPrimitiveType(first.object) === 'get' ? objQueue : [...objQueue, ...children]
+    return bfsObjectTree(objectTable, first.object, newD3Data, newQueue)
 }
 
 const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.object) === hash)))

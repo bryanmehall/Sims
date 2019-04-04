@@ -8,11 +8,9 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
         .filter((arg) => (arg.type === GLOBAL_SEARCH)) //combine these conditions
         .map((arg) => {
             let root = objectFromName(state, arg.query)
-            root.props.hash = getHash(root) //formalize what hash means so it is consistent //remove prop here
-            const rootProps = Object.assign({}, root.props, arg.searchContext) //remove prop here
-            root = Object.assign({}, root, {
-                props: rootProps, //remove prop here
-            })
+            root.hash = getHash(root) //formalize what hash means so it is consistent
+            const rootProps = Object.assign({}, root, arg.searchContext) //refactor for context
+            root = rootProps
             const getStack = arg.getStack
             if (getStack.length > 1) { throw 'get stack length greater than one' }
             let ast, args1, variableDefs1
@@ -60,10 +58,8 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     }
     const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
     const rootWithoutInverses = objectFromName(state, query)
-    const rootProps = Object.assign({}, rootWithoutInverses.props, dbSearchObject.inverses) //remove prop here
-    const root = Object.assign({}, rootWithoutInverses, {
-        props: rootProps, //remove prop here
-    })
+    const rootProps = Object.assign({}, rootWithoutInverses, dbSearchObject.inverses) //refactor for context
+    const root = rootProps
     if (getStack.length > 1) { throw 'get stack length greater than one' } //todo:make this work for longer paths
     if (getStack.length === 0){
         const ast = getValue(state, 'jsPrimitive', root).value

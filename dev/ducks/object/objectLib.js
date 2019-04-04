@@ -1,20 +1,13 @@
 import { UNDEFINED } from './constants'
 const constructString = (string) => ({
-    type: "string",
-    props: {
-        jsPrimitive: { type: "string", value: string }
-    }
+    jsPrimitive: { type: "string", value: string }
 })
 export const objectLib = {
 	id: (id) => ({
-		props: {
 			jsPrimitive: { type: 'id', id }
-		}
 	}),
 	undef: {
-		props: {
-            name: constructString(UNDEFINED)
-		}
+        name: constructString(UNDEFINED)
 	},
 	union: (set1, set2, scope) => ({
 		props: {
@@ -47,21 +40,17 @@ export const objectLib = {
 		}
 	},
 	constructSearch: (query) => ({ //add support for searching different databases
-		props: {
 			query,
 			id: 'search'+query,
 			jsPrimitive: { type: 'search', id: query }
-		}
 	}),
     constructString,
     constructArray: function(name, elements){
         return {
-            props: {
                 name: "array",
                 instanceOf: "array",
                 jsPrimitive: { type: "array", value: elements }
             }
-        }
     },
 	constructSet: function(id, elements){
 		const length = elements.length

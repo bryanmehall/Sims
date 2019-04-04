@@ -51,7 +51,7 @@ const flattenState = (state) => {
     return hashTable
 }
 const getHashesFromTree = (objectData) => (
-    Object.entries(objectData.props) //remove prop here
+    Object.entries(objectData)
         .filter((entry) => (
             entry[0] !== 'jsPrimitive' && typeof entry[1] !== 'string' //is this filter needed? test without
         ))
