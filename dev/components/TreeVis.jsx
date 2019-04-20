@@ -37,7 +37,7 @@ class TreeVis extends React.Component {
                         prevNode.vx -= acc
                     }
                 }
-                const parNode = vis.state.nodes[currNode.object.parId] || { level: -1, x: 0 }
+                const parNode = vis.state.nodes[currNode.parId] || { level: -1, x: 0 }
                 const x = parNode === undefined ? 0 : parNode.x
                 const diff = (x-currNode.x)
                 const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
@@ -88,12 +88,11 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     const level = first.level
     const i = d3Data.nodes.length
     const newD3Data = {
-        nodes: d3Data.nodes.concat({ id: i, object: first.object, objQueue, level }),
+        nodes: d3Data.nodes.concat({ id: i, parId: first.parId, object: first.object, objQueue, level }),
         links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i, attr: first.attr })
     }
-    const propList =  Object.entries(first.object)
 
-    const entries = propList
+    const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
             !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0])
         )).map((entry) => {
@@ -101,11 +100,19 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             ? [entry[0], objectFromName(objectTable, entry[1])]
             : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
             return result
-        })
+        }).map((entry) => (//combine these
+            Object.assign({}, { object: entry[1] }, { attr: entry[0], parId: i, level: level+1 })
+        ))
 
-    const children = entries.map((entry) => (Object.assign({}, { object: entry[1] }, { attr: entry[0], parId: i, level: level+1 })))
-
-    const newQueue = getPrimitiveType(first.object) === 'get' ? objQueue : [...objQueue, ...children]
+    let structureChildren = []
+    if (getPrimitiveType(first.object) === 'array'){
+        const elements = first.object.jsPrimitive.value
+        structureChildren = elements.map((element) => (
+            { object: element, attr: 'elements', parId: i, level: level+1 }
+        ))
+    }
+    const contiuneTree = getPrimitiveType(first.object) === 'get' && typeof first.object.rootObject !== 'string'
+    const newQueue = contiuneTree ? objQueue : [...objQueue, ...children, ...structureChildren]
     return bfsObjectTree(objectTable, first.object, newD3Data, newQueue)
 }
 
@@ -113,11 +120,18 @@ const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.o
 
 const addAST = (ast, nodesAndLinks) => { //helper function for addAST
     const { nodes, links } = nodesAndLinks
-    const astIndex = getNodeIndex(nodes, ast.hash)
-    if (astIndex !== -1){
-        const astNode = nodes[astIndex]
-        nodes[astIndex] = { ...astNode, ast }
-    }
+    const astIndexes = nodes.reduce(function(a, node, i) { //get all indexes
+        if (getHash(node.object) === ast.hash)
+            a.push(i)
+        return a
+    }, [])
+    astIndexes.forEach((astIndex) => {
+        if (astIndex !== -1){
+            const astNode = nodes[astIndex]
+            nodes[astIndex] = { ...astNode, ast }
+        }
+    })
+
     const children = Object.values(ast.children)
     const varDefChildren = ast.variableDefs.map((varDef) => (varDef.ast))
 

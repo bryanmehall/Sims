@@ -25,6 +25,7 @@ export const lynxParser = (lynxString) => {
         const out = parser.parse(outString)
         return out
     } catch (e) {
+        console.log(outString)
         console.warn("parsing failed for" , e.message, 'line:', e.line, 'column:', e.column)
         throw new Error('parsing error')
     }

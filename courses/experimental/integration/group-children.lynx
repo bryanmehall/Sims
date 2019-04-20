@@ -1,0 +1,19 @@
+window = new group
+    name:"window"
+    childElements:[
+        new text
+            name:"txta"
+            innerText:"a"
+            x:txta.parentElement.index*11+10
+            y:30
+        new text
+            name:"txtb"
+            innerText:"b"
+            x:txtb.parentElement.index*10+10
+            y:30
+        new text
+            name:"txtc"
+            innerText:"c"
+            x:txtc.parentElement.index*11+9
+            y:30
+    ]

@@ -1,11 +1,8 @@
 window = new group
-    name:"group"
+    name:"window"
     childElement1: new text
         name:"txt"
         op1:true
-        x:new ternary
-            condition:txt.op1
-            then:20
-            alt:100
+        x:txt.op1 ? 20 : 100
         y:20
         innerText:"test"

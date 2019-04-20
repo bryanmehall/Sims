@@ -19,18 +19,20 @@ const compileOutput = (state, ast, outputs) => { //get rid of dependence on stat
     }
     const dbASTs = resolveDBSearches(state, ast.args) //get all db searches from ast args
     const stateArgs = getStateArgs(ast) //get all state args from ast
+
     const varDefs = ast.variableDefs.concat(dbASTs) //add db varDefs to ast varDefs
     const astWithDB = Object.assign({}, ast, { variableDefs: varDefs }) //combine these new varDefs with ast
     const functionTable = astToFunctionTable(astWithDB) //create function table from ast
     const outputString = buildFunction(astWithDB).string //create top level function for ast
-    const valueFunction = compileToJS(['functionTable', 'inputs'], `${outputString}`)//add inputs here
+    const valueFunctionArgs = ['functionTable', 'inputs']
+        .concat(stateArgs.map((arg) =>(arg.hash)))
+    const valueFunction = compileToJS(valueFunctionArgs, `${outputString}`)//add inputs here
     //recursively call compile output for state and then combine the results to this output
     const newOutputs = Object.assign({}, outputs, { [ast.hash]: { functionTable, valueFunction, ast, stateArgs } }) //get rid of ast and state args
-    /*const newOutputsWithState = stateArgs.reduce((currentOutputs, stateArg) => {
-        console.log(stateArg)
-        return Object.assign(currentOutputs, compileOutput(state, stateArg.ast, newOutputs))
-    }, newOutputs)*/
-    return newOutputs// aWithState
+    const newOutputsWithState = stateArgs.reduce((currentOutputs, stateArg) => (
+        Object.assign(currentOutputs, compileOutput(state, stateArg.ast, newOutputs))
+    ), newOutputs)
+    return newOutputsWithState
 }
 
 const combineFunctionTables = (outputs) => ( //for an object of outputs, combine their function tables into one
@@ -53,7 +55,7 @@ const flattenState = (state) => {
 const getHashesFromTree = (objectData) => (
     Object.entries(objectData)
         .filter((entry) => (
-            entry[0] !== 'jsPrimitive' && typeof entry[1] !== 'string' //is this filter needed? test without
+            typeof entry[1] !== 'string' //is this filter needed? test without
         ))
         .reduce((hashTable, entry) => {
             const prop = entry[0]
@@ -62,6 +64,12 @@ const getHashesFromTree = (objectData) => (
             if (typeof value === 'string') {
                 return hashTable
             } else if (prop === 'jsPrimitive') {
+                if (value.type === "array"){ //add hashes for elements of array --need to add map
+                    return value.value.reduce((hashTable, element) => {
+                        const elementTable = getHashesFromTree(element)
+                        return Object.assign(hashTable, elementTable)
+                    }, {})
+                }
                 return Object.assign(hashTable, { [hash]: value })
             } else {
                 return Object.assign(hashTable, getHashesFromTree(value), { [hash]: value })
@@ -77,12 +85,11 @@ export const compile = (state) => {
     const { value: appAST } = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
     const outputs = compileOutput(hashTable, appAST, {})
     const functionTable = combineFunctionTables(outputs)
-    //console.log(outputs, functionTable)
     return {
-        renderMonad: outputs.apphash.valueFunction,
         functionTable,
-        ast: outputs.apphash.ast,
+        outputs,
+        renderMonad: outputs.apphash.valueFunction,
         objectTable: hashTable,
-        stateArgs: outputs.apphash.stateArgs
+        ast: outputs.apphash.ast
     }
 }

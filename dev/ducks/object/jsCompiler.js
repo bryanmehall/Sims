@@ -18,11 +18,16 @@ const varDefsToString = (varDefs) => (
         .join('')
 )
 
-const input = (ast) => (`inputs.${ast.inputName}.value`)
+const input = (ast) => (`inputs.${ast.inputName}.value;\n`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
-const array = (ast) => JSON.stringify(ast.value)
 const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
+
+//data structures
+const array = (ast) => {
+    const programText = buildChildren(ast, ', ')
+    return `[${programText}]`
+}
 
 const getIndex = (ast) => {
     const programText = buildChildren(ast)
@@ -38,15 +43,17 @@ const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.variableDefs)
     const stateDefs = getStateArgs(ast)
-        .map((arg) => (`\tvar ${arg.hash} = inputs.${arg.hash}.value`))
+        .map((arg) => (`\tvar ${arg.hash} = inputs.${arg.hash}.value;`))
         .join('\n')
-    return `\t//app\n${varDefs}${stateDefs}\treturn function(prim) { ${programText}(prim) }`
+    return `\t//app\n${varDefs}\n\treturn function(prim) { ${programText}(prim) }`
 }
 
 const group = (ast) => {
-    const child1 = ast.children.childElement1
-    if (child1.type === array){
-        console.log('################array')
+    const elementsList = ast.children.childElements
+    if (elementsList !== undefined && elementsList.type === 'array'){ //remove this check when all elements are arrays
+        const programText = buildChildren(elementsList, '(prim)\n')
+        const varDefs = varDefsToString(ast.variableDefs)
+        return `\t//group\n${varDefs}\treturn function(prim) { ${programText}(prim) }`
     } else {
         const programText = buildChildren(ast, '(prim)\n')
         const varDefs = varDefsToString(ast.variableDefs)
@@ -72,14 +79,11 @@ const get = (ast) => {
         if (ast.isFunction){
             return { varDefs: varDef, returnStatement: ast.hash }
         }*/
-        //console.log("here", ast, varDef, programText)
         const ret = programText === "" ? ast.hash + "//fix case with no children" : programText // todo: see why the case with no children is failing
         return { varDefs: varDef, returnStatement: ret } //is this structure needed or can this just return a string?
     }
-
 }
 const stateNode = (ast) => {
-    console.log('state node', ast)
     return ast.hash
 }
 const search = (ast) => (ast.hash)
@@ -94,17 +98,33 @@ const globalSearch = (ast) => {
 }
 
 const apply = (ast) => {
-    const children = buildChildren(ast)
-    if (children.length === 2){
-        return `${children[1]}(${children[0]})`
+    if (ast.variableDefs.length === 0){
+        return inlineApply(ast)
     } else {
+        const varDefs = varDefsToString(ast.variableDefs)
+        return `\t//apply\n${varDefs}\nreturn ${inlineApply(ast)}`
+    }
+}
+
+const inlineApply = (ast) => { //helper function for apply
+    const children = buildChildren(ast)
+    if (children.length === 2){ //unop
+        return `${children[1]}(${children[0]})`
+    } else if (children.length === 4){ //ternop
+        return `${children[0]} ? ${children[2]} : ${children[3]}`
+    } else { //binop
         return `( ${children.join(' ')})`
     }
 }
-//todo: combine the
-const ternary = (ast) => {
+
+const ternary = (ast) => { //remove
     const [condition, then, alt] = buildChildren(ast)
     return `return ${condition} ? \n\t\t${then} : \n\t\t${alt}`
+}
+
+const conditional = (ast) => { //this isn't really needed. the string construction is done in the apply assembler
+    const [op1, op2, op3] = buildChildren(ast)
+    return `return ${op1} ? \n\t\t${op2} : \n\t\t${op3}`
 }
 const addition       = () => ('+')
 const subtraction    = () => ('-')
@@ -131,7 +151,8 @@ export const jsCompilers = {
     app,
     group,
     text,
-    ternary,
+    ternary, //replace with conditional
+    conditional,
     get,
     search,
     globalSearch,

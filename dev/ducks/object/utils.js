@@ -1,4 +1,4 @@
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, UNDEFINED } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED } from './constants'
 import { getAttr, getName } from './objectUtils'
 
 export const formatGetLog = (query, getStack) => (
@@ -33,6 +33,8 @@ export const formatArg = (arg) => {
             return formatGetLog(arg.query, arg.getStack)
         case GLOBAL_SEARCH:
             return arg.query
+        case STATE_ARG:
+            return 'state'
         default:
             console.log(arg)
             throw `type ${arg.type} not found`
@@ -106,6 +108,7 @@ export const compileToJS = (args, string) => {
         return new Function(args, string)
     } catch (e) {
         if (e instanceof SyntaxError) {
+            console.log(string)
             throw new Error('Lynx Error: invalid syntax in compiled code '+e.message)
         } else {
             throw e

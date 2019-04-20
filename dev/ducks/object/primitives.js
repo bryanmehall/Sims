@@ -1,5 +1,5 @@
-import { getArgsAndVarDefs } from './selectors'
-import { getValue, getJSValue, getName, getAttr, getPrimitiveType } from './objectUtils'
+import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
+import { getValue, getJSValue, getName, getAttr, getHash, addContext } from './objectUtils'
 import { isUndefined } from './utils'
 import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
@@ -11,7 +11,8 @@ const input = (state, objectData) => {
         type: 'input',
         children: {},
         inputName: name,
-        args: { name },
+        args: { [hash]: { type: 'input', name } },
+        variableDefs: [],
         inline: true
     }
 }
@@ -44,15 +45,30 @@ const primitive = (state, objectData, valueData) => ({
 
 //data structures
 const array = (state, objectData, valueData) => {
+    const elements = valueData.value
+    const parameters = elements.map((elementData) => {
+        const elementHash = getHash(elementData)
+        const elementValueData = getValue(state, 'elementValue', Object.assign({}, elementData, { hash: elementHash })).value
+        const elementValueHash = getHash(elementValueData)
+        const elementValueDataWithHash = Object.assign({}, elementValueData, { hash: elementValueHash })
+        const valuePrimitive = getValue(state, 'jsPrimitive', elementValueDataWithHash).value //todo: this will not work with context --need to pass prop?
+        const withContext = addContext(state, 'elementValue', valuePrimitive, elementValueDataWithHash)
+        const { args, varDefs } = argsToVarDefs(state, elementData, { args: withContext.args, varDefs: withContext.variableDefs })
+        return Object.assign({}, withContext, { args, variableDefs: varDefs })
+    })
+    const paramNames = parameters.map(() => ('element'))
+
+    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
-    hash: getAttr(objectData, 'hash'),
-    value: valueData.value,
-    args: {},
-    children: {},
-    variableDefs: [],
-    type: 'array',
-    inline: true
-}}
+        hash: getAttr(objectData, 'hash'),
+        value: valueData.value,
+        args,
+        children: Object.assign({}, parameters), //convert to map with index as key
+        variableDefs,
+        type: 'array',
+        inline: true
+    }
+}
 
 const set = (state, objectData) => {
 
@@ -70,6 +86,14 @@ const greaterThan    = (...args) => (binOp(...args))
 const and            = (...args) => (binOp(...args))
 const or             = (...args) => (binOp(...args))
 const binOp = (state, objectData, valueData) => ({
+    hash: getAttr(objectData, 'hash'),
+    type: valueData.type,
+    variableDefs: [],
+    children: {},
+    args: {},
+    inline: true
+})
+const conditional = (state, objectData, valueData) => ({
     hash: getAttr(objectData, 'hash'),
     type: valueData.type,
     variableDefs: [],
@@ -209,8 +233,8 @@ const apply = (state, objectData) => {
         ))
         .filter((param) => (param !== undefined))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
-    console.log(parameters)
-    const children = parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
+    const children =
+          parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
         : parameters.length === 3 ? { op1: parameters[0], function: parameters[1], op2: parameters[2] } //binop
         : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
         : {} //error
@@ -237,8 +261,7 @@ const ternary = (state, objectData) => {
         children: { condition: parameters[0],then: parameters[1], alt: parameters[2] },
         args,
         variableDefs,
-        inline: false,
-        vis: { name: getName(state, objectData) }
+        inline: false
     }
 }
 
@@ -260,16 +283,21 @@ const text = (state, objectData) => {
 }
 
 const group = (state, objectData) => {
-    const paramNames = ["childElement1", "childElement2"]
+    const paramNames = ["childElement1", "childElement2", "childElements"]
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((child) => (child !== undefined))
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     //need to sort by z-order
-    const children = parameters.length ===1
-        ? { childElement1: parameters[0] }
-        :{ childElement1: parameters[0], childElement2: parameters[1] }
+    let children = {}
+    if (parameters[0].type === 'array'){
+        children = { childElements: parameters[0] }
+    } else {
+        children =
+            parameters.length === 1 ? { childElement1: parameters[0] }
+            :{ childElement1: parameters[0], childElement2: parameters[1] }
+    }
     return {
         hash: getAttr(objectData, 'hash'),
         type: 'group',
@@ -317,6 +345,7 @@ export const primitives = {
     and,
     or,
     not,
+    conditional,
     getIndex,
     contains,
     get,

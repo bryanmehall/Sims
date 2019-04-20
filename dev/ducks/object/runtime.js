@@ -25,6 +25,7 @@ import { compile } from './compiler'
 
 */
 //sim this.runtime
+//pass value of output
 
 
 const checkTypes = (type, vars) => {
@@ -39,30 +40,55 @@ export class Runtime {
     //all lynx state in handled by this runtime object
     constructor(initState, canvas) { //init state is the object table for now
         const runtime = this
+        this.outputs = {}
+        this.inputs = {}
+        this.state = {}
+        const lynxState = initState.sim.object
+        this.hashTable = lynxState
+        const { functionTable, outputs } = compile(lynxState)
+        this.functionTable = functionTable
+
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
         canvas.width = width
         canvas.height = height
         const ctx = canvas.getContext('2d')
-        const lynxState = initState.sim.object
-        const { renderMonad, functionTable, stateArgs } = compile(lynxState)
-        const stateInputs = stateArgs.reduce((inputs, arg) => (
-            Object.assign(inputs, { [arg.hash]: { value: undefined, available: true } })
-        ), {})
-        const stateOutputs = stateArgs.reduce((outputs, arg) => (
-            Object.assign(outputs, {
-                [arg.hash]: {
-                    evaluation: 'lazy',
-                    open: true,
-                    value: () => (renderMonad(functionTable)), //take inputs as arg
-                    hook: (renderer) => {
-                        renderFunctions.clear()
-                        renderer(renderFunctions, runtime.inputs)
-                    },
-                    inputs: ['mouseX', 'mouseY', 'mouseDown', "$hash__3284533923"]
-                }
-            })
-        ), {})
+
+        const hooks = {
+            render: (renderer) => {
+                renderFunctions.clear()
+                renderer(renderFunctions, runtime.inputs)
+            },
+            state: (value, hash) => {
+
+                this.state[hash] = value
+            }
+        }
+
+
+
+        Object.keys(outputs).forEach((outputKey) => {
+            const output = outputs[outputKey]
+            const ast = output.ast
+            const args = ast.args
+            const inputs = Object.values(args)
+                .map((arg) => {
+                    const inputName = arg.type === 'input' ? arg.name : arg.hash
+                    Object.assign(runtime.inputs, {
+                        [inputName]: { available: true, value: 0 }
+                    })
+                    return inputName
+                })
+                .filter((input) => (typeof input !== 'undefined'))
+            this.outputs[outputKey] = {
+                evaluation: 'lazy',
+                open: true,
+                hash: ast.hash,
+                value: output.valueFunction,
+                hook: ast.hash === 'apphash' ? hooks.render : hooks.state,
+                inputs
+            }
+        }, this)
         canvas.addEventListener('mousemove', (e) => {
             const mouseX = e.pageX - e.currentTarget.offsetLeft || 0
             const mouseY = e.pageY - e.currentTarget.offsetTop || 0
@@ -76,6 +102,10 @@ export class Runtime {
         })
         canvas.addEventListener('mouseup', () => {
             this.inputs.mouseDown = { available: true, value: false }
+            this.checkOutputs()
+        })
+        document.addEventListener('keydown', (e) => {
+            this.inputs.currentKey = { available: true, value: e.key }
             this.checkOutputs()
         })
 
@@ -96,54 +126,28 @@ export class Runtime {
             }
         }
 
-
-        this.inputs = {
-            mouseX: {
-                available: true,
-                value: 25
-            },
-            mouseY: {
-                available: true,
-                value: 50
-            },
-            mouseDown: {
-                available: false,
-                value: false
-            },
-            time: {
-                avalilable: true,
-                value: () => (performance.now())
-            },
-            ...stateInputs
-        }
-        this.outputs = {
-            //add other outputs from compile here
-            render: {
-                evaluation: 'lazy',
-                open: true,
-                value: () => (renderMonad(functionTable, runtime.inputs)), //take inputs as arg
-                hook: (renderer) => {
-                    renderFunctions.clear()
-                    renderer(renderFunctions)
-                },
-                inputs: ['mouseX', 'mouseY', 'mouseDown', "$hash__3284533923"]
-            }
-        }
         this.checkOutputs()
     }
+    //check if any of "output"'s inputs are available
     inputAvailable(output){
-        return output.inputs.some((name) => (this.inputs[name].available))
+        return output.inputs.some((name) => (this.inputs[name].available)) || output.inputs.length === 0
     }
+
+    //for each output if it is available check inputs. if it has input available then run hook
     checkOutputs() {
-        Object.values(this.outputs).forEach(this.runOutput, this) //pass 'this' to second parameter of forEach to define 'this' in callback
-        //for each output if it is available check inputs. if it has input available then run hook
+        //pass 'this' to second parameter of forEach to define 'this' in callback
+        Object.values(this.outputs).forEach(this.runOutput, this)
     }
     runOutput(output) {
         if (output.open){
             const inputAvailable = this.inputAvailable(output)
             if (inputAvailable){
-                const value = output.value() //inputs go here
-                output.hook(value)
+                const stateArgs = output.inputs
+                    .filter((i) => (i.includes('$hash')))
+                    .map((i) => (this.state[i] || 0))
+                const args = [this.functionTable, this.inputs].concat(stateArgs)
+                const value = output.value.apply(null, args) //inputs go here
+                output.hook(value, output.hash)
             }
         }
     }

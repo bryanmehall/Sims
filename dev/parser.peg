@@ -25,6 +25,15 @@ function createBinOp(left, right, op){
             function:symbolTable[op]
     } 
 }
+function createTernOp(first, second, third, op){
+    return {
+        jsPrimitive:{type:"apply"},
+        op1:first,
+        op2:second,
+        op3:third,
+        function:op
+    }
+}
 function createApply(arg, op){
 	return {
             jsPrimitive:{type:"apply"},
@@ -38,7 +47,14 @@ function createFunction(name){
         	jsPrimitive:{type:"function"}
     }
 }
-function createArray(elements){
+function createArray(elementValues){
+    var elements = elementValues.map(function(value, i){
+        return {
+            instanceOf:"element",
+            index: createString(i), //todo: replace this indexing with an index computed at runtime by passing it in as an argument to the element --concat would need to update indexes
+            elementValue:value
+        }
+    })
     return {
             instanceOf:"array",
             jsPrimitive:{ type:"array", value:elements}
@@ -81,10 +97,16 @@ Attribute
        }
    }
 Expression "expression"
-	= Ternary /  Or / Array
-    
+	=  Conditional / Array
+
+Conditional "conditional"
+    = condition:Or _ "?"_ then:Expression _":"_ alt:Expression {
+    return createTernOp(condition, then, alt, "conditional")
+    }
+    / Or
+
 Value "value"
-	=  Primitive /Bool/ Number / String / Get / Object / Name
+	=  Primitive / Bool / Number / String / Get / Object / Name
 
 Apply "function application"
 	= name:Name "("arg:Expression")"{return createApply(arg, name)}
@@ -104,20 +126,22 @@ Sum "sum"
 Product "product"
 	= left:Value _ op:("*"/"/") _ right:Product { return createBinOp(left, right, op)}
     / Not
-    
+
 Not "not"
     ="!"value:Not {return createApply(value, "not")}
     / Apply / Value
 
 Name "name"
 	= name:[a-zA-Z0-9]+ {return name.join("")}
-    
+
 New = "new "name:Name _ Comment? {return name}
+
 Search = query:Name {
 	return {
             jsPrimitive:{type:"search", "query":query}
         }
     }
+
 ////////references
 Get "get"
     = root:Search? attributes:("."Name)+ {
@@ -133,16 +157,6 @@ Get "get"
     }
     return attributes.reduce(buildPath, root)
 }
-
-Ternary "ternary"
-    = "if" _ condition:Value _ "then"_ then:Value _"else"_ alt:Value {
-    return {
-        	instanceOf:"ternary",
-        	condition:condition,
-        	then:then,
-        	alt:alt
-    }
-    }
      
 ////////primitives
 Number 
@@ -171,16 +185,24 @@ ArrayElement "array element"
 	= Object / Expression
     
 Array "array"
-    ='['_ head:ArrayElement tail:(','_ ArrayElement)*']' {
+    = SingleLineArray / MultilineArray
+    
+SingleLineArray "single line array"
+    ='['_ head:ArrayElement* tail:(','_ ArrayElement)*']' {
     	var remaining = tail.map(function(expr){return expr[2]})
     	return createArray([head].concat(remaining))
+    }
+MultilineArray "multi line array"
+    ='['"{#{\n""    "* head:ArrayElement tail:('\n' '    '*ArrayElement)*'}#}\n''    '*']'{
+        var remaining = tail.map(function(expr){return expr[2]})
+        return createArray([head].concat(remaining))
     }
 
 Map "map"
     = '{'_ firstKey:ArrayElement ':'_ firstValue:ArrayElement _"}"
 
 Bool "bool"
-	= value:("true" / "false") {
+    = value:("true" / "false") {
     return {
         	jsPrimitive:{type:"bool", value:value==="true"}
        }

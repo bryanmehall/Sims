@@ -34,6 +34,9 @@ childElement2 = new attribute
     name:"childElement2"
     inverseAttribute: parentGroup
 
+element = new object
+    name:"element"
+
 parentGroup = new attribute
     name:"parentGroup"
 
@@ -58,9 +61,15 @@ nextElement = new attribute
 
 previousElement = new attribute
     name:"previousElement"
+
 value = new attribute
     name:"value"
+elementValue = new attribute
+    name:"elementValue"
+    inverseAttribute:parentElement
 
+parentElement = new attribute
+    name:"parentElement"
 
 parentConcept = new attribute
     name:"parentConcept"
@@ -110,6 +119,8 @@ set = new object
     jsPrimitive:{set}
 array = new object
     name:"array"
+index = new attribute
+    name:"index"
 setEquiv = new attribute
     name:"a"
 subset1 = new attribute
@@ -161,6 +172,9 @@ forEach = new attribute
 ternary = new object
     name:"ternary"
     jsPrimitive:{ternary}
+conditional =new attribute
+    name: "conditional"
+    jsPrimitive:{conditional}
 
 condition = new attribute
     name:"condition"
@@ -182,52 +196,42 @@ func = new object
 
 addition = new func
     name:"addition"
-    caller:addition.parentValue
     jsPrimitive:{addition}
 
 subtraction = new func
     name:"subtraction"
-    caller:subtraction.parentValue
     jsPrimitive:{subtraction}
 
 multiplication = new func
     name:"multiplication"
-    caller:multiplication.parentValue
     jsPrimitive:{multiplication}
 
 division = new func
     name:"division"
-    caller:division.parentValue
     jsPrimitive:{division}
 
 equal = new func
     name:"equal"
-    caller:equal.parentValue
     jsPrimitive:{equal}
 
 lessThan = new func
     name:"lessThan"
-    caller:lessThan.parentValue
     jsPrimitive:{lessThan}
 
 greaterThan = new func
     name:"greaterThan"
-    caller:greaterThan.parentValue
     jsPrimitive:{greaterThan}
 
 and = new func
     name:"and"
-    caller:and.parentValue
     jsPrimitive:{and}
 
 or = new func
     name:"or"
-    caller:or.parentValue
     jsPrimitive:{or}
 
 not = new func
     name:"not"
-    caller:not.parentValue
     jsPrimitive:{not}
 
 apply = new object

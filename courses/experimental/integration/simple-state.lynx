@@ -2,19 +2,20 @@ window = new group
     name:"window"
     childElement1: new get
         jsPrimitive:{get}
-        rootObject:checkbox
+        rootObject:counter
         attribute:graphicalRepresentation
 
-checkbox = new object
-    name:"checkbox"
-    isChecked:true
+counter = new object
+    name:"counter"
     graphicalRepresentation: new text
         name:"box"
-        mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30
-        isClicked: box.mouseOver && app.mouse.down
-        isChecked: box.isClicked ? !box.isChecked.previousState : box.isChecked.previousState
-        innerText: box.isChecked ? "1" : "0"
-        x:30
+        isDragging:box.isDragging.previousState && app.mouse.down
+        mouseOver: app.mouse.pos.x > box.x && app.mouse.pos.x < box.x + box.width
+        count: box.mouseOver ? box.count.previousState+1 : box.count.previousState-1
+        innerText: box.count-200
+        x:20
+        width:20
+        height:20
         y:30
 
 state = new object
@@ -24,6 +25,10 @@ previousState = new attribute
     name:"previousState"
 isChecked = new attribute
     name:"isChecked"
+isDragging = new attribute
+    name:"isDragging"
+count = new attribute
+    name:"count"
 mouseOver = new attribute
     name:"mouseOver"
 isClicked = new attribute

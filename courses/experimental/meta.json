@@ -146,6 +146,13 @@
 			"title":"Integration",
 			"contentBlocks":[
                 {
+					"id": "simple-state",
+					"title":"Simple state",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "checkbox",
 					"title":"Checkbox",
 					"text":"simple state demonstration",
@@ -198,6 +205,13 @@
 					"id": "copy",
 					"title":"array problem",
 					"text":"array",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "group-children",
+					"title":"Group Children",
+					"text":"test making child elements of group be array",
 					"type":"anim",
 					"length":10
 				},

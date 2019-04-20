@@ -1,6 +1,10 @@
 window = new group
     name:"window"
     childElement1: new text
+        attributes:[
+            "a",
+            2
+        ]
         name:"txt"
         x:30
         y:20
@@ -14,8 +18,7 @@ array = new object
             jsPrimitive:{get}
             attribute:equalTo
             rootObject:new object
-                name:"apply"
-                attributes:["a", "b"]
+                name:"apply" 
                 equalTo: apply.function.result //should be a contains object with array and value as args
                 function: new function
                     name:"contains"
@@ -23,7 +26,7 @@ array = new object
                         jsPrimitive:{contains}
                         array:txt.attributes
                         value: contains.caller.value
-                array:apply.attributes //apply.attributes works but array.attributes does not
+                array:txt.attributes //apply.attributes works but array.attributes does not
                 value:"c"
 
 getIndex = new function

@@ -1,7 +1,7 @@
 /* eslint pure/pure: 2 */
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS, UNDEFINED, STATE_ARG } from './constants'
 import { primitives } from './primitives'
-import { isUndefined } from './utils'
+import { isUndefined, objectFromEntries } from './utils'
 import { getValue, getName, objectFromHash, getInverseAttr, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
 
@@ -65,7 +65,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
                 const nextValue = objectFromHash(state, contextPath.value)
                 const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
                 return returnFunctionData
             } else {
                 return undefined
@@ -102,7 +102,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 context: addContextToGetStack(state, context, attr, currentObject, nextValue),
                 searchContext: nextValue.inverses //switch to contex t
             } }
-        const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs }, attr)
+        const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs })
         //combine args from db search ast, with any args in putting this in contex t of current with db arg
         const combinedArgs = Object.assign({}, ast.args, args, dbSearchArg)
         const searchAST = Object.assign({}, nextJSValue, { args: combinedArgs, varDefs })
@@ -132,7 +132,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 getStack: newGetStack
             }
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
-            return argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+            return argsToVarDefs(state, currentObject, nextValueFunctionData)
         }
         const arg = Object.values(nextJSValue.args).filter((arg) => (arg.type === LOCAL_SEARCH))
         if (arg.length > 1) { //this would mean that the get object has more than one argument
@@ -147,7 +147,7 @@ const getNext = (state, currentObject, searchArgData) => {
             getStack: combinedGetStack
         }
         const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
-        const getData = argsToVarDefs(state, currentObject, getFunctionData, attr)
+        const getData = argsToVarDefs(state, currentObject, getFunctionData)
         return getData
     } else {
         const newSearchArgs = {
@@ -157,7 +157,7 @@ const getNext = (state, currentObject, searchArgData) => {
             getStack: newGetStack
         }
         const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-        const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData, attr)
+        const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
         return returnFunctionData
     }
 }
@@ -197,8 +197,8 @@ const createVarDef = (state, currentObject, searchArgData) => {
         //get rid of prim when refactoring? it isn't part of the main rendering monad
     }
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.variableDefs }
+    const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData)
 
-    const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData, inverseAttr)
     const searchName = getName(state, currentObject) //remove for debug
     if (isUndefined(jsResult)) {
         console.warn('adding recursive function at varDef', currentObject, searchName)
@@ -270,11 +270,10 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to variableDefs
-const argsToVarDefs = (state, currentObject, functionData, attr) => { //test if the args in functionData are resolved...return
+export const argsToVarDefs = (state, currentObject, functionData) => { //test if the args in functionData are resolved...return
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
     //if it does, the search is resolved, if not, pass it up the tree
-    //const functionData = resolveInverses(state, functionDataWithInverse, attr)//varDefs just pass through
     const combinedArgs = functionData.args
     const searchArgs = convertToSearchArgs(combinedArgs)
     const resolvedFunctionData = searchArgs.map((searchArgData) => {
@@ -286,15 +285,43 @@ const argsToVarDefs = (state, currentObject, functionData, attr) => { //test if 
             return reduced
         })
         .reduce(reduceFunctionData, functionData)
-    return resolvedFunctionData
+    //overwrite state args with updated state args (resolve args of state AST)
+    const newStateArgs = resolveStateASTs(state, combinedArgs, currentObject)
+    const argsWithState = Object.assign({}, resolvedFunctionData.args, newStateArgs)
+    return { varDefs: resolvedFunctionData.varDefs, args: argsWithState }
 }
+
+/*
+for resolving state args above the top of the state's ast
+take all args,
+filter out state args,
+resolve function data on the ast of each state arg,
+combine back into asts then back into state
+*/
+const resolveStateASTs = (state, args, currentObject) => (
+    Object.entries(args)
+        .filter((entry) => (entry[1].type === STATE_ARG))
+        .map((entry) => {
+            const argKey = entry[0]
+            const arg = entry[1]
+            if (arg.hasOwnProperty('ast')){
+                const ast = arg.ast
+                const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: [] })
+                const orderedVarDefs = varDefs.concat(ast.variableDefs.reverse())//does  this reversing var defs work for the general case?
+                const newAst = Object.assign({}, ast, { args, variableDefs: orderedVarDefs })
+                return [argKey, Object.assign({}, arg, { ast: newAst })]
+            } else {
+                return [argKey, arg]
+            }
+        })
+        .reduce(objectFromEntries, {})
+)
 
 //combine args of children and test which of these args are resolved
 export const getArgsAndVarDefs = (state, childASTs, currentObject, childAttrs) => {
     const combinedArgs = combineArgs(childASTs, childAttrs)//combine arguments of sub functions
     const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
-    const inverseAttr = 'x'
-    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData, inverseAttr)
+    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData)
 
     return { args, variableDefs: varDefs }
 }

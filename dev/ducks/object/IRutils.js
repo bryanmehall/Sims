@@ -51,7 +51,8 @@ export const astToFunctionTable = (ast) => {
 }
 
 export const getStateArgs = (ast) => {
-    const stateArgs = Object.values(ast.args).filter((arg) => (arg.type === STATE_ARG))
+    const stateArgs = Object.values(ast.args)
+        .filter((arg) => (arg.type === STATE_ARG))
     return stateArgs
 }
 
