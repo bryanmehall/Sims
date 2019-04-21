@@ -25,7 +25,8 @@ var config = {
 	devtool: 'source-map',
 	module: {
 		loaders: [
-			{
+            //{ test: /\.tsx?$/, loader: "awesome-typescript-loader" },
+            {
                 include: DEV,
                 exclude: "/node_modules/",
                 loader: "babel-loader",
@@ -37,7 +38,7 @@ var config = {
 		]
 	},
 	resolve: {
-		extensions: ['.js', '.jsx']
+		extensions: ['.js', '.jsx', ".ts", ".tsx"]
 	},
 	plugins: [
 		HtmlWebpackPluginConfig

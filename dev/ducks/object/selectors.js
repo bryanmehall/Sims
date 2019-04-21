@@ -57,6 +57,7 @@ const getNext = (state, currentObject, searchArgData) => {
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
     const attr = getAttr(nextGet, 'attribute')//attribute to go to
+    console.log(attr, searchArgData)
     //search through context to see if the current attr from the get stack matches any of the first attrs from the context
     //if it does then return the
     const contextFunctionArray = context.map(
@@ -80,6 +81,7 @@ const getNext = (state, currentObject, searchArgData) => {
         throw 'LynxError: handle context here'
     }
     if (attr === 'previousState'){
+        console.log(currentObject)
         return createStateArg(state, currentObject, argKey);
     }
 
@@ -163,7 +165,6 @@ const getNext = (state, currentObject, searchArgData) => {
 }
 
 const addContextToGetStack = (state, context, attr, currentObject, nextValue) => { //combine this with the context generator in objectUtils
-
     const hash = getAttr(currentObject, 'hash')
     const searchName = getName(state, currentObject) //remove for debug
     const inverseAttr = getInverseAttr(state, attr)
@@ -181,21 +182,14 @@ const createVarDef = (state, currentObject, searchArgData) => {
     const { argKey, context } = searchArgData
     //get primitve of the end of the get stack
     const { value: jsResult } = getValue(state, 'jsPrimitive', currentObject)
-    const inverseAttr = context[0].attr //todo: need to loop through context
-    //add context to all resulting arguments
     const args = typeof jsResult.args ==='undefined' ? {} : jsResult.args
     const argsWithContext = Object.entries(args)
-        .filter((entry) => (entry[0] !== 'prim'))
         .reduce((args, entry) => {
             const targetContext = entry[1].context || [] //if context is undefined
             const appendedContext = targetContext.concat(context)
             const argWithAppendedContext = { ...{}, ...entry[1], context: appendedContext }
             return { ...{}, ...args, [entry[0]]: argWithAppendedContext }
         }, {})
-    if (args.hasOwnProperty('prim')) {
-        Object.assign(argsWithContext, { prim: true })
-        //get rid of prim when refactoring? it isn't part of the main rendering monad
-    }
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.variableDefs }
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData)
 
@@ -291,6 +285,14 @@ export const argsToVarDefs = (state, currentObject, functionData) => { //test if
     return { varDefs: resolvedFunctionData.varDefs, args: argsWithState }
 }
 
+//combine args of children and test which of these args are resolved
+export const getArgsAndVarDefs = (state, childASTs, currentObject, childAttrs) => {
+    const combinedArgs = combineArgs(childASTs, childAttrs)//combine arguments of sub functions
+    const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
+    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData)
+    return { args, variableDefs: varDefs }
+}
+
 /*
 for resolving state args above the top of the state's ast
 take all args,
@@ -316,12 +318,3 @@ const resolveStateASTs = (state, args, currentObject) => (
         })
         .reduce(objectFromEntries, {})
 )
-
-//combine args of children and test which of these args are resolved
-export const getArgsAndVarDefs = (state, childASTs, currentObject, childAttrs) => {
-    const combinedArgs = combineArgs(childASTs, childAttrs)//combine arguments of sub functions
-    const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
-    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData)
-
-    return { args, variableDefs: varDefs }
-}

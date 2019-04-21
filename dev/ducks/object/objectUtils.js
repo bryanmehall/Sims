@@ -169,7 +169,6 @@ export const addContext = (state, prop, primitive, objectData) => {
     const contextAttr = typeof inverseAttr === 'undefined' ? 'g' : inverseAttr
     const primitiveArgs = typeof primitive.args === 'undefined' ? {} : primitive.args
     const argsWithContext = Object.entries(primitiveArgs)
-    .filter((arg) => arg[0] !== 'prim')
     .reduce((args, arg) => {
         const hash = getAttr(objectData, 'hash')
         const newContext = {
@@ -182,10 +181,6 @@ export const addContext = (state, prop, primitive, objectData) => {
         })
         return Object.assign({}, args, { [arg[0]]: argWithContext })
     }, {})
-    if (primitiveArgs.hasOwnProperty('prim')) {
-        Object.assign(argsWithContext, { prim: true })
-        //get rid of prim when refactoring? it isn't part of the main rendering monad
-    }
     const primitiveWithContext = Object.assign({}, primitive, { args: argsWithContext })
     return primitiveWithContext
 }

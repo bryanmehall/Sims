@@ -273,7 +273,7 @@ const text = (state, objectData) => {
     const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: getAttr(objectData, 'hash'),
-        args: Object.assign(args, { prim: true }), //combine args of x,y,text
+        args, //combine args of x,y,text
         children: { x: parameters[0], y: parameters[1], innerText: parameters[2] },
         type: 'text',
         variableDefs,

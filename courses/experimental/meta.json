@@ -153,6 +153,13 @@
 					"length":10
 				},
                 {
+					"id": "textbox",
+					"title":"Textbox",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "checkbox",
 					"title":"Checkbox",
 					"text":"simple state demonstration",

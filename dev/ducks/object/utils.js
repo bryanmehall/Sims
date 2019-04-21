@@ -34,7 +34,9 @@ export const formatArg = (arg) => {
         case GLOBAL_SEARCH:
             return arg.query
         case STATE_ARG:
-            return 'state'
+            return 'state '+arg.hash
+        case 'input':
+            return arg.name
         default:
             console.log(arg)
             throw `type ${arg.type} not found`

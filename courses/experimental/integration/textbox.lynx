@@ -2,26 +2,20 @@ window = new group
     name:"window"
     childElement1: new get
         jsPrimitive:{get}
-        rootObject:checkbox
+        rootObject:textbox
         attribute:graphicalRepresentation
 
-checkbox = new object
-    name:"checkbox"
+textbox = new object
+    name:"textbox"
     isChecked:true
     graphicalRepresentation: new text
         name:"box"
-        mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30
-        isClicked: box.mouseOver && app.mouse.clicked
-        isChecked: box.isClicked ? !box.isChecked.previousState : box.isChecked.previousState
-        innerText: box.isChecked ? "1" : "0"
+        innerText: app.keyboard.currentKey
         x:30
         y:30
 
 state = new object
     name:"state"
-
-previousState = new attribute
-    name:"previousState"
 isChecked = new attribute
     name:"isChecked"
 mouseOver = new attribute

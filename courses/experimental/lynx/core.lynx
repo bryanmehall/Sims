@@ -18,7 +18,18 @@ app = new object
             y:new input
                 name:"mouseY"
                 jsPrimitive:{input}
+        clicked:!app.mouse.down && app.mouse.down.previousState
+    keyboard: new object
+        currentKey: new input
+            name:"currentKey"
+            jsPrimitive:{input}
     graphicalRepresentation:window
+
+previousState = new attribute
+    name:"previousState"
+
+keyboard = new attribute
+    name: "keyboard"
 
 input = new object
     name:"input"
@@ -185,6 +196,8 @@ alt = new attribute
 
 down = new attribute
     name:"down"
+clicked = new attribute
+    name:"clicked"
 query = new attribute
     name:"query"
 search = new object

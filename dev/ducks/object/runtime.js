@@ -60,7 +60,6 @@ export class Runtime {
                 renderer(renderFunctions, runtime.inputs)
             },
             state: (value, hash) => {
-
                 this.state[hash] = value
             }
         }
@@ -68,6 +67,7 @@ export class Runtime {
 
 
         Object.keys(outputs).forEach((outputKey) => {
+            console.log(outputs)
             const output = outputs[outputKey]
             const ast = output.ast
             const args = ast.args
@@ -105,7 +105,11 @@ export class Runtime {
             this.checkOutputs()
         })
         document.addEventListener('keydown', (e) => {
-            this.inputs.currentKey = { available: true, value: e.key }
+            this.inputs.currentKey = { available: true, value: [e.key] } //make it possible to have multiple keys
+            this.checkOutputs()
+        })
+        document.addEventListener('keyup', (e) => {
+            this.inputs.currentKey = { available: true, value: [] } //make this just pop the key up key out of the set
             this.checkOutputs()
         })
 

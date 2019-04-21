@@ -94,7 +94,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'mouse'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'keyboard'].includes(entry[0])
         )).map((entry) => {
             const result = typeof entry[1] === 'string'
             ? [entry[0], objectFromName(objectTable, entry[1])]
@@ -121,7 +121,7 @@ const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.o
 const addAST = (ast, nodesAndLinks) => { //helper function for addAST
     const { nodes, links } = nodesAndLinks
     const astIndexes = nodes.reduce(function(a, node, i) { //get all indexes
-        if (getHash(node.object) === ast.hash)
+        if (getHash(node.object) === ast.hash || ast.hash === 'apphash' && node.object.hasOwnProperty('jsPrimitive') && node.object.jsPrimitive.type === 'app')
             a.push(i)
         return a
     }, [])
@@ -161,15 +161,11 @@ const displayArgs = (ast) => {
 }
 
 const displayArg = (arg, argKey) => {
-    if (arg === true){
-        return <tspan key={"prim"} style={{ fill: 'gray' }}>{'prim'}</tspan>
-    } else {
-        const color = (arg.type === LOCAL_SEARCH) ? "green" :
-            arg.type === INVERSE ? 'red' :
-            arg.type === GLOBAL_SEARCH ? 'purple' :
-            "black"
-        return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
-    }
+    const color = (arg.type === LOCAL_SEARCH) ? "green" :
+        arg.type === INVERSE ? 'red' :
+        arg.type === GLOBAL_SEARCH ? 'purple' :
+        "black"
+    return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
 }
 
 const Node = ({ x, y, object, setActive, ast, activeNode }) => {
@@ -184,7 +180,7 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
         if (ast.hasOwnProperty('value')){
             label = JSON.stringify(ast.value)
         } else {
-            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}{context}</tspan>
+            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
         }
 
     } else {
