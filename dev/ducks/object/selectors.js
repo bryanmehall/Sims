@@ -40,12 +40,12 @@ function createStateArg(state, currentObject, argKey) {
     //create ast for state with state argument resolved
     const astArgs = Object.assign({}, ast.args, { [hash]: { hash, type: STATE_ARG } })
     delete astArgs[argKey]
-    const astVarDefs = ast.variableDefs.concat(varDef)
+    const astVarDefs = ast.varDefs.concat(varDef)
     const arg = {
         hash,
         type: STATE_ARG,
         getStack: [],
-        ast: Object.assign({}, ast, { args: astArgs, variableDefs: astVarDefs }),
+        ast: Object.assign({}, ast, { args: astArgs, varDefs: astVarDefs }),
         searchContext: currentObject.inverses
     }
     return { args: { [hash]: arg }, varDefs: [varDef] }
@@ -104,7 +104,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 context: addContextToGetStack(state, context, attr, currentObject, nextValue),
                 searchContext: nextValue.inverses //switch to contex t
             } }
-        const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.variableDefs })
+        const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.varDefs })
         //combine args from db search ast, with any args in putting this in contex t of current with db arg
         const combinedArgs = Object.assign({}, ast.args, args, dbSearchArg)
         const searchAST = Object.assign({}, nextJSValue, { args: combinedArgs, varDefs })
@@ -190,7 +190,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
             const argWithAppendedContext = { ...{}, ...entry[1], context: appendedContext }
             return { ...{}, ...args, [entry[0]]: argWithAppendedContext }
         }, {})
-    const targetFunctionData = { args: argsWithContext, varDefs: jsResult.variableDefs }
+    const targetFunctionData = { args: argsWithContext, varDefs: jsResult.varDefs }
     const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData)
 
     const searchName = getName(state, currentObject) //remove for debug
@@ -263,7 +263,7 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 }
 
 //if an an argument is defined entirely under the current object in the tree then it is considered
-//resolved and is added to variableDefs
+//resolved and is added to varDefs
 export const argsToVarDefs = (state, currentObject, functionData) => { //test if the args in functionData are resolved...return
     //get args that are searches into list of pairs [argKey, argValue]
     //for each searchArg, test if the query matches the name of the current object
@@ -289,8 +289,7 @@ export const argsToVarDefs = (state, currentObject, functionData) => { //test if
 export const getArgsAndVarDefs = (state, childASTs, currentObject, childAttrs) => {
     const combinedArgs = combineArgs(childASTs, childAttrs)//combine arguments of sub functions
     const initialFunctionData = { args: combinedArgs, varDefs: [] } //search args moves resolved defs from args to varDefs
-    const { args, varDefs } = argsToVarDefs(state, currentObject, initialFunctionData)
-    return { args, variableDefs: varDefs }
+    return argsToVarDefs(state, currentObject, initialFunctionData)
 }
 
 /*
@@ -309,8 +308,8 @@ const resolveStateASTs = (state, args, currentObject) => (
             if (arg.hasOwnProperty('ast')){
                 const ast = arg.ast
                 const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: [] })
-                const orderedVarDefs = varDefs.concat(ast.variableDefs.reverse())//does  this reversing var defs work for the general case?
-                const newAst = Object.assign({}, ast, { args, variableDefs: orderedVarDefs })
+                const orderedVarDefs = varDefs.concat(ast.varDefs.reverse())//does  this reversing var defs work for the general case?
+                const newAst = Object.assign({}, ast, { args, varDefs: orderedVarDefs })
                 return [argKey, Object.assign({}, arg, { ast: newAst })]
             } else {
                 return [argKey, arg]

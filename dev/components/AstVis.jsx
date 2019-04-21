@@ -100,7 +100,7 @@ const astToD3 = (ast, level, parId) => {
         const childD3 = astToD3(childAst, level+1, id)
         return { nodes: childD3.nodes, links: [...childD3.links, newLink] }
     })
-    const varDefs = ast.variableDefs.map((varDef) => {
+    const varDefs = ast.varDefs.map((varDef) => {
         const newLink = { source: parId, target: id }
         id+=1
         const childD3 = astToD3(varDef.ast, level+1, id)
@@ -129,7 +129,7 @@ const bfsAST = (ast, d3Data, queue) => {
 
     const childrenASTs = Object.values(first.children)
         .map((ast) => (Object.assign({}, ast, { parId: i, level: level+1 })))
-    const varDefASTs = first.variableDefs.map((varDef) => (Object.assign({}, varDef.ast, { parId: i, level: level+1, varDef: true })))
+    const varDefASTs = first.varDefs.map((varDef) => (Object.assign({}, varDef.ast, { parId: i, level: level+1, varDef: true })))
     const newQueue = [...queue, ...childrenASTs, ...varDefASTs]
     return bfsAST(first, newD3Data, newQueue)
 }

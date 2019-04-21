@@ -12,7 +12,7 @@ const input = (state, objectData) => {
         children: {},
         inputName: name,
         args: { [hash]: { type: 'input', name } },
-        variableDefs: [],
+        varDefs: [],
         inline: true
     }
 }
@@ -23,7 +23,7 @@ const stateNode = (state, objectData) => {
         args: {}, //combine args of x,y,text
         children: {},
         type: 'stateNode',
-        variableDefs: [],
+        varDefs: [],
         inline: true
     }
 }
@@ -38,7 +38,7 @@ const primitive = (state, objectData, valueData) => ({
     value: valueData.value,
     args: {},
     children: {},
-    variableDefs: [],
+    varDefs: [],
     type: typeof valueData.value,
     inline: true,
 })
@@ -53,18 +53,18 @@ const array = (state, objectData, valueData) => {
         const elementValueDataWithHash = Object.assign({}, elementValueData, { hash: elementValueHash })
         const valuePrimitive = getValue(state, 'jsPrimitive', elementValueDataWithHash).value //todo: this will not work with context --need to pass prop?
         const withContext = addContext(state, 'elementValue', valuePrimitive, elementValueDataWithHash)
-        const { args, varDefs } = argsToVarDefs(state, elementData, { args: withContext.args, varDefs: withContext.variableDefs })
-        return Object.assign({}, withContext, { args, variableDefs: varDefs })
+        const { args, varDefs } = argsToVarDefs(state, elementData, { args: withContext.args, varDefs: withContext.varDefs })
+        return Object.assign({}, withContext, { args, varDefs })
     })
     const paramNames = parameters.map(() => ('element'))
 
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: getAttr(objectData, 'hash'),
         value: valueData.value,
         args,
         children: Object.assign({}, parameters), //convert to map with index as key
-        variableDefs,
+        varDefs,
         type: 'array',
         inline: true
     }
@@ -88,7 +88,7 @@ const or             = (...args) => (binOp(...args))
 const binOp = (state, objectData, valueData) => ({
     hash: getAttr(objectData, 'hash'),
     type: valueData.type,
-    variableDefs: [],
+    varDefs: [],
     children: {},
     args: {},
     inline: true
@@ -96,7 +96,7 @@ const binOp = (state, objectData, valueData) => ({
 const conditional = (state, objectData, valueData) => ({
     hash: getAttr(objectData, 'hash'),
     type: valueData.type,
-    variableDefs: [],
+    varDefs: [],
     children: {},
     args: {},
     inline: true
@@ -107,13 +107,13 @@ const getIndex = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: getAttr(objectData, 'hash'),
         args: args, //combine args of x,y,text
         children: { array: parameters[0], index: parameters[1] },
         type: 'getIndex',
-        variableDefs,
+        varDefs,
         inline: true,
         vis: { name: getName(state, objectData) }
     }
@@ -124,13 +124,13 @@ const contains = (state, objectData) => { //eventually switch to set
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: getAttr(objectData, 'hash'),
         args: args, //combine args of x,y,text
         children: { array: parameters[0], index: parameters[1] },
         type: 'contains',
-        variableDefs,
+        varDefs,
         inline: true,
         vis: { name: getName(state, objectData) }
     }
@@ -151,7 +151,7 @@ const get = (state, objectData) => {
         const attributeObject = getValue(state, 'attribute', objectData).value
         const attribute = getName(state, attributeObject)
         const next = getJSValue(state, 'placeholder', attribute, root)
-        const { args, variableDefs } = getArgsAndVarDefs(state, [next], root)
+        const { args, varDefs } = getArgsAndVarDefs(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
             hash: getAttr(objectData, 'hash'),
@@ -160,7 +160,7 @@ const get = (state, objectData) => {
             args,
             type: 'get',
             children: { value: next }, //is getting this next the cause of duplicate trees?
-            variableDefs: variableDefs
+            varDefs
         }
     } else {
         const searchArgs = Object.entries(rootObject.args)
@@ -179,7 +179,7 @@ const get = (state, objectData) => {
     return {
         hash,
         query,
-        variableDefs: [],
+        varDefs: [],
         args,
         inline: true,
         type: 'get',
@@ -193,7 +193,7 @@ const search = (state, objectData, valueData) => { //search is get root (local S
     return {
         hash,
         type: "search",
-        variableDefs: [],
+        varDefs: [],
         children: {},
         args: { search: { query, type: 'localGet', getStack: [] } }
     }
@@ -210,7 +210,7 @@ const dbSearch = (state, objectData) => {
         type: GLOBAL_SEARCH,
         query,
         hash,
-        variableDefs: [],
+        varDefs: [],
         inline: true,
         children: {},
         args: {
@@ -232,7 +232,7 @@ const apply = (state, objectData) => {
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     const children =
           parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
         : parameters.length === 3 ? { op1: parameters[0], function: parameters[1], op2: parameters[2] } //binop
@@ -242,7 +242,7 @@ const apply = (state, objectData) => {
         hash: getAttr(objectData, 'hash'),
         args,
         children,
-        variableDefs,
+        varDefs,
         inline: true,
         type: "apply",
     }
@@ -253,14 +253,14 @@ const ternary = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
-    if (variableDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    if (varDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
     return {
         hash: getAttr(objectData, 'hash'),
         type: 'ternary',
         children: { condition: parameters[0],then: parameters[1], alt: parameters[2] },
         args,
-        variableDefs,
+        varDefs,
         inline: false
     }
 }
@@ -270,13 +270,13 @@ const text = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: getAttr(objectData, 'hash'),
         args, //combine args of x,y,text
         children: { x: parameters[0], y: parameters[1], innerText: parameters[2] },
         type: 'text',
-        variableDefs,
+        varDefs,
         inline: false,
         vis: { name: getName(state, objectData) }
     }
@@ -288,7 +288,7 @@ const group = (state, objectData) => {
         getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((child) => (child !== undefined))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     //need to sort by z-order
     let children = {}
     if (parameters[0].type === 'array'){
@@ -303,7 +303,7 @@ const group = (state, objectData) => {
         type: 'group',
         children,
         args,
-        variableDefs,
+        varDefs,
         vis: { name: getName(state, objectData) }
     }
 }
@@ -313,14 +313,14 @@ const app = (state, objectData) => {
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, 'placeholder', paramName, objectData)
     ))
-    const { variableDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: 'apphash',//change this to actual hash...why isn't it there?
         children: { graphicalRep: parameters[0] },
         args,
         inline: true,
         type: 'app',
-        variableDefs,
+        varDefs,
     }
 }
 

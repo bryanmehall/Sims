@@ -40,7 +40,7 @@ export const astToFunctionTable = (ast) => {
     checkASTs(childASTs, ast)
     const childTables = childASTs.map(astToFunctionTable)
 
-    const varDefs = ast.variableDefs || []
+    const varDefs = ast.varDefs || []
     const varDefASTs = varDefs.map((varDef) => (varDef.ast))
     checkASTs(varDefASTs, ast)
     const varDefTables = varDefASTs.map(astToFunctionTable)

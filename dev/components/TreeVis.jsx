@@ -133,7 +133,7 @@ const addAST = (ast, nodesAndLinks) => { //helper function for addAST
     })
 
     const children = Object.values(ast.children)
-    const varDefChildren = ast.variableDefs.map((varDef) => (varDef.ast))
+    const varDefChildren = ast.varDefs.map((varDef) => (varDef.ast))
 
     return [...children, ...varDefChildren].reduce((nodesAndLinks, child) => (
         addAST(child, nodesAndLinks)
@@ -145,7 +145,7 @@ const getPath = (nodes, hash) => {
     const rootNodes = nodes.filter((node) => {
         const hasAST = node.hasOwnProperty('ast')
         if (hasAST) {
-            return node.ast.variableDefs.some((varDef) => (varDef.key === hash))
+            return node.ast.varDefs.some((varDef) => (varDef.key === hash))
         } else {
             return false
         }
@@ -175,7 +175,7 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
     const isPrimitive = ast !== undefined
     let label = ''
     if (isPrimitive) {
-        const activeVarDefs = ast.variableDefs.filter((varDef) => (varDef.key === activeHash))
+        const activeVarDefs = ast.varDefs.filter((varDef) => (varDef.key === activeHash))
         const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
         if (ast.hasOwnProperty('value')){
             label = JSON.stringify(ast.value)

@@ -28,7 +28,7 @@ const getWidth = (astNode) => {
 const combineChildrenAndVarDefs = (ast) => {
 	const childList = Object.entries(ast.children)
 		.map((child) => ({ name: child[0], ast:child[1], type:"child"}))
-	const varDefList = ast.variableDefs.map((varDef) => ({...varDef, type:"varDef"}))
+	const varDefList = ast.varDefs.map((varDef) => ({...varDef, type:"varDef"}))
 	return childList.concat(varDefList)
 }
 
@@ -131,7 +131,7 @@ const displayVarDefs = (ast , x, y) => {
             setActive={this.props.setActive}
             ></Trace>
     )
-    const astList = ast.hasOwnProperty('variableDefs') ? ast.variableDefs.map(varDefMap) : []
+    const astList = ast.hasOwnProperty('varDefs') ? ast.varDefs.map(varDefMap) : []
     return (
         <g>
             {astList}

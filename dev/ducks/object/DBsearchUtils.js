@@ -13,23 +13,23 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
             root = rootProps
             const getStack = arg.getStack
             if (getStack.length > 1) { throw 'get stack length greater than one' }
-            let ast, args1, variableDefs1
+            let ast, args1, varDefs1
             if (getStack.length === 0){ //generalize for getStack of length n
                 ast = getValue(state, 'jsPrimitive', root).value
-                const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
+                const { args, varDefs } = getArgsAndVarDefs(state, [ast], root)
                 args1 = args
-                variableDefs1 = variableDefs
+                varDefs1 = varDefs
             } else {
                 const attr = getAttr(getStack[0], 'attribute')
                 const nextValue = getValue(state, attr, root).value
                 ast = getValue(state, 'jsPrimitive', nextValue).value
-                const { args, variableDefs } = getArgsAndVarDefs(state, [ast], nextValue)
+                const { args, varDefs } = getArgsAndVarDefs(state, [ast], nextValue)
                 args1 = args
-                variableDefs1 = variableDefs
+                varDefs1 = varDefs
             }
             ast.inline = false
             ast.isFunction = true
-            const astWithVarDefs = Object.assign({}, ast, { args: args1, variableDefs: variableDefs1 })
+            const astWithVarDefs = Object.assign({}, ast, { args: args1, varDefs: varDefs1 })
             return {
                 key: arg.hash,
                 varDefKey: arg.hash,
@@ -54,7 +54,7 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     }
     dbCache[hash] = { //prevent recursive evaluation
         query: 'fact',
-        ast: { type: 'recursive', args: {}, variableDefs: [], children: {}, context: {} }
+        ast: { type: 'recursive', args: {}, varDefs: [], children: {}, context: {} }
     }
     const query = getJSValue(state,'placeholder', 'query', dbSearchObject).value
     const rootWithoutInverses = objectFromName(state, query)
@@ -69,8 +69,8 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     }
     const attr = getAttr(getStack[0], 'attribute')
     const ast = getJSValue(state, 'placeholder', attr, root)
-    const { args, variableDefs } = getArgsAndVarDefs(state, [ast], root)
-    const astWithArgs = Object.assign({}, ast, { args, variableDefs })
+    const { args, varDefs } = getArgsAndVarDefs(state, [ast], root)
+    const astWithArgs = Object.assign({}, ast, { args, varDefs })
     const searchData = { query, root, ast: astWithArgs }
     dbCache[hash] = searchData
     return searchData

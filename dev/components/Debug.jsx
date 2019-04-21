@@ -93,7 +93,7 @@ const ObjectData = ({ node }) => {
         objectData = <div>{name} : {hash}</div>
     }
     if( typeof node.ast !== 'undefined'){
-        const varDefs = node.ast.variableDefs
+        const varDefs = node.ast.varDefs
         const args = node.ast.args
         astData = <div>
                 Args:

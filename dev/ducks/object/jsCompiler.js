@@ -41,7 +41,7 @@ const contains = (ast) => {
 
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
-    const varDefs = varDefsToString(ast.variableDefs)
+    const varDefs = varDefsToString(ast.varDefs)
     const stateDefs = getStateArgs(ast)
         .map((arg) => (`\tvar ${arg.hash} = inputs.${arg.hash}.value;`))
         .join('\n')
@@ -52,11 +52,11 @@ const group = (ast) => {
     const elementsList = ast.children.childElements
     if (elementsList !== undefined && elementsList.type === 'array'){ //remove this check when all elements are arrays
         const programText = buildChildren(elementsList, '(prim)\n')
-        const varDefs = varDefsToString(ast.variableDefs)
+        const varDefs = varDefsToString(ast.varDefs)
         return `\t//group\n${varDefs}\treturn function(prim) { ${programText}(prim) }`
     } else {
         const programText = buildChildren(ast, '(prim)\n')
-        const varDefs = varDefsToString(ast.variableDefs)
+        const varDefs = varDefsToString(ast.varDefs)
         return `\t//group\n${varDefs}\treturn function(prim) { ${programText}(prim) }`
     }
 
@@ -64,7 +64,7 @@ const group = (ast) => {
 
 const text = (ast) => {
     const programText = buildChildren(ast, ', ') //space is important for unit tests
-    const varDefs = varDefsToString(ast.variableDefs)
+    const varDefs = varDefsToString(ast.varDefs)
     return `\t//text\n${varDefs}\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
 }
 
@@ -73,12 +73,7 @@ const get = (ast) => {
         return ast.hash
     } else {
         const programText = buildChildren(ast, "")
-        const varDef = varDefsToString(ast.variableDefs)
-
-        /*
-        if (ast.isFunction){
-            return { varDefs: varDef, returnStatement: ast.hash }
-        }*/
+        const varDef = varDefsToString(ast.varDefs)
         const ret = programText === "" ? ast.hash + "//fix case with no children" : programText // todo: see why the case with no children is failing
         return { varDefs: varDef, returnStatement: ret } //is this structure needed or can this just return a string?
     }
@@ -98,10 +93,10 @@ const globalSearch = (ast) => {
 }
 
 const apply = (ast) => {
-    if (ast.variableDefs.length === 0){
+    if (ast.varDefs.length === 0){
         return inlineApply(ast)
     } else {
-        const varDefs = varDefsToString(ast.variableDefs)
+        const varDefs = varDefsToString(ast.varDefs)
         return `\t//apply\n${varDefs}\nreturn ${inlineApply(ast)}`
     }
 }

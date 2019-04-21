@@ -20,8 +20,8 @@ const compileOutput = (state, ast, outputs) => { //get rid of dependence on stat
     const dbASTs = resolveDBSearches(state, ast.args) //get all db searches from ast args
     const stateArgs = getStateArgs(ast) //get all state args from ast
 
-    const varDefs = ast.variableDefs.concat(dbASTs) //add db varDefs to ast varDefs
-    const astWithDB = Object.assign({}, ast, { variableDefs: varDefs }) //combine these new varDefs with ast
+    const varDefs = ast.varDefs.concat(dbASTs) //add db varDefs to ast varDefs
+    const astWithDB = Object.assign({}, ast, { varDefs }) //combine these new varDefs with ast
     const functionTable = astToFunctionTable(astWithDB) //create function table from ast
     const outputString = buildFunction(astWithDB).string //create top level function for ast
     const valueFunctionArgs = ['functionTable', 'inputs']
