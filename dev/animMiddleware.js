@@ -1,7 +1,7 @@
 import { tween, getActiveTweens } from "./anim"
 import { getValue, getAnimatable, getMax, getPlaying } from './ducks/quantity/selectors'
 import { getAnimTime, getAnimPlaying, getAnimLength} from './ducks/content/selectors'
-import {getKeyframes, getNext} from './ducks/sim/selectors'
+import { getKeyframes } from './ducks/sim/selectors'
 import QuantityActions from './ducks/quantity/actions'
 import ContentActions from './ducks/content/actions'
 

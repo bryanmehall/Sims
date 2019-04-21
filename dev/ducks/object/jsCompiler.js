@@ -1,4 +1,4 @@
-import { buildFunction, getStateArgs } from './IRutils'
+import { buildFunction } from './IRutils'
 
 const buildChildren = (ast, delimiter) => {
     const childList = Object.values(ast.children)
@@ -42,9 +42,6 @@ const contains = (ast) => {
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.varDefs)
-    const stateDefs = getStateArgs(ast)
-        .map((arg) => (`\tvar ${arg.hash} = inputs.${arg.hash}.value;`))
-        .join('\n')
     return `\t//app\n${varDefs}\n\treturn function(prim) { ${programText}(prim) }`
 }
 
@@ -78,9 +75,7 @@ const get = (ast) => {
         return { varDefs: varDef, returnStatement: ret } //is this structure needed or can this just return a string?
     }
 }
-const stateNode = (ast) => {
-    return ast.hash
-}
+const stateNode = (ast) => (ast.hash)
 const search = (ast) => (ast.hash)
 
 const globalSearch = (ast) => {
