@@ -82,7 +82,7 @@ export const compile = (state) => {
     const hashTable = flattenState(state)
     const appData = objectFromName(hashTable, 'app')
     //const appDataWithHash = Object.assign({}, appData, { props: Object.assign({}, appData.props, { hash: appHash }) })//remove prop here
-    const { value: appAST } = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
+    const appAST = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
     const outputs = compileOutput(hashTable, appAST, {})
     const functionTable = combineFunctionTables(outputs)
     return {

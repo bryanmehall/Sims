@@ -7,7 +7,7 @@ import { objectFromEntries } from './utils'
 export const createStateArg = (state, currentObject, argKey) => {
     const statePrimitive = primitives.state(state, currentObject)
     const hash = getAttr(currentObject, 'hash')
-    const ast = getValue(state, 'jsPrimitive', currentObject).value
+    const ast = getValue(state, 'jsPrimitive', currentObject)
     const varDef = { //reassign value defined by get hash to the hash of curentObject
         key: argKey,
         varDefKey: statePrimitive.hash,

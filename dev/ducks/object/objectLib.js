@@ -1,6 +1,6 @@
 import { UNDEFINED } from './constants'
 const constructString = (string) => ({
-    jsPrimitive: { type: "string", value: string }
+    jsPrimitive: { type: "string", value: string, args: {} }
 })
 export const objectLib = {
 	id: (id) => ({

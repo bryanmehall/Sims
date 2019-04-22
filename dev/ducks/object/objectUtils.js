@@ -2,6 +2,9 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
+import { addContextToArgs } from './contextUtils'
+import { UNDEFINED } from './constants'
+
 
 export const objectFromName = (state, name) => {
     const values = Object.values(state)
@@ -14,7 +17,6 @@ export const objectFromName = (state, name) => {
     if (matches.length === 0) {
         throw new Error(`LynxError: object "${name}" not found, ${matches.length}`)
     } else if (matches.length > 1){
-        console.log(matches)
         throw new Error(`LynxError: multiple objects named "${name}" found (${matches.length})`)
     }
     return matches[0]
@@ -93,17 +95,11 @@ export const getHash = (objectData) => { //this should check that all children a
 	return digest
 }
 
-export const returnWithContext = (state, attr, attrData, valueData, objectData) => {
-    //adds hash and
-	if (objectData.type === 'app'){ //special case for root in this case app
-        objectData = objectLib.undef
-    }
+const returnWithHash = (state, attr, attrData, valueData) => {
+    //adds hash
     const hash = getHash(valueData)
     const newProps = Object.assign({}, valueData, { hash }) //only calculate hash in first state transform
-    return {
-        state: state,
-        value: Object.assign({}, newProps)
-    }
+    return newProps
 }
 
 export const getValue = (state, prop, objectData) => {
@@ -116,7 +112,7 @@ export const getValue = (state, prop, objectData) => {
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		const isInstance = hasAttribute(objectData, 'instanceOf')
         const inheritedData = isInstance
-            ? getValue(state, 'instanceOf', objectData).value
+            ? getValue(state, 'instanceOf', objectData)
             : objectFromName(state, 'object')
         def = getAttr(inheritedData, prop)
 	}
@@ -124,31 +120,29 @@ export const getValue = (state, prop, objectData) => {
 	if (objectData === undefined) {
 		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
-        console.log('getting attributes', objectData)
+        //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
-
-			return returnWithContext(state, prop, attrData, valueData, objectData)
-
+			return returnWithHash(state, prop, attrData, valueData)
 		} else {
 			let attrs = Object.keys(objectData)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrs)//switch to set
-			return returnWithContext(state, prop,attrData, attrSet, objectData)
+			return returnWithHash(state, prop,attrData, attrSet)
 		}
 	} else if (def === undefined) {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
-		return { state, value: objectLib.undef }
+		return objectLib.undef
 	} else if (prop === 'jsPrimitive') { // primitive objects
         if (primitives.hasOwnProperty(valueData.type)){
             //console.log(`getting ${valueData.type} subtree named ${name}`)
-            return { state, value: primitives[valueData.type](state, objectData, valueData) }
+            return primitives[valueData.type](state, objectData, valueData)
         } else {
             throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
         }
 	} else {
-        return returnWithContext(state, prop, attrData, valueData, objectData)
+        return returnWithHash(state, prop, attrData, valueData)
 	}
 }
 
@@ -163,36 +157,19 @@ const checkObjectData = (state, objectData) => {
     }
 }
 
-//add context to args of ast (wraps output of getJSValue)
-export const addContext = (state, prop, primitive, objectData) => {
-    const inverseAttr = getInverseAttr(state, prop)
-    const contextAttr = typeof inverseAttr === 'undefined' ? 'g' : inverseAttr
-    const primitiveArgs = typeof primitive.args === 'undefined' ? {} : primitive.args
-    const argsWithContext = Object.entries(primitiveArgs)
-    .reduce((args, arg) => {
-        const hash = getAttr(objectData, 'hash')
-        const newContext = {
-            debug: `js prim of ${getName(state, objectData)}.${prop} has inverse ${inverseAttr} ${hash}`,
-            attr: contextAttr,
-            value: hash
-        }
-        const argWithContext = Object.assign({}, arg[1], {
-            context: arg.context === undefined ? [newContext] : arg.context.concat([newContext, {}])
-        })
-        return Object.assign({}, args, { [arg[0]]: argWithContext })
-    }, {})
-    const primitiveWithContext = Object.assign({}, primitive, { args: argsWithContext })
-    return primitiveWithContext
-}
-
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objectData) => {
-	const { value: valueData } = getValue(state, prop, objectData)
+	const valueData = getValue(state, prop, objectData)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-		const { value: primitive } = getValue(state , 'jsPrimitive', valueData) //get Value of jsPrimitive works
-        const primitiveWithContext = addContext(state, prop, primitive, objectData)
-        return primitiveWithContext
+		const primitive = getValue(state , 'jsPrimitive', valueData) //get Value of jsPrimitive works
+        if (isUndefined(primitive)){
+            return primitive //switch to array for child elements so none are undefined
+        } else {
+            const primitiveWithContext = addContextToArgs(state, prop, primitive, objectData)
+            return primitiveWithContext
+        }
+
 	}
 }

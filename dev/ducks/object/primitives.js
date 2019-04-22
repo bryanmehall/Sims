@@ -1,5 +1,6 @@
 import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
-import { getValue, getJSValue, getName, getAttr, getHash, addContext } from './objectUtils'
+import { getValue, getJSValue, getName, getAttr, getHash } from './objectUtils'
+import { addContextToArgs } from './contextUtils'
 import { isUndefined } from './utils'
 import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
 
@@ -48,11 +49,11 @@ const array = (state, objectData, valueData) => {
     const elements = valueData.value
     const parameters = elements.map((elementData) => {
         const elementHash = getHash(elementData)
-        const elementValueData = getValue(state, 'elementValue', Object.assign({}, elementData, { hash: elementHash })).value
+        const elementValueData = getValue(state, 'elementValue', Object.assign({}, elementData, { hash: elementHash }))
         const elementValueHash = getHash(elementValueData)
         const elementValueDataWithHash = Object.assign({}, elementValueData, { hash: elementValueHash })
-        const valuePrimitive = getValue(state, 'jsPrimitive', elementValueDataWithHash).value //todo: this will not work with context --need to pass prop?
-        const withContext = addContext(state, 'elementValue', valuePrimitive, elementValueDataWithHash)
+        const valuePrimitive = getValue(state, 'jsPrimitive', elementValueDataWithHash) //todo: this will not work with context --need to pass prop?
+        const withContext = addContextToArgs(state, 'elementValue', valuePrimitive, elementValueDataWithHash)
         const { args, varDefs } = argsToVarDefs(state, elementData, { args: withContext.args, varDefs: withContext.varDefs })
         return Object.assign({}, withContext, { args, varDefs })
     })
@@ -110,7 +111,7 @@ const getIndex = (state, objectData) => {
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: getAttr(objectData, 'hash'),
-        args: args, //combine args of x,y,text
+        args,
         children: { array: parameters[0], index: parameters[1] },
         type: 'getIndex',
         varDefs,
@@ -127,7 +128,7 @@ const contains = (state, objectData) => { //eventually switch to set
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
         hash: getAttr(objectData, 'hash'),
-        args: args, //combine args of x,y,text
+        args,
         children: { array: parameters[0], index: parameters[1] },
         type: 'contains',
         varDefs,
@@ -137,7 +138,7 @@ const contains = (state, objectData) => { //eventually switch to set
 }
 
 const get = (state, objectData) => {
-    const { value: root } = getValue(state, "rootObject", objectData)
+    const root = getValue(state, "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
     let query = THIS
     let getStack = []
@@ -148,7 +149,7 @@ const get = (state, objectData) => {
     } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
-        const attributeObject = getValue(state, 'attribute', objectData).value
+        const attributeObject = getValue(state, 'attribute', objectData)
         const attribute = getName(state, attributeObject)
         const next = getJSValue(state, 'placeholder', attribute, root)
         const { args, varDefs } = getArgsAndVarDefs(state, [next], root)
@@ -195,7 +196,7 @@ const search = (state, objectData, valueData) => { //search is get root (local S
         type: "search",
         varDefs: [],
         children: {},
-        args: { search: { query, type: 'localGet', getStack: [] } }
+        args: { search: { query, type: LOCAL_SEARCH, getStack: [] } }
     }
 }
 
@@ -247,7 +248,7 @@ const apply = (state, objectData) => {
         type: "apply",
     }
 }
-
+ //remove this?
 const ternary = (state, objectData) => {
     const paramNames = ["condition", "then", "alt"]
     const parameters = paramNames.map((paramName) => (
