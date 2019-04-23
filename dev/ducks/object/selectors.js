@@ -23,33 +23,12 @@ const combineArgs = (childAsts) => (
     },{})
 )
 
-const getNext = (state, currentObject, searchArgData) => {
+const getNext = (state, currentObject, searchArgData) => { //this remaps args as a result of getting the next value
     const { argKey, getStack, context } = searchArgData
     const searchName = getName(state, currentObject) //remove for debug
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
     const attr = getAttr(nextGet, 'attribute')//attribute to go to
-    //search through context to see if the current attr from the get stack matches any of the first attrs from the context
-    //if it does then return the
-    const contextFunctionArray = context.map(
-        (contextPath) => {
-            if (contextPath.attr === attr) {
-                const newSearchArgs = { ...searchArgData, query: THIS, getStack: newGetStack }
-                const nextValue = objectFromHash(state, contextPath.value)
-                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
-                return returnFunctionData
-            } else {
-                return undefined
-            }
-        })
-        .filter((contextFunctionData) => (typeof contextFunctionData !== 'undefined'))
-    //if there is a change then return context function Data
-    if (contextFunctionArray.length === 1) {
-        return contextFunctionArray[0]
-    } else if (contextFunctionArray.length > 1) {
-        throw 'LynxError: handle context here'
-    }
     if (attr === 'previousState'){
         if (newGetStack.length > 0){
             throw new Error('LynxError: handle case where get stack does not end at previous state')
@@ -60,13 +39,13 @@ const getNext = (state, currentObject, searchArgData) => {
     const nextValue = getValue(state, attr, currentObject) //evaluate attr of currentobject
     const nextJSValue = getValue(state, 'jsPrimitive', nextValue)
     //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
-    if (isUndefined(nextValue)) { //if the next value is not defined treat it as an inverse
+    if (isUndefined(nextValue)) { //if the next value is not defined treat it as an inverse (going up the tree)
         //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
-        console.log(currentObject, attr)
-        const newSearchArgs = { argKey: argKey, query: THIS, type: INVERSE, context, getStack: getStack }//don't slice get stack here --slice it when evaluating inverse arg
+        const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: newGetStack }//don't slice get stack here --slice it when evaluating inverse arg
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
     } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
+        //compare this to state( passing up ast should it be re-evaluated at every step? )
         const { query, ast } = getDBsearchAst(state, nextValue, newGetStack)
         const hash = getAttr(nextValue, 'hash')
         const dbSearchArg = { [hash]: {
@@ -77,7 +56,7 @@ const getNext = (state, currentObject, searchArgData) => {
                 context: addContextToGetStack(state, context, attr, currentObject, hash),
             } }
         const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: ast.varDefs })
-        //combine args from db search ast, with any args in putting this in contex t of current with db arg
+        //combine args from db search ast, with any args in putting this in context of current with db arg
         const combinedArgs = Object.assign({}, ast.args, args, dbSearchArg)
         const searchAST = Object.assign({}, nextJSValue, { args: combinedArgs, varDefs })
         return {
@@ -170,12 +149,20 @@ const reduceGetStack = (state, currentObject, searchArgData) => { // get all arg
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
     const { query, getStack } = searchArgData
     const searchName = getName(state, currentObject)
-    if (query === searchName || query === THIS){ //the query THIS is a for objects that always match.
-        if (getStack.length === 0){
-            return createVarDef(state, currentObject, searchArgData)
-        } else {
-            return getNext(state, currentObject, searchArgData)
-        }
+    if (getStack.length === 0){ //this check should be inside of get next or move arg outside of ?
+        return createVarDef(state, currentObject, searchArgData)
+    } else {
+        const nextValueFunctionData = getNext(state, currentObject, searchArgData)
+        //args to var defs here?
+        //const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
+        return nextValueFunctionData
+    }
+}
+const resolveLocalSearch = (state, currentObject, searchArgData) => {
+    const { query, getStack } = searchArgData
+    const searchName = getName(state, currentObject)
+    if (query === searchName){
+        return reduceGetStack(state, currentObject, searchArgData)
     } else {
         if (searchName === 'app'){
             console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
@@ -190,7 +177,7 @@ to searchArgs in the form:[{argKey, query, getStack}]
 */
 const convertToSearchArgs = (args) => (
     Object.entries(args)
-        .filter((arg) => (arg[1].type === LOCAL_SEARCH || arg[1].type === INVERSE))
+        .filter((arg) => (arg[1].type === LOCAL_SEARCH) || arg[1].type === INVERSE)
         .map((searchArg) => ({ //unpack from object.entries form
             argKey: searchArg[0],
             ...searchArg[1]
@@ -224,12 +211,26 @@ export const argsToVarDefs = (state, currentObject, functionData) => { //test if
     //console.log(combinedArgs)
     const searchArgs = convertToSearchArgs(combinedArgs)
     const resolvedFunctionData = searchArgs.map((searchArgData) => {
-            const reduced = reduceGetStack(state, currentObject, searchArgData)
-            if (reduced.args.hasOwnProperty('recursive')){ //handle struct primitives
-                throw new Error('LynxError: recursive')
-                //throw 'recursive'
+            if (searchArgData.query === THIS){ //switch this to a different type
+                return reduceGetStack(state, currentObject, searchArgData)
+            } else if ( searchArgData.type === LOCAL_SEARCH) {
+                return resolveLocalSearch(state, currentObject, searchArgData)
+                return reduceGetStack(state, currentObject, searchArgData) //rename searchArg data
+            } else if (searchArgData.type === INVERSE) {
+                const inverseAttr = searchArgData.query
+                const matchingContext = searchArgData.context
+                    .filter((contextPath) => (contextPath.attr === inverseAttr))
+                if (matchingContext.length !== 1){
+                    console.log(matchingContext)
+                    throw new Error('LynxError: context not found or multiple found')
+                }
+                const contextPath = matchingContext[0]
+                const newSearchArgs = { ...searchArgData, query: THIS }
+                const nextValue = objectFromHash(state, contextPath.value)
+                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
+                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
+                return returnFunctionData
             }
-            return reduced
         })
         .reduce(reduceFunctionData, functionData)
     //overwrite state args with updated state args (resolve args of state AST)
@@ -253,7 +254,9 @@ if LOCAL_SEARCH:
 
             get nextValue of attr relative to currentObject
             if next value is get:
+                append search to get
             if next value is globalSearch:
+                add global search arg
             else:
         if getStack.length == 0:
             move arg to varDef
