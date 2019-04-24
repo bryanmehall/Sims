@@ -2,7 +2,7 @@ import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
 import { getValue, getJSValue, getName, getAttr, getHash } from './objectUtils'
 import { addContextToArgs } from './contextUtils'
 import { isUndefined } from './utils'
-import { THIS, GLOBAL_SEARCH, LOCAL_SEARCH } from './constants'
+import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT } from './constants'
 
 const input = (state, objectData) => {
     const hash = getAttr(objectData, 'hash')
@@ -12,7 +12,7 @@ const input = (state, objectData) => {
         type: 'input',
         children: {},
         inputName: name,
-        args: { [hash]: { type: 'input', name } },
+        args: { [hash]: { type: INPUT, name } },
         varDefs: [],
         inline: true
     }
@@ -140,13 +140,7 @@ const contains = (state, objectData) => { //eventually switch to set
 const get = (state, objectData) => {
     const root = getValue(state, "rootObject", objectData)
     const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
-    let query = THIS
-    let getStack = []
-    if (isUndefined(root)){ //for implied root (only works for one level deep)
-        //set query to THIS if root is left undefined
-        query = THIS
-        getStack = []
-    } else if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
+    if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
         const attributeObject = getValue(state, 'attribute', objectData)
@@ -164,27 +158,27 @@ const get = (state, objectData) => {
             varDefs
         }
     } else {
-        const searchArgs = Object.entries(rootObject.args)
-        if (searchArgs.length>1){ throw 'search args length longer than one' }
-        query = searchArgs[0][1].query
-        getStack = searchArgs[0][1].getStack //this only works for one search. is more than one ever needed in args?
-    }
-    const hash = getAttr(objectData, 'hash')
-    const args = {
-        [hash]: {
-            query,
-            type: LOCAL_SEARCH,
-            getStack: [...getStack, objectData]
+        const searchArgs = Object.values(rootObject.args)
+        if (searchArgs.length > 1) { throw new Error('search args length longer than one') }
+        const query = searchArgs[0].query
+        const getStack = searchArgs[0].getStack //this only works for one search. is more than one ever needed in args?
+        const hash = getAttr(objectData, 'hash')
+        const args = {
+            [hash]: {
+                query,
+                type: LOCAL_SEARCH,
+                getStack: [...getStack, objectData]
+            }
         }
-    }
-    return {
-        hash,
-        query,
-        varDefs: [],
-        args,
-        inline: true,
-        type: 'get',
-        children: {},
+        return {
+            hash,
+            query,
+            varDefs: [],
+            args,
+            inline: true,
+            type: 'get',
+            children: {},
+        }
     }
 }
 
@@ -295,8 +289,8 @@ const group = (state, objectData) => {
     if (parameters[0].type === 'array'){
         children = { childElements: parameters[0] }
     } else {
-        children =
-            parameters.length === 1 ? { childElement1: parameters[0] }
+        children = parameters.length === 1
+            ? { childElement1: parameters[0] }
             :{ childElement1: parameters[0], childElement2: parameters[1] }
     }
     return {

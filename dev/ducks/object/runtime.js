@@ -1,4 +1,5 @@
 import { compile } from './compiler'
+import { INPUT } from './constants'
 //import { logFunctionTable } from './utils'
 
 /*
@@ -67,13 +68,13 @@ export class Runtime {
 
 
         Object.keys(outputs).forEach((outputKey) => {
-            console.log(outputs)
+            //console.log(outputs)
             const output = outputs[outputKey]
             const ast = output.ast
             const args = ast.args
             const inputs = Object.values(args)
                 .map((arg) => {
-                    const inputName = arg.type === 'input' ? arg.name : arg.hash
+                    const inputName = arg.type === INPUT ? arg.name : arg.hash
                     Object.assign(runtime.inputs, {
                         [inputName]: { available: true, value: 0 }
                     })
@@ -108,7 +109,7 @@ export class Runtime {
             this.inputs.currentKey = { available: true, value: [e.key] } //make it possible to have multiple keys
             this.checkOutputs()
         })
-        document.addEventListener('keyup', (e) => {
+        document.addEventListener('keyup', () => {
             this.inputs.currentKey = { available: true, value: [] } //make this just pop the key up key out of the set
             this.checkOutputs()
         })

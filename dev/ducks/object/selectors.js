@@ -1,31 +1,13 @@
 /* eslint pure/pure: 2 */
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, THIS } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT } from './constants'
 import { isUndefined } from './utils'
 import { getValue, getName, objectFromHash, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
-import { createStateArg, resolveStateASTs } from './stateUtils'
+import { createStateArg, resolveState } from './stateUtils'
 import { addContextToGetStack } from './contextUtils'
-
-/*
-refactor todo:
-    -switch all args to get objects
-        -replace THIS with next value
-        -replace root can be next value
-*/
-
-const combineArgs = (childAsts) => (
-    childAsts.reduce((combined, ast) => {
-        //add warning here for overwriting property
-        if (typeof ast === 'undefined'){
-            throw new Error("LynxError: ast is undefined")
-        }
-        return Object.assign(combined, ast.args)
-    },{})
-)
 
 const getNext = (state, currentObject, searchArgData) => { //this remaps args as a result of getting the next value
     const { argKey, getStack, context } = searchArgData
-    const searchName = getName(state, currentObject) //remove for debug
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
     const attr = getAttr(nextGet, 'attribute')//attribute to go to
@@ -80,16 +62,15 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
             //needs larger scale refactoring
             const newSearchArgs = {
                 ...searchArgData,
-                query: THIS,
                 context: addContextToGetStack(state, context, attr, currentObject, getAttr(nextValue, 'hash')),
                 getStack: newGetStack
             }
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
             return argsToVarDefs(state, currentObject, nextValueFunctionData)
         }
-        const arg = Object.values(nextJSValue.args)
-        const childQuery = arg[0].query
-        const childGetStack = arg[0].getStack
+        const arg = Object.values(nextJSValue.args)[0]
+        const childQuery = arg.query
+        const childGetStack = arg.getStack
         const combinedGetStack = childGetStack.concat(newGetStack)
         const appendedSearchArgs = {
             ...searchArgData,
@@ -101,7 +82,6 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
     } else {
         const newSearchArgs = {
             ...searchArgData,
-            query: THIS,
             context: addContextToGetStack(state, context, attr, currentObject, getAttr(nextValue, 'hash')),
             getStack: newGetStack
         }
@@ -147,8 +127,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
 
 const reduceGetStack = (state, currentObject, searchArgData) => { // get all args and varDefs of an argument
     //iteratively get the getStack[0] attribute of current object to find the end of the stack
-    const { query, getStack } = searchArgData
-    const searchName = getName(state, currentObject)
+    const { getStack } = searchArgData
     if (getStack.length === 0){ //this check should be inside of get next or move arg outside of ?
         return createVarDef(state, currentObject, searchArgData)
     } else {
@@ -158,31 +137,35 @@ const reduceGetStack = (state, currentObject, searchArgData) => { // get all arg
         return nextValueFunctionData
     }
 }
+
 const resolveLocalSearch = (state, currentObject, searchArgData) => {
-    const { query, getStack } = searchArgData
+    const { query } = searchArgData
     const searchName = getName(state, currentObject)
     if (query === searchName){
         return reduceGetStack(state, currentObject, searchArgData)
     } else {
         if (searchName === 'app'){
-            console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
+            //console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
+            throw new Error(`LynxError: no match found for query "${query}"`)
         }
-        return { args: {}, varDefs: [] }//this just doesn't move any args, it doesn't mean that there are not any
+        return { args: {}, varDefs: [] } //this just doesn't move any args, it doesn't mean that there are not any
     }
 }
 
-/*
-convert args in the form {argKey:{query:"query" getStack:[]}}
-to searchArgs in the form:[{argKey, query, getStack}]
-*/
-const convertToSearchArgs = (args) => (
-    Object.entries(args)
-        .filter((arg) => (arg[1].type === LOCAL_SEARCH) || arg[1].type === INVERSE)
-        .map((searchArg) => ({ //unpack from object.entries form
-            argKey: searchArg[0],
-            ...searchArg[1]
-        }))
-)
+function resolveInverse(state, arg, currentObject) {
+    const inverseAttr = arg.query
+    const matchingContext = arg.context
+    .filter((contextPath) => (contextPath.attr === inverseAttr))
+    if (matchingContext.length !== 1){
+        throw new Error('LynxError: context not found or multiple found')
+    }
+    const contextPath = matchingContext[0]
+    const newSearchArgs = { ...arg, type: RELATIVE }
+    const nextValue = objectFromHash(state, contextPath.value)
+    const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
+    const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
+    return returnFunctionData
+}
 
 /*
 combine arg and varDef movements to create the final args and varDefs
@@ -203,40 +186,30 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 
 //if an an argument is defined entirely under the current object in the tree then it is considered
 //resolved and is added to varDefs
-export const argsToVarDefs = (state, currentObject, functionData) => { //test if the args in functionData are resolved...return
-    //get args that are searches into list of pairs [argKey, argValue]
-    //for each searchArg, test if the query matches the name of the current object
-    //if it does, the search is resolved, if not, pass it up the tree
+export const argsToVarDefs = (state, currentObject, functionData) => {
     const combinedArgs = functionData.args
     //console.log(combinedArgs)
-    const searchArgs = convertToSearchArgs(combinedArgs)
-    const resolvedFunctionData = searchArgs.map((searchArgData) => {
-            if (searchArgData.query === THIS){ //switch this to a different type
-                return reduceGetStack(state, currentObject, searchArgData)
-            } else if ( searchArgData.type === LOCAL_SEARCH) {
-                return resolveLocalSearch(state, currentObject, searchArgData)
-                return reduceGetStack(state, currentObject, searchArgData) //rename searchArg data
-            } else if (searchArgData.type === INVERSE) {
-                const inverseAttr = searchArgData.query
-                const matchingContext = searchArgData.context
-                    .filter((contextPath) => (contextPath.attr === inverseAttr))
-                if (matchingContext.length !== 1){
-                    console.log(matchingContext)
-                    throw new Error('LynxError: context not found or multiple found')
-                }
-                const contextPath = matchingContext[0]
-                const newSearchArgs = { ...searchArgData, query: THIS }
-                const nextValue = objectFromHash(state, contextPath.value)
-                const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
-                const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
-                return returnFunctionData
+    const resolvedFunctionData = Object.entries(combinedArgs)
+        .map((entry) => {
+            const arg = { ...entry[1], argKey: entry[0] }
+            if (arg.type === RELATIVE){
+                return reduceGetStack(state, currentObject, arg)
+            } else if (arg.type === LOCAL_SEARCH) {
+                return resolveLocalSearch(state, currentObject, arg)
+            } else if (arg.type === INVERSE) {
+                return resolveInverse(state, arg, currentObject)
+            } else if (arg.type === STATE_ARG){
+                return resolveState(state, arg, currentObject)
+            } else if (arg.type === GLOBAL_SEARCH) {
+                return { args: {}, varDefs: [] }
+            } else if (arg.type === INPUT) {
+                return { args: {}, varDefs: [] }
+            } else {
+                throw new Error(`LynxError: arg type "${arg.type}" not found`)
             }
         })
         .reduce(reduceFunctionData, functionData)
-    //overwrite state args with updated state args (resolve args of state AST)
-    const newStateArgs = resolveStateASTs(state, combinedArgs, currentObject)
-    const argsWithState = Object.assign({}, resolvedFunctionData.args, newStateArgs)
-    return { varDefs: resolvedFunctionData.varDefs, args: argsWithState }
+    return { varDefs: resolvedFunctionData.varDefs, args: resolvedFunctionData.args }
 }
 
 /*combine args of children of the currentObject
@@ -269,6 +242,16 @@ if STATE_ARG:
 if GLOBAL_SEARCH:
     place in current o
 */
+
+const combineArgs = (childAsts) => (
+    childAsts.reduce((combined, ast) => {
+        //add warning here for overwriting property
+        if (typeof ast === 'undefined'){
+            throw new Error("LynxError: ast is undefined")
+        }
+        return Object.assign(combined, ast.args)
+    },{})
+)
 
 export const getArgsAndVarDefs = (state, childASTs, currentObject, childAttrs) => {
     const combinedArgs = combineArgs(childASTs, childAttrs)//combine arguments of sub functions

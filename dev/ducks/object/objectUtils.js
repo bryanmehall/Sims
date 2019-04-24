@@ -3,7 +3,6 @@ import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
 import { addContextToArgs } from './contextUtils'
-import { UNDEFINED } from './constants'
 
 
 export const objectFromName = (state, name) => {

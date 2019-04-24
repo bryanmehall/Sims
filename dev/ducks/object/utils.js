@@ -1,11 +1,11 @@
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED } from './constants'
-import { getAttr, getName } from './objectUtils'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED, INPUT } from './constants'
+import { getAttr } from './objectUtils'
 
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
 )
 export const formatInverseArg = (query, getStack) => (
-    getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
+    query+'.'+getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
 )
 
 export const formatDBSearchLog = (dbSearches) => (
@@ -35,10 +35,9 @@ export const formatArg = (arg) => {
             return arg.query
         case STATE_ARG:
             return 'state '+arg.hash
-        case 'input':
+        case INPUT:
             return arg.name
         default:
-            console.log(arg)
             throw `type ${arg.type} not found`
     }
 }
@@ -83,7 +82,6 @@ export const logFunctionTable = (functionTable) => {
     Object.entries(functionTable).forEach((entry) => {
         const key = entry[0]
         const func = entry[1].toString()
-        console.log(key, func)
         return { key, func }
     })
 }
@@ -110,7 +108,6 @@ export const compileToJS = (args, string) => {
         return new Function(args, string)
     } catch (e) {
         if (e instanceof SyntaxError) {
-            console.log(string)
             throw new Error('Lynx Error: invalid syntax in compiled code '+e.message)
         } else {
             throw e
