@@ -1,11 +1,19 @@
+
 object = new object
     name:"object"
 
 attribute = new object
     name:"attribute"
-
+functionalRep = new attribute
+    name:"functionalRep"
+functionalRepresentation = new object
+    name:"functionalRepresentation"
+compile = new object
+    name:"compile"
+    jsPrimitive:{compile}
 app = new object
     jsPrimitive:{app}
+    functionalRep:compile(app)
     name:"app"
     mouse: new object
         down: new input
@@ -18,10 +26,11 @@ app = new object
             y:new input
                 name:"mouseY"
                 jsPrimitive:{input}
-        clicked:!app.mouse.down && app.mouse.down.previousState
+        clicked: app.mouse.down.previousState
     keyboard: new object
-        currentKey: new input
-            name:"currentKey"
+        currentKeysDown: new array
+            name:"currentKeys"
+            length:0
             jsPrimitive:{input}
     graphicalRepresentation:window
 
@@ -30,6 +39,9 @@ previousState = new attribute
 
 keyboard = new attribute
     name: "keyboard"
+
+currentKeysDown = new attribute
+    name:"currentKeysDown"
 
 input = new object
     name:"input"
@@ -47,6 +59,10 @@ childElement2 = new attribute
 
 element = new object
     name:"element"
+    index:new number
+        name:"arrayIndex"
+        jsPrimitive:{arrayIndex}
+    jsPrimitive:{arrayElement}
 
 parentGroup = new attribute
     name:"parentGroup"
@@ -75,6 +91,11 @@ previousElement = new attribute
 
 value = new attribute
     name:"value"
+arrayElement = new attribute
+    name:"arrayElement"
+    inverseAttribute:parentArray
+parentArray = new attribute
+    name:"parentArray"
 elementValue = new attribute
     name:"elementValue"
     inverseAttribute:parentElement
@@ -101,6 +122,9 @@ attributes = new attribute
 
 jsPrimitive = new attribute
     name:"jsPrimitive"
+parse = new func
+    name:"parse"
+    jsPrimitive:{parse}
 childElements = new attribute
     name:"childElements"
 name = new attribute
@@ -128,8 +152,36 @@ mouse = new attribute
 set = new object
     name:"set"
     jsPrimitive:{set}
+
 array = new object
     name:"array"
+    length:0
+
+length = new attribute
+    name:"length"
+arrayLength = new func
+    name:"arrayLength"
+    jsPrimitive:{arrayLength}
+concat = new func
+    name:"concat"
+    jsPrimitive:{concat}
+
+slice = new func
+    name:"slice"
+    jsPrimitive:{slice}
+splice = new func
+    name:"splice"
+    jsPrimitive:{splice}
+substring = new func
+    name:"substring"
+    jsPrimitive:{substring}
+insert = new func
+    name: "insert"
+    op1:"insertString"
+    op2:"targetString"
+    op3:3
+    result:substring(insert.op2, 0, insert.op3-1)+insert.op1+substring(insert.op2, insert.op3-1)
+
 index = new attribute
     name:"index"
 setEquiv = new attribute
@@ -173,6 +225,24 @@ width = new attribute
 height = new attribute
     name:"height"
 
+line = new object
+    jsPrimitive:{line}
+    name:"line"
+    r:0
+    g:0
+    b:0
+    x1:0
+    y1:0
+    x2:20
+    y2:20
+x1 = new attribute
+    name:"x1"
+y1 = new attribute
+    name:"y1"
+x2 = new attribute
+    name:"x2"
+y2 = new attribute
+    name:"y2"
 get = new object
     name:"get"
 rootObject = new attribute
@@ -247,6 +317,10 @@ not = new func
     name:"not"
     jsPrimitive:{not}
 
+index = new func
+    name:"index"
+    jsPrimitive:{index}
+
 apply = new object
     name:"apply"
     jsPrimitive:{apply}
@@ -257,6 +331,8 @@ op2 = new attribute
     name:"op2"
 op3 = new attribute
     name:"op3"
+op4 = new attribute
+    name:"op4"
 result = new attribute
     name:"result"
 caller = new attribute

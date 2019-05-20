@@ -1,5 +1,6 @@
-import { compile } from './compiler'
+import { compileApp } from './compiler'
 import { INPUT } from './constants'
+import { lynxParser } from './../../lynxParser'
 //import { logFunctionTable } from './utils'
 
 /*
@@ -39,15 +40,33 @@ const checkTypes = (type, vars) => {
 
 export class Runtime {
     //all lynx state in handled by this runtime object
-    constructor(initState, canvas) { //init state is the object table for now
+    constructor(lynxText, canvas, updateDebug) { //init state is the object table for now
         const runtime = this
+        this.updateDebug = updateDebug
         this.outputs = {}
-        this.inputs = {}
+        //when calculating state, put state in buffer so that all outputs are concurrent
+        this.stateBuffer = {}
+        this.inputs = {
+            mouseDown: { available: false, value: false },
+            mouseX: { available: false, value: false },
+            mouseY: { available: false, value: false },
+            currentKeys: { available: false, value: [] }
+        }//this list must be complete
         this.state = {}
-        const lynxState = initState.sim.object
+        let lynxState
+
+        lynxState = lynxParser(lynxText)
         this.hashTable = lynxState
-        const { functionTable, outputs } = compile(lynxState)
-        this.functionTable = functionTable
+        const { functionTable, outputs } = compileApp(lynxState)
+        const externalFunctions = {
+            parse: (lynxString) => {
+                return lynxParser(lynxString)
+            },
+            compile: (lynxObject) => {
+                const { functionTable, outputs } = compile(lynxState)
+            }
+        }
+        this.functionTable = Object.assign(functionTable, externalFunctions)
 
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
@@ -61,11 +80,15 @@ export class Runtime {
                 renderer(renderFunctions, runtime.inputs)
             },
             state: (value, hash) => {
-                this.state[hash] = value
+                if (value === this.inputs[hash].value){
+                    this.stateBuffer[hash] = { value, available: false, lock: false }
+                } else {
+                    this.stateBuffer[hash] = { value, available: true, lock: false }
+                    this.stateAvailable = true
+                }
+
             }
         }
-
-
 
         Object.keys(outputs).forEach((outputKey) => {
             //console.log(outputs)
@@ -75,9 +98,11 @@ export class Runtime {
             const inputs = Object.values(args)
                 .map((arg) => {
                     const inputName = arg.type === INPUT ? arg.name : arg.hash
-                    Object.assign(runtime.inputs, {
-                        [inputName]: { available: true, value: 0 }
-                    })
+                    if (arg.type !== INPUT ){
+                        Object.assign(runtime.inputs, {
+                            [arg.hash]: { available: true, value: "1" }
+                        })
+                    }
                     return inputName
                 })
                 .filter((input) => (typeof input !== 'undefined'))
@@ -85,6 +110,7 @@ export class Runtime {
                 evaluation: 'lazy',
                 open: true,
                 hash: ast.hash,
+                ast,
                 value: output.valueFunction,
                 hook: ast.hash === 'apphash' ? hooks.render : hooks.state,
                 inputs
@@ -106,11 +132,14 @@ export class Runtime {
             this.checkOutputs()
         })
         document.addEventListener('keydown', (e) => {
-            this.inputs.currentKey = { available: true, value: [e.key] } //make it possible to have multiple keys
+            if (e.key === "Tab") {
+                e.preventDefault() //prevent tab from capturing input
+            }
+            this.inputs.currentKeys = { available: true, value: [e.key] } //make it possible to have multiple keys
             this.checkOutputs()
         })
         document.addEventListener('keyup', () => {
-            this.inputs.currentKey = { available: true, value: [] } //make this just pop the key up key out of the set
+            this.inputs.currentKeys = { available: true, value: [] } //make this just pop the key up key out of the set
             this.checkOutputs()
         })
 
@@ -120,17 +149,29 @@ export class Runtime {
                 ctx.fillRect(x, y, width, height)
             },
             text: (x, y, innerText, r, g, b) => {
-                const size=20
+                const size = 18
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
-                ctx.font = `${size}px serif`
+                ctx.font = `${size}px monospace`
                 checkTypes('number', [x,y,r,g,b])
-                ctx.fillText(innerText, x, y)
+                innerText.toString()
+                    .split('\\t')
+                    .join('    ') //replace all tabs sith 4 spaces for display
+                    .split('\\n')
+                    .forEach((line, i) => {
+                        ctx.fillText(line, x, y+i*size)
+                    })
+            },
+            line: (x1, y1, x2, y2) => {
+                ctx.beginPath()
+                ctx.moveTo(x1, y1)
+                ctx.lineTo(x2, y2)
+                ctx.stroke()
             },
             clear: () => {
-                ctx.clearRect(0, 0, width, height);
+                ctx.clearRect(0, 0, width, height)
             }
         }
-
+        this.updateDebug(this)
         this.checkOutputs()
     }
     //check if any of "output"'s inputs are available
@@ -142,14 +183,33 @@ export class Runtime {
     checkOutputs() {
         //pass 'this' to second parameter of forEach to define 'this' in callback
         Object.values(this.outputs).forEach(this.runOutput, this)
+        const stateAvailable = Object.values(this.stateBuffer).some((input) => (input.avaliable))
+        Object.assign(this.inputs, this.stateBuffer)
+        Object.values(this.inputs).forEach((input) => {
+            if (input.lock){
+                input.lock = false
+                input.available = false
+            }
+        }, this)
+
+        this.stateBuffer = {}
+        this.updateDebug(this) //show state of runtime to debug utils --remove for production
+        if (this.stateAvailable){
+            //this.checkOutputs()
+        }
+        this.stateAvailable = false
+
     }
     runOutput(output) {
         if (output.open){
             const inputAvailable = this.inputAvailable(output)
             if (inputAvailable){
                 const stateArgs = output.inputs
-                    .filter((i) => (i.includes('$hash')))
-                    .map((i) => (this.state[i] || 0))
+                    .filter((key) => (key.includes('$hash')))
+                    .map((key) => (typeof this.inputs[key] === 'undefined' ? true : this.inputs[key].value))
+                output.inputs.forEach((inputKey) => {
+                    this.inputs[inputKey].lock = true
+                }, this)
                 const args = [this.functionTable, this.inputs].concat(stateArgs)
                 const value = output.value.apply(null, args) //inputs go here
                 output.hook(value, output.hash)

@@ -3,18 +3,11 @@ import { connect } from "react-redux"
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { compile } from '../ducks/object/compiler'
-import Video from './Video'
+import { compileApp } from '../ducks/object/compiler'
 import { Runtime } from '../ducks/object/runtime'
-import Plot from './Plot'
-import Circle from './Circle'
-import Group from './Group'
-import Expression from './Expression'
-import Tracker from './Tracker'
 import Debug from './Debug'
 import { cardStyle } from './styles'
 import Link from 'redux-first-router-link'
-import TreeDiagram from './TreeDiagram'
 
 class Sim extends React.Component {
 	constructor(props){
@@ -23,9 +16,8 @@ class Sim extends React.Component {
         this.state = {
             offset: { x: 300, y: 0 },
              //each of these is a function
-            objectTable: props.objectTable,
-            ast: props.ast,
-            debugView: 'tree' //tree or other
+            runtime: null,
+            debugView: 'flow' //tree or other
         }
 	}
 
@@ -35,9 +27,11 @@ class Sim extends React.Component {
         this.canvas = document.getElementById('canvas')
 	}
     componentDidUpdate(nextProps){
-        const self = this
-        if (this.props.loadState === 'loaded'){
-            self.runtime = new Runtime(this.props.state, this.canvas)
+        const updateFunction = (runtime) => {
+            this.setState({ runtime: runtime })
+        }
+        if (this.props.loadState === 'loaded' && this.state.runtime === null){
+            this.runtime = new Runtime(this.props.state.sim.lynxText, this.canvas, updateFunction)
         }
 
 		const contentBlockId = nextProps.contentBlockId
@@ -77,18 +71,13 @@ class Sim extends React.Component {
 			float: 'left',
 			backgroundColor: '#fff' 
 		}
-        const functionTable = this.props.functionTable
 
         const debug = this.props.loadState !=='loading' ?
               <Debug
-                  functionTable={functionTable}
-                  ast={this.props.ast}
+                  runtime = {this.state.runtime}
                   debugType={this.state.debugView}
-                  objectTable={this.props.objectTable}
-                  appString={this.props.renderMonad.toString()}
                 ></Debug> : null
 
-        //const graphVis = <TreeDiagram objectTable={this.props.objectTable}></TreeDiagram>
 		return (
             <div>
                 <canvas
@@ -98,10 +87,11 @@ class Sim extends React.Component {
                     style={simCardStyle}
                 >
                 </canvas>
-                <div style = {{...cardStyle, backgroundColor:'white', padding:10, top:305}}>
-                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"tree"})}}>tree</span> |
-                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"ast"})}}> ast</span> |
-                    <span style={{cursor:'pointer'}} onClick={()=>{this.setState({debugView:"code"})}}> code</span>
+                <div style = {{ ...cardStyle, backgroundColor: 'white', padding: 10, top: 305 }}>
+                    <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "tree" }) }}>tree</span> |
+                    <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "ast" }) }}> ast</span> |
+                    <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "code" }) }}> code</span> |
+                    <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "flow" }) }}> flow</span>
                 </div>
                 {debug}
             </div>
@@ -126,16 +116,9 @@ function mapStateToProps(state) {
 	if (loadState === 'loading'){
 		return { loadState, childData: { type: "Group", children: [] } }
 	} else {
-        console.groupCollapsed('visualizations')
-		const { renderMonad, functionTable, ast, objectTable } = compile(state.sim.object)
-        console.groupEnd()
 		return {
             state,
-			renderMonad,
-            functionTable,
-            ast,
 			loadState,
-            objectTable
 		}
 	}
 }

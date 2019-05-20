@@ -149,7 +149,7 @@ const checkObjectData = (state, objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
-        //console.log('objectData', objectData)
+        console.log('objectData', objectData, )
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'

@@ -1,7 +1,8 @@
 {
 //from dev folder run $pegjs --cache parser.peg
+//var flattenState = options.flattenState
 var symbolTable = {
-	"+":"addition",
+    "+":"addition",
     "*":"multiplication",
     "-":"subtraction",
     "/":"division",
@@ -14,33 +15,21 @@ var symbolTable = {
 
 function createString(str){
 	return {
-            jsPrimitive:{type:"string", value:str}
+        jsPrimitive:{type:"string", value:str}
 	}
 }
-function createBinOp(left, right, op){
-	return {
-            jsPrimitive:{type:"apply"},
-            op1:left,
-            op2:right,
-            function:symbolTable[op]
-    } 
-}
-function createTernOp(first, second, third, op){
-    return {
+
+function createNOp(args, op){
+    const prim = {
         jsPrimitive:{type:"apply"},
-        op1:first,
-        op2:second,
-        op3:third,
         function:op
     }
+    args.forEach((arg, i) => {
+        prim["op"+(i+1)] = arg
+    })
+    return prim
 }
-function createApply(arg, op){
-	return {
-            jsPrimitive:{type:"apply"},
-            op1:arg,
-            function:op
-    }
-}
+
 function createFunction(name){
 	return {
         	name:createString(name),
@@ -51,7 +40,6 @@ function createArray(elementValues){
     var elements = elementValues.map(function(value, i){
         return {
             instanceOf:"element",
-            index: createString(i), //todo: replace this indexing with an index computed at runtime by passing it in as an argument to the element --concat would need to update indexes
             elementValue:value
         }
     })
@@ -59,6 +47,16 @@ function createArray(elementValues){
             instanceOf:"array",
             jsPrimitive:{ type:"array", value:elements}
     }
+}
+function buildPath(rootObject, attr){
+    var getData = {
+        jsPrimitive:{type:"get"},
+        attribute:attr[1]
+    }
+    if (rootObject !== null){
+        getData.rootObject = rootObject
+    }
+    return getData
 }
 }
 start
@@ -75,6 +73,9 @@ Module
         
         return objects
     }
+    / Object
+    / Expression
+
 Declaration
 	= "\n"*id:Name _ "="_ object:Object { return { object: object, id: id } }
     / BlockComment
@@ -100,36 +101,58 @@ Expression "expression"
 	=  Conditional / Array
 
 Conditional "conditional"
-    = condition:Or _ "?"_ then:Expression _":"_ alt:Expression {
-    return createTernOp(condition, then, alt, "conditional")
+    =  condition:Or _ "?"_ then:Expression _":"_ alt:Expression {
+    return createNOp([condition, then, alt], "conditional")
     }
+    / MultilineConditional
     / Or
 
+MultilineConditional "multiline conditional" 
+    = "condition" "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "*Expression _ )"}#}"{
+        return cases.reduceRight((elseValue, conditionalCase) => {
+            return createNOp([conditionalCase.condition, conditionalCase.value, elseValue], "conditional")
+        }, defaultCase[2])
+    }
+
+ConditionalCase "conditional case"
+    = "\n""    "* "if" _ condition:Or _ "then" _ value:Expression _ Comment? {
+        return {condition, value}
+    }
+
+Or "or"
+	= left:And _ op:"||" _ right:Or { return createNOp([left, right], "or")}
+    / And
+And "and"
+	= left:Equal _ op:"&&" _ right:And { return createNOp([left, right], "and")}
+    / Equal
+Equal "equality"
+	=  left:Sum _ op:("<"/">"/"==") _ right:Equal { return createNOp([left, right], symbolTable[op])}
+    / Sum
+Sum "sum"
+	= left:Product _ op:("+"/"-") _ right:Sum { return createNOp([left, right], symbolTable[op])}
+    /Product
+Product "product"
+	= left:Not _ op:("*"/"/") _ right:Product { return createNOp([left, right], symbolTable[op])}
+    / Not
+
+Not "not"
+    ="!"value:Not {return createNOp([value], "not")}
+    / ComputedMemberAccess
+
+ComputedMemberAccess "computed member access"
+    = iterator: Value"[" key:Expression "]" {
+        return createNOp([iterator, key], "index")
+    }
+    / Apply / Value
+    
 Value "value"
 	=  Primitive / Bool / Number / String / Get / Object / Name
 
 Apply "function application"
-	= name:Name "("arg:Expression")"{return createApply(arg, name)}
-
-Or "or"
-	= left:And _ op:"||" _ right:Or { return createBinOp(left, right, op)}
-    / And
-And "and"
-	= left:Equal _ op:"&&" _ right:And { return createBinOp(left, right, op)}
-    /Equal
-Equal "equality"
-	=  left:Sum _ op:("<"/">"/"==") _ right:Equal { return createBinOp(left, right, op)}
-    /Sum
-Sum "sum"
-	= left:Product _ op:("+"/"-") _ right:Sum { return createBinOp(left, right, op)}
-    /Product
-Product "product"
-	= left:Value _ op:("*"/"/") _ right:Product { return createBinOp(left, right, op)}
-    / Not
-
-Not "not"
-    ="!"value:Not {return createApply(value, "not")}
-    / Apply / Value
+	= name:Name "("arg0:Expression args:("," _ Expression)*")"{
+        const argsList = args.map((arg) => (arg[2]))
+        return createNOp([arg0].concat(argsList), name)
+    }
 
 Name "name"
 	= name:[a-zA-Z0-9]+ {return name.join("")}
@@ -145,38 +168,29 @@ Search = query:Name {
 ////////references
 Get "get"
     = root:Search? attributes:("."Name)+ {
-    function buildPath(rootObject, attr){
-      var getData = {
-              jsPrimitive:{type:"get"},
-              attribute:attr[1]
-      }
-      if (rootObject !== null){
-      	  getData.rootObject = rootObject
-      }
-      return getData
-    }
     return attributes.reduce(buildPath, root)
 }
      
 ////////primitives
 Number 
-	= value:Float / value:Int {
+	= value:(Float / Int) {
         return {
-            	jsPrimitive:{type:"number", value:value}
+            jsPrimitive:{type:"number", value:value}
         }
     }
     
 Int "int"
-	= digits:[0-9]+ {
-    	return parseInt(digits.join(""))
+	= negative:"-"? digits:[0-9]+ {
+    	return parseInt(negative+digits.join(""))
      }
+
 Float "number"
   = left:[0-9]+ "." right:[0-9]+ {
-    return parseFloat(left.join("") + "." +   right.join("")); 
+        return parseFloat(left.join("") + "." +   right.join(""))
     }
 
 String "string"
-     = '"'characters:[a-zA-Z0-9]*'"' {
+     = '"'characters:[a-zA-Z0-9\\]*'"' {
          var value = characters.join("")
          return createString(value)
      }

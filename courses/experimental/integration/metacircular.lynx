@@ -1,0 +1,9 @@
+window = new group
+    name:"window"
+    childElements:[
+        new text
+            name:"txta"
+            innerText:"test"
+            x:30
+            y:30
+    ]

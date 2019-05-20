@@ -1,22 +1,11 @@
 window = new group
     name:"window"
-    childElement1: new get
-        jsPrimitive:{get}
-        rootObject:counter
-        attribute:graphicalRepresentation
-
-counter = new object
-    name:"counter"
-    graphicalRepresentation: new text
+    childElement1: new text
         name:"box"
-        isDragging:box.isDragging.previousState && app.mouse.down
-        mouseOver: app.mouse.pos.x > box.x && app.mouse.pos.x < box.x + box.width
-        count: box.mouseOver ? box.count.previousState+1 : box.count.previousState-1
-        innerText: box.count-200
-        x:20
-        width:20
-        height:20
-        y:30
+        mouseOver: 10 + box.x
+        innerText: box.mouseOver
+        x:app.mouse.pos.x
+        y:150
 
 state = new object
     name:"state"

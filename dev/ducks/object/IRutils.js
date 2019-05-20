@@ -1,11 +1,11 @@
 import { compileToJS } from './utils'
-import { jsCompilers } from './jsCompiler'
+import { jsAssembler } from './jsAssembler'
 import { STATE_ARG } from './constants'
 
 //build string of function from ast node and add that function to the function table
 export const buildFunction = (ast) => {
     checkAST(ast)
-    const string = jsCompilers[ast.type](ast)
+    const string = jsAssembler[ast.type](ast)
 
     if (ast.inline && !ast.isFunction){
         return { string , newFunctionTable: {} }
@@ -65,7 +65,7 @@ const checkASTs = (asts, objectTable) => {
 export const checkAST = (ast) => {
     if (ast === undefined) {
         throw new Error("ast is undefined")
-    } else if (!jsCompilers.hasOwnProperty(ast.type)){
-        throw new Error(`LynxError: compiler does not have type ${ast.type}`)
+    } else if (!jsAssembler.hasOwnProperty(ast.type)){
+        throw new Error(`LynxError: assembler does not have type ${ast.type}`)
     }
 }

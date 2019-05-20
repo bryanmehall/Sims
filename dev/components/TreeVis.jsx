@@ -178,7 +178,11 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
         const activeVarDefs = ast.varDefs.filter((varDef) => (varDef.key === activeHash))
         const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
         if (ast.hasOwnProperty('value')){
-            label = JSON.stringify(ast.value)
+            if (Array.isArray(ast.value)){
+                label = <tspan>[array]{active ? displayArgs(ast) : null}</tspan>
+            } else {
+                label = JSON.stringify(ast.value)
+            }
         } else {
             label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
         }

@@ -1,0 +1,8 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"box"
+        op1: 10 + box.x
+        innerText: box.op1
+        x:app.mouse.pos.x
+        y:150

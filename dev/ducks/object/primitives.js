@@ -2,7 +2,7 @@ import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
 import { getValue, getJSValue, getName, getAttr, getHash } from './objectUtils'
 import { addContextToArgs } from './contextUtils'
 import { isUndefined } from './utils'
-import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT } from './constants'
+import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX } from './constants'
 
 const input = (state, objectData) => {
     const hash = getAttr(objectData, 'hash')
@@ -17,11 +17,11 @@ const input = (state, objectData) => {
         inline: true
     }
 }
-const stateNode = (state, objectData) => {
-    const hash = getAttr(objectData, 'hash')
+const stateNode = (state, objectData, valueData) => {
+    const hash = valueData.hash//getAttr(objectData, 'hash')//valueData because of the 'state' added to it
     return {
         hash,
-        args: {}, //combine args of x,y,text
+        args: {},
         children: {},
         type: 'stateNode',
         varDefs: [],
@@ -29,6 +29,27 @@ const stateNode = (state, objectData) => {
     }
 }
 
+//lynx primitives
+const parse = (state, objectData) => (
+    {
+        hash: getAttr(objectData, 'hash'),
+        type: 'parse',
+        varDefs: [],
+        children: {},
+        args: {},
+        inline: true
+    }
+)
+const compile = (state, objectData) => (
+    {
+        hash: getAttr(objectData, 'hash'),
+        type: 'compile',
+        varDefs: [],
+        children: {},
+        args: {},
+        inline: true
+    }
+)
 //data constants
 const number = (...args) => (primitive(...args))
 const bool =   (...args) => (primitive(...args))
@@ -48,17 +69,13 @@ const primitive = (state, objectData, valueData) => ({
 const array = (state, objectData, valueData) => {
     const elements = valueData.value
     const parameters = elements.map((elementData) => {
-        const elementHash = getHash(elementData)
-        const elementValueData = getValue(state, 'elementValue', Object.assign({}, elementData, { hash: elementHash }))
-        const elementValueHash = getHash(elementValueData)
-        const elementValueDataWithHash = Object.assign({}, elementValueData, { hash: elementValueHash })
-        const valuePrimitive = getValue(state, 'jsPrimitive', elementValueDataWithHash) //todo: this will not work with context --need to pass prop?
-        const withContext = addContextToArgs(state, 'elementValue', valuePrimitive, elementValueDataWithHash)
-        const { args, varDefs } = argsToVarDefs(state, elementData, { args: withContext.args, varDefs: withContext.varDefs })
-        return Object.assign({}, withContext, { args, varDefs })
+        const hash = getHash(elementData)
+        const elementDataWithHash = { ...elementData, hash }
+        const elementPrim = getValue(state, 'jsPrimitive', elementDataWithHash)
+        return addContextToArgs(state, 'element', elementPrim, objectData)
+
     })
     const paramNames = parameters.map(() => ('element'))
-
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
         hash: getAttr(objectData, 'hash'),
@@ -70,13 +87,47 @@ const array = (state, objectData, valueData) => {
         inline: true
     }
 }
+// the elements of arrays can depend on the index within the array at run time. Therefore, the index must be passed in as an argument to the array
+const arrayElement = (state, objectData) => {
+    const paramNames = ['elementValue']
+
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+    ))
+    //if the parameter has index as an arg then remove it --need to modify for nested arrays
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
+    const argEntries = Object.entries(args)
+        .filter((entry) => (entry[1].type !== INDEX))
+    const filteredArgs = Object.fromEntries(argEntries)
+    return {
+        hash: getAttr(objectData, 'hash'),
+        args: filteredArgs,
+        children: { elementValue: parameters[0] },
+        type: 'arrayElement',
+        varDefs,
+        inline: false //make inline if it does not depend on index or array
+    }
+}
+const arrayIndex = (state, objectData) => { //make array index work for nested arrays
+    const hash = getAttr(objectData, 'hash')
+    return {
+        hash,
+        type: 'arrayIndex',
+        children: {},
+        args: { [hash]: { type: INDEX } },
+        varDefs: [],
+        inline: true
+    }
+}
 
 const set = (state, objectData) => {
 
 }
 const not           = (...args) => (binOp(...args))
+const arrayLength   = (...args) => (binOp(...args))
+const concat        = (...args) => (binOp(...args))
 
-//operation primitives
+//operation primitives --refactor
 const addition       = (...args) => (binOp(...args))
 const subtraction    = (...args) => (binOp(...args))
 const multiplication = (...args) => (binOp(...args))
@@ -86,7 +137,14 @@ const lessThan       = (...args) => (binOp(...args))
 const greaterThan    = (...args) => (binOp(...args))
 const and            = (...args) => (binOp(...args))
 const or             = (...args) => (binOp(...args))
-const binOp = (state, objectData, valueData) => ({
+const index          = (...args) => (binOp(...args))
+const slice          = (...args) => (binOp(...args))
+const splice         = (...args) => (binOp(...args))
+const substring      = (...args) => (binOp(...args))
+
+
+
+const binOp = (state, objectData, valueData) => ({ //rename
     hash: getAttr(objectData, 'hash'),
     type: valueData.type,
     varDefs: [],
@@ -166,6 +224,7 @@ const get = (state, objectData) => {
         const args = {
             [hash]: {
                 query,
+                context: [],
                 type: LOCAL_SEARCH,
                 getStack: [...getStack, objectData]
             }
@@ -214,6 +273,7 @@ const dbSearch = (state, objectData) => {
                 query,
                 type: GLOBAL_SEARCH,
                 getStack: [],
+                context: [],
                 searchContext: objectData.inverses
             },
             //...astArgs
@@ -222,7 +282,7 @@ const dbSearch = (state, objectData) => {
 }
 
 const apply = (state, objectData) => {
-    const paramNames = ['op1','function', 'op2', 'op3']
+    const paramNames = ['op1','function', 'op2', 'op3', 'op4']
     const parameters = paramNames.map((paramName) => (
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
@@ -232,6 +292,7 @@ const apply = (state, objectData) => {
           parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
         : parameters.length === 3 ? { op1: parameters[0], function: parameters[1], op2: parameters[2] } //binop
         : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
+        : parameters.length === 5 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3], op4: parameters[4] } //quadOp --make this an array?
         : {} //error
     return {
         hash: getAttr(objectData, 'hash'),
@@ -276,6 +337,22 @@ const text = (state, objectData) => {
         vis: { name: getName(state, objectData) }
     }
 }
+const line = (state, objectData) => {
+    const paramNames = ["x1", "y1", "x2", "y2", "r", "g", "b"]
+    const parameters = paramNames.map((paramName) => (
+        getJSValue(state, 'placeholder', paramName, objectData)
+    ))
+    const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    return {
+        hash: getAttr(objectData, 'hash'),
+        args, //combine args of x,y,text
+        children: { x1: parameters[0], y1: parameters[1], x2: parameters[2], y2: parameters[3] },
+        type: 'line',
+        varDefs,
+        inline: false,
+        vis: { name: getName(state, objectData) }
+    }
+}
 
 const group = (state, objectData) => {
     const paramNames = ["childElement1", "childElement2", "childElements"]
@@ -286,7 +363,7 @@ const group = (state, objectData) => {
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     //need to sort by z-order
     let children = {}
-    if (parameters[0].type === 'array'){
+    if (parameters[0].type === 'array' || parameters[0].type === 'apply'){ //remove check
         children = { childElements: parameters[0] }
     } else {
         children = parameters.length === 1
@@ -325,11 +402,15 @@ const evaluate = () => ({
 })
 
 export const primitives = {
+    parse,
+    compile,
     input,
     number,
     bool,
     string,
     array,
+    arrayElement,
+    arrayIndex,
     addition,
     subtraction,
     multiplication,
@@ -341,7 +422,13 @@ export const primitives = {
     or,
     not,
     conditional,
-    getIndex,
+    index,
+    arrayLength,
+    slice,
+    splice,
+    substring,
+    concat,
+    getIndex,//remove
     contains,
     get,
     search,
@@ -350,6 +437,7 @@ export const primitives = {
     apply,
     ternary,
     text,
+    line,
     group,
     app,
     set,

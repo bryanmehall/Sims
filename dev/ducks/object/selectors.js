@@ -1,5 +1,5 @@
 /* eslint pure/pure: 2 */
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT, INDEX } from './constants'
 import { isUndefined } from './utils'
 import { getValue, getName, objectFromHash, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
@@ -15,7 +15,8 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
         if (newGetStack.length > 0){
             throw new Error('LynxError: handle case where get stack does not end at previous state')
         }
-        return createStateArg(state, currentObject, argKey);
+        const stateFD = createStateArg(state, currentObject, argKey)
+        return stateFD
     }
 
     const nextValue = getValue(state, attr, currentObject) //evaluate attr of currentobject
@@ -77,6 +78,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
             query: childQuery,
             getStack: combinedGetStack
         }
+        console.log(appendedSearchArgs)
         const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
         return argsToVarDefs(state, currentObject, getFunctionData)
     } else {
@@ -119,7 +121,7 @@ const createVarDef = (state, currentObject, searchArgData) => {
             ast: Object.assign({}, jsResult, { args, varDefs: inverseFunctionData.varDefs }),
             string: jsResult.string,
             comment: `//${searchName}`,
-            context: context
+            context
         }
         return { args: inverseFunctionData.args, varDefs: [variableDefinition, ...inverseFunctionData.varDefs] }
     }
@@ -145,8 +147,8 @@ const resolveLocalSearch = (state, currentObject, searchArgData) => {
         return reduceGetStack(state, currentObject, searchArgData)
     } else {
         if (searchName === 'app'){
-            //console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
-            throw new Error(`LynxError: no match found for query "${query}"`)
+            console.warn(`LynxError: no match found for query "${query}"\n Traceback:`)
+            //throw new Error(`LynxError: no match found for query "${query}"`)
         }
         return { args: {}, varDefs: [] } //this just doesn't move any args, it doesn't mean that there are not any
     }
@@ -156,8 +158,11 @@ function resolveInverse(state, arg, currentObject) {
     const inverseAttr = arg.query
     const matchingContext = arg.context
     .filter((contextPath) => (contextPath.attr === inverseAttr))
-    if (matchingContext.length !== 1){
-        throw new Error('LynxError: context not found or multiple found')
+    if (matchingContext.length === 0){
+        console.log('context: ', arg.context)
+        throw new Error(`LynxError: context not found for ${inverseAttr}`)
+    } else if (matchingContext.length > 1){
+        throw new Error(`LynxError: multiple context found for ${inverseAttr}: ${arg.context}`)
     }
     const contextPath = matchingContext[0]
     const newSearchArgs = { ...arg, type: RELATIVE }
@@ -192,20 +197,27 @@ export const argsToVarDefs = (state, currentObject, functionData) => {
     const resolvedFunctionData = Object.entries(combinedArgs)
         .map((entry) => {
             const arg = { ...entry[1], argKey: entry[0] }
-            if (arg.type === RELATIVE){
-                return reduceGetStack(state, currentObject, arg)
-            } else if (arg.type === LOCAL_SEARCH) {
-                return resolveLocalSearch(state, currentObject, arg)
-            } else if (arg.type === INVERSE) {
-                return resolveInverse(state, arg, currentObject)
-            } else if (arg.type === STATE_ARG){
-                return resolveState(state, arg, currentObject)
-            } else if (arg.type === GLOBAL_SEARCH) {
+            try {
+                if (arg.type === RELATIVE){
+                    return reduceGetStack(state, currentObject, arg)
+                } else if (arg.type === LOCAL_SEARCH) {
+                    return resolveLocalSearch(state, currentObject, arg)
+                } else if (arg.type === INVERSE) {
+                    return resolveInverse(state, arg, currentObject)
+                } else if (arg.type === STATE_ARG){
+                    return resolveState(state, arg, currentObject)
+                } else if (arg.type === GLOBAL_SEARCH) {
+                    return { args: {}, varDefs: [] }
+                } else if (arg.type === INPUT) {
+                    return { args: {}, varDefs: [] }
+                } else if (arg.type === INDEX) {
+                    return { args: {}, varDefs: [] }
+                } else {
+                    throw new Error(`LynxError: arg type "${arg.type}" not found`)
+                }
+            } catch (e){ //catch compiler errors so it can complete but with an incorrect output for debugging
+                console.log(e)
                 return { args: {}, varDefs: [] }
-            } else if (arg.type === INPUT) {
-                return { args: {}, varDefs: [] }
-            } else {
-                throw new Error(`LynxError: arg type "${arg.type}" not found`)
             }
         })
         .reduce(reduceFunctionData, functionData)
@@ -245,7 +257,6 @@ if GLOBAL_SEARCH:
 
 const combineArgs = (childAsts) => (
     childAsts.reduce((combined, ast) => {
-        //add warning here for overwriting property
         if (typeof ast === 'undefined'){
             throw new Error("LynxError: ast is undefined")
         }

@@ -5,6 +5,7 @@ export const INVERSE = 'inverse'
 export const STATE_ARG = 'STATE_ARG'
 export const RELATIVE = 'RELATIVE'
 export const INPUT = 'INPUT'
+export const INDEX = 'INDEX'
 
 
 //undefined

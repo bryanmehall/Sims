@@ -19,7 +19,6 @@ const compileOutput = (state, ast, outputs) => { //get rid of dependence on stat
     }
     const dbASTs = resolveDBSearches(state, ast.args) //get all db searches from ast args
     const stateArgs = getStateArgs(ast) //get all state args from ast
-
     const varDefs = ast.varDefs.concat(dbASTs) //add db varDefs to ast varDefs
     const astWithDB = Object.assign({}, ast, { varDefs }) //combine these new varDefs with ast
     const functionTable = astToFunctionTable(astWithDB) //create function table from ast
@@ -43,7 +42,7 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
 
 //take state indexed by name and return a hash table
 //for every nested tree, flatten the tree and index by hash
-const flattenState = (state) => {
+export const flattenState = (state) => {
     const hashTable = Object.values(state).reduce((hashTable, obj) => {
         const hash = getHash(obj)
         const objWithHash = obj//{ ...obj, hash }
@@ -66,24 +65,29 @@ const getHashesFromTree = (objectData) => (
             } else if (prop === 'jsPrimitive') {
                 if (value.type === "array"){ //add hashes for elements of array --need to add map
                     return value.value.reduce((hashTable, element) => {
-                        const elementTable = getHashesFromTree(element)
-                        return Object.assign(hashTable, elementTable)
+                        const elementHash = getHash(element)
+                        const elementWithHash = { ...element, hash: elementHash }
+                        const elementTable = getHashesFromTree(elementWithHash)
+                        return Object.assign(hashTable, elementTable, { [elementHash]: elementWithHash })
                     }, {})
+                } else {
+                    return Object.assign(hashTable, { [hash]: value })
                 }
-                return Object.assign(hashTable, { [hash]: value })
             } else {
                 return Object.assign(hashTable, getHashesFromTree(value), { [hash]: value })
             }
         }, {})
 )
 
-//compile a module
-export const compile = (state) => {
+export const compileApp = (state) => { //state is in the form name:lynxObject
     const hashTable = flattenState(state)
     const appData = objectFromName(hashTable, 'app')
-    //const appDataWithHash = Object.assign({}, appData, { props: Object.assign({}, appData.props, { hash: appHash }) })//remove prop here
-    const appAST = getValue(hashTable, 'jsPrimitive', appData)//aWithHash)
-    const outputs = compileOutput(hashTable, appAST, {})
+    return compile(hashTable, appData)
+}
+//compile a module
+export const compile = (hashTable, objectData) => {
+    const objAST = getValue(hashTable, 'jsPrimitive', objectData)//aWithHash)
+    const outputs = compileOutput(hashTable, objAST, {})
     const functionTable = combineFunctionTables(outputs)
     return {
         functionTable,

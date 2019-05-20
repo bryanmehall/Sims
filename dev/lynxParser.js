@@ -1,4 +1,5 @@
 import parser from './parser'
+import { flattenState } from './ducks/object/compiler'
 //pegjs --track-line-and-column --cache parser.peg
 
 export const lynxParser = (lynxString) => {
@@ -6,7 +7,7 @@ export const lynxParser = (lynxString) => {
     const lines = lynxString.split("\n")
     let outString = ""
     let indentLevel = 0
-    lines.forEach((line) => {
+    lines.forEach((line, i) => {
 		const indentPos = line.replace("\t", "    ")
 			.split("")
 			.findIndex((char) => (char !== " "))/4
@@ -14,7 +15,11 @@ export const lynxParser = (lynxString) => {
         const change = indents-indentLevel
         indentLevel = indents
         if (change === 0){
-            outString += ("\n"+line)
+            if (i === 0){
+                outString += line
+            } else {
+                outString += ("\n"+line)
+            }
         } else if (change >= 1){
             outString += ("{#{".repeat(change)+"\n"+line)
         } else if (change <= -1){
@@ -23,10 +28,10 @@ export const lynxParser = (lynxString) => {
     })
     try {
         const out = parser.parse(outString)
+        //const hashTable = flattenState(out)
         return out
     } catch (e) {
         console.log(outString)
-        console.warn("parsing failed for" , e.message, 'line:', e.line, 'column:', e.column)
-        throw new Error('parsing error')
+        throw new Error(`parsing failed: ${e.message} line: ${e.line} column:${e.column}`)
     }
 }

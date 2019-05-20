@@ -7,7 +7,7 @@ window = new group
         pos: new coordinatePosition
             x:20+20
             y:20+30
-        childElement1: new text
+        childElements: new text
             name:"objectName"
             x:accordianRepresentation.pos.x
             y:accordianRepresentation.pos.y

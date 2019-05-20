@@ -4,16 +4,57 @@ window = new group
         jsPrimitive:{get}
         rootObject:textbox
         attribute:graphicalRepresentation
+    childElement2:new text
+        name:"lynxResult"
+        op1:new get
+            jsPrimitive:{get}
+            rootObject:textbox
+            attribute:value
+        innerText:parse(lynxResult.op1)
+        x:100
+        y:50
+
 
 textbox = new object
     name:"textbox"
-    isChecked:true
-    graphicalRepresentation: new text
-        name:"box"
-        innerText: app.keyboard.currentKey
+    value:textbox.graphicalRepresentation.childElement1.innerText
+    cursorColumn:condition
+        if app.keyboard.currentKeysDown[0] == "ArrowLeft" || app.keyboard.currentKeysDown[0] == "Backspace" then textbox.cursorColumn.previousState-1
+        if app.keyboard.currentKeysDown[0] == "Shift" then textbox.cursorColumn.previousState
+        if arrayLength(app.keyboard.currentKeysDown) == 1 then textbox.cursorColumn.previousState+1
+        textbox.cursorColumn.previousState
+    cursorRow:0
+    pos: new coordinatePosition
         x:30
         y:30
+    graphicalRepresentation: new group
+        childElement1:new text
+            name:"box"
+            currentKey: app.keyboard.currentKeysDown[0]
+            innerText:condition
+                if box.currentKey == "Backspace" then slice(box.innerText.previousState, 0, textbox.cursorColumn)+slice(box.innerText.previousState, textbox.cursorColumn+1)
+                if box.currentKey == "Enter" then box.innerText.previousState+"\n"
+                if box.currentKey == "Tab" then box.innerText.previousState+"\t"
+                if box.currentKey == "Shift" || box.currentKey == "ArrowRight" || box.currentKey == "ArrowLeft" then box.innerText.previousState
+                if arrayLength(app.keyboard.currentKeysDown) == 0 then box.innerText.previousState
+                substring(box.innerText.previousState, 0, textbox.cursorColumn-1)+box.currentKey+substring(box.innerText.previousState, textbox.cursorColumn-1)
+            x:textbox.pos.x
+            y:textbox.pos.y
+        childElement2: new line
+            name: "cursor"
+            x:textbox.cursorColumn*10.836914+textbox.pos.x
+            y:textbox.cursorRow*18+textbox.pos.y
+            x1:cursor.x
+            y1:cursor.y-16
+            x2:cursor.x
+            y2:cursor.y+2
 
+cursorRow = new attribute
+    name:"cursorRow"
+cursorColumn = new attribute
+    name:"cursorColumn"
+currentKey = new attribute
+    name:"currentKey"
 state = new object
     name:"state"
 isChecked = new attribute

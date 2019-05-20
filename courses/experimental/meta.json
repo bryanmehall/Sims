@@ -29,6 +29,13 @@
 					"length":10
 				},
                 {
+					"id": "append-parent-get",
+					"title":"Append parent get",
+					"text":"append a get that is above the current level to then end of the get stack",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "get-middle-chain",
 					"title":"Get Middle Chain",
 					"text":"test for when the a get chain is inserted in the middle of another one",
@@ -226,6 +233,13 @@
 					"id": "structs",
 					"title":"Structs",
 					"text":"simple struct example",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "metacircular",
+					"title":"Metacircular",
+					"text":"develop homoiconic behavior",
 					"type":"anim",
 					"length":10
 				}

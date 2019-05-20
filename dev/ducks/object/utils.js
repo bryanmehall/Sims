@@ -108,6 +108,7 @@ export const compileToJS = (args, string) => {
         return new Function(args, string)
     } catch (e) {
         if (e instanceof SyntaxError) {
+            console.log(string)
             throw new Error('Lynx Error: invalid syntax in compiled code '+e.message)
         } else {
             throw e

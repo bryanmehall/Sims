@@ -17,8 +17,15 @@ const varDefsToString = (varDefs) => (
         })
         .join('')
 )
-
-const input = (ast) => (`inputs.${ast.inputName}.value;\n`)
+const input = (ast) => {
+    if (ast.varDefs.length === 0){
+        return inlineInput(ast)
+    } else {
+        const varDefs = varDefsToString(ast.varDefs)
+        return `\t//input\n${varDefs}\nreturn ${inlineInput(ast)}`
+    }
+}
+const inlineInput = (ast) => (`inputs.${ast.inputName}.value;\n`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
@@ -27,6 +34,14 @@ const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS ri
 const array = (ast) => {
     const programText = buildChildren(ast, ', ')
     return `[${programText}]`
+}
+const arrayElement = (ast) => {
+    const programText = buildChildren(ast)
+    const varDefs = varDefsToString(ast.varDefs)
+    return `\t//arrayElement\n\treturn function(i, array){\n\t${varDefs}\n\t\treturn ${programText}\n\t}`
+}
+const arrayIndex = (ast) => {
+    return 'i' //need to change to hash of some kind for neted arrays?
 }
 
 const getIndex = (ast) => {
@@ -39,18 +54,20 @@ const contains = (ast) => {
     return `!(${programText[0]}.indexOf(${programText[1]}) === -1)`
 }
 
+
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.varDefs)
-    return `\t//app\n${varDefs}\n\treturn function(prim) { ${programText}(prim) }`
+    const debug = ''
+    return `\t//app\n${varDefs}\n${debug}\n\treturn function(prim) { ${programText}(prim) }`
 }
 
 const group = (ast) => {
     const elementsList = ast.children.childElements
-    if (elementsList !== undefined && elementsList.type === 'array'){ //remove this check when all elements are arrays
-        const programText = buildChildren(elementsList, '(prim)\n')
+    if (elementsList !== undefined && (elementsList.type === 'array' || elementsList.type === 'apply')){ //remove this check when all elements are arrays
+        const childrenText = buildChildren(ast)
         const varDefs = varDefsToString(ast.varDefs)
-        return `\t//group\n${varDefs}\treturn function(prim) { ${programText}(prim) }`
+        return `\t//group\n${varDefs}\tvar children = ${childrenText};\n\treturn function(prim) { children.forEach(function(elem, i, array){elem(i, array)(prim)}) }`
     } else {
         const programText = buildChildren(ast, '(prim)\n')
         const varDefs = varDefsToString(ast.varDefs)
@@ -64,6 +81,12 @@ const text = (ast) => {
     const varDefs = varDefsToString(ast.varDefs)
     return `\t//text\n${varDefs}\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
 }
+const line = (ast) => {
+    const programText = buildChildren(ast, ', ') //space is important for unit tests
+    const varDefs = varDefsToString(ast.varDefs)
+    return `\t//line\n${varDefs}\treturn function(prim) { prim.line( ${programText} ) }`//space is important for unit tests
+}
+
 
 const get = (ast) => {
     if (ast.inline){
@@ -96,9 +119,17 @@ const apply = (ast) => {
     }
 }
 
+const objectOperators = ["slice", "splice", "substring", 'concat'] //list of operators in the form object.function(arg1, ...)
 const inlineApply = (ast) => { //helper function for apply
     const children = buildChildren(ast)
-    if (children.length === 2){ //unop
+    if (children[1] === "index"){ //index operator
+        return `${children[0]}[${children[2]}]`
+    } else if (children[1] === "arrayLength") {
+        return `${children[0]}.length`
+    } else if (objectOperators.includes(children[1])) {
+        const argsList = children.slice(2).join(", ")
+        return `${children[0]}.${children[1]}(${argsList})`
+    } else if (children.length === 2){ //unop
         return `${children[1]}(${children[0]})`
     } else if (children.length === 4){ //ternop
         return `${children[0]} ? ${children[2]} : ${children[3]}`
@@ -126,21 +157,40 @@ const greaterThan    = () => ('>')
 const and            = () => ('&&')
 const or             = () => ('||')
 const not            = () => ('!')
+const index          = () => ('index')
+const arrayLength    = () => ('arrayLength')
+const slice          = () => ('slice')
+const splice         = () => ('splice')
+const substring      = () => ('substring')
+const concat         = () => ('concat')
+const parse          = () => ('functionTable.parse')
+const compile          = () => ('functionTable.compile')
 
 const evaluate = () => ('evaluate()')
 
-export const jsCompilers = {
+export const jsAssembler = {
+    parse,
+    compile,
+    index,
+    arrayLength,
+    slice,
+    splice,
+    substring,
+    concat,
     evaluate,
     input,
     number,
     boolean,
     array,
+    arrayElement,
+    arrayIndex,
     string,
     getIndex,
     contains,
     app,
     group,
     text,
+    line,
     ternary, //replace with conditional
     conditional,
     get,

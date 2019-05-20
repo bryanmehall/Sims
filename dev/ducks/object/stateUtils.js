@@ -4,9 +4,10 @@ import { getValue, getAttr } from './objectUtils'
 import { argsToVarDefs } from './selectors'
 
 export const createStateArg = (state, currentObject, argKey) => {
-    const statePrimitive = primitives.state(state, currentObject)
-    const hash = getAttr(currentObject, 'hash')
+    const hash = 'state'+getAttr(currentObject, 'hash')
     const ast = getValue(state, 'jsPrimitive', currentObject)
+    ast.hash = 'state'+ast.hash
+    const statePrimitive = primitives.state(state, currentObject, ast)
     const varDef = { //reassign value defined by get hash to the hash of curentObject
         key: argKey,
         varDefKey: statePrimitive.hash,
@@ -19,7 +20,7 @@ export const createStateArg = (state, currentObject, argKey) => {
     delete astArgs[argKey]
     const astVarDefs = ast.varDefs.concat(varDef)
     const arg = {
-        hash,
+        hash: hash,
         type: STATE_ARG,
         getStack: [],
         ast: Object.assign({}, ast, { args: astArgs, varDefs: astVarDefs }),
