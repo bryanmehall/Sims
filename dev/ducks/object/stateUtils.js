@@ -41,7 +41,7 @@ export const resolveState = (state, arg, currentObject) => {
     if (arg.hasOwnProperty('ast')){
         const ast = arg.ast
         const { args, varDefs } = argsToVarDefs(state, currentObject, { args: ast.args, varDefs: [] })
-        const orderedVarDefs = varDefs.concat(ast.varDefs.reverse())//does  this reversing var defs work for the general case?
+        const orderedVarDefs = varDefs.concat(ast.varDefs)
         const newAst = Object.assign({}, ast, { args, varDefs: orderedVarDefs })
         const newArg = Object.assign({}, arg, { ast: newAst })
         return { args: { [argKey]: newArg }, varDefs: [] }

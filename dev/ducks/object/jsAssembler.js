@@ -7,8 +7,7 @@ const buildChildren = (ast, delimiter) => {
 }
 
 const varDefsToString = (varDefs) => {
-    return varDefs.reverse()
-        .map((varDef) => {
+    return varDefs.map((varDef) => {
             let string =  buildFunction(varDef.ast).string
             if (string.hasOwnProperty('returnStatement')){
                 string = string.returnStatement

@@ -176,14 +176,12 @@ combine arg and varDef movements to create the final args and varDefs
 */
 const reduceFunctionData = (functionData, newFunctionData) => {
     //this is reversed so var defs will be in the right order
-    const varDefs = functionData.varDefs.concat(newFunctionData.varDefs)
+    const varDefs = newFunctionData.varDefs.concat(functionData.varDefs)
     const args = Object.assign({}, functionData.args, newFunctionData.args)
-    const newVarDefs = newFunctionData.varDefs
-    newVarDefs.forEach((newVarDef) => {
-        if (newVarDef.hasOwnProperty('key')){
-            delete args[newVarDef.key]
+    varDefs.forEach((varDef) => {
+        if (varDef.hasOwnProperty('key')){
+            delete args[varDef.key]
         }
-        Object.assign(args, newVarDef.ast.args)
     })
     return { args, varDefs }
 }
@@ -192,7 +190,6 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 //resolved and is added to varDefs
 export const argsToVarDefs = (state, currentObject, functionData) => {
     const combinedArgs = functionData.args
-    //console.log(combinedArgs)
     const resolvedFunctionData = Object.entries(combinedArgs)
         .map((entry) => {
             const arg = { ...entry[1], argKey: entry[0] }
