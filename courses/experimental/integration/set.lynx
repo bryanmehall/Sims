@@ -1,6 +1,6 @@
 set = new object
     graphicalRepresentation:
-    jsPrimitive:{type:set}
+    lynxIR:{type:set}
 
 setToList = new function
     

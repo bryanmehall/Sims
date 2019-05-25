@@ -5,7 +5,7 @@ window = new group
         x:txt.op1.x
         y:30
         op1:new dbSearch
-            jsPrimitive:{dbSearch}
+            lynxIR:{dbSearch}
             query:"dbobject"
         innerText:"test"
 

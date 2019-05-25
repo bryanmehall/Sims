@@ -4,7 +4,7 @@ window = new group
         x:new get
             name:"get"
             x:100
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute: equalTo
             rootObject: new object
                 name:"apply"

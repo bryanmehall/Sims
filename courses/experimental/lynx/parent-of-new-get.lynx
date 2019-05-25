@@ -8,7 +8,7 @@ window = new group
         innerText:new get
             name:"test"
             op1:3
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute:equalTo
             rootObject:new object
                 name:"apply"

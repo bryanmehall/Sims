@@ -1,10 +1,10 @@
 import { UNDEFINED } from './constants'
 const constructString = (string) => ({
-    jsPrimitive: { type: "string", value: string, args: {} }
+    lynxIR: { type: "string", value: string, args: {} }
 })
 export const objectLib = {
 	id: (id) => ({
-			jsPrimitive: { type: 'id', id }
+			lynxIR: { type: 'id', id }
 	}),
 	undef: {
         name: constructString(UNDEFINED)
@@ -16,14 +16,14 @@ export const objectLib = {
 			id: 'union',
 			function: 'unionFunction',
 			scope,
-			jsPrimitive: { type: 'apply' }
+			lynxIR: { type: 'apply' }
 		}
 	}),
 	find: (attrList) => { //switch this to get?
 		if (attrList.length === 1){
 			return {
 				props: {
-					jsPrimitive: { type: "find" },
+					lynxIR: { type: "find" },
 					attribute: attrList[0]
 				}
 			}
@@ -32,7 +32,7 @@ export const objectLib = {
 			return {
 				type: "find",
 				props: {
-					jsPrimitive: { type: "find" },
+					lynxIR: { type: "find" },
 					attribute: currentAttr,
 					then: objectLib.find(attrList)
 				}
@@ -42,14 +42,14 @@ export const objectLib = {
 	constructSearch: (query) => ({ //add support for searching different databases
 			query,
 			id: 'search'+query,
-			jsPrimitive: { type: 'search', id: query }
+			lynxIR: { type: 'search', id: query }
 	}),
     constructString,
     constructArray: function(name, elements){
         return {
                 name: "array",
                 instanceOf: "array",
-                jsPrimitive: { type: "array", value: elements }
+                lynxIR: { type: "array", value: elements }
             }
     },
 	constructSet: function(id, elements){
@@ -63,7 +63,7 @@ export const objectLib = {
 			return {
 				type: 'set',
 				props: {
-					jsPrimitive: { type: 'set' },
+					lynxIR: { type: 'set' },
                     type: objectLib.constructString('set'),
 					subset1: set1,
 					subset2: set2,

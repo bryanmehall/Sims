@@ -1,7 +1,7 @@
 window = new group
     childElement1: new text
         x:new get
-            jsPrimitive:{get}//varDefs are here
+            lynxIR:{get}//varDefs are here
             attribute:equalTo
             rootObject:new apply
                 name:"apply"
@@ -26,7 +26,7 @@ sum = new function //new is just short for new object...isA --parent chain
         condition: sum.list.length == 0
         then: 0
         alt:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute: equalTo
             rootObject: new object
                 name:"apply"

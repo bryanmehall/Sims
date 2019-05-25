@@ -174,13 +174,13 @@
 			"objectAttrs": {
 				"type": "set",
 				"props": {
-					"jsPrimitive": { "type": "set", "elements": ["accordianRep"] }
+					"lynxIR": { "type": "set", "elements": ["accordianRep"] }
 				}
 			},
 			"appAttrs":{
 				"type":"set",
 				"props": {
-					"jsPrimitive":{ "type": "set", "elements": ["name","childElements"] }
+					"lynxIR":{ "type": "set", "elements": ["name","childElements"] }
 				}
 			},
 			"unionAttrs":{
@@ -189,14 +189,14 @@
 					"set1":"objectAttrs",
 					"set2":"appAttrs",
 					"result":"unionResult",
-					"jsPrimitive":{"type":"apply"},
+					"lynxIR":{"type":"apply"},
 					"function": "unionFunction"
 				}
 			},
 			"unionResult":{
 				"type":"set",
 				"props":{
-					"jsPrimitive":{"type":"set"},
+					"lynxIR":{"type":"set"},
                     "setEquiv":"unionAttrs"
 				}
 			},
@@ -210,13 +210,13 @@
 			"mouseX":{
 				"type":"number",
 				"props": {
-					"jsPrimitive":{"type":"number", "value":0}
+					"lynxIR":{"type":"number", "value":0}
 				}
 			},
 			"mouseY":{
 				"type":"number",
 				"props":{
-					"jsPrimitive":{"type":"number", "value":0}
+					"lynxIR":{"type":"number", "value":0}
 				}
 			},
 			"mousePos":{
@@ -229,7 +229,7 @@
 			"mouseDown":{
 				"type":"bool",
 				"props":{
-					"jsPrimitive": {"type": "bool", "value":false}
+					"lynxIR": {"type": "bool", "value":false}
 				}
 			},
 			"object":{
@@ -266,28 +266,28 @@
 				"type":"bool",
 				"props":{
 					"name":"true",
-					"jsPrimitive": {"type":"bool", "value":true}
+					"lynxIR": {"type":"bool", "value":true}
 				}
 			},
 			"false":{
 				"type":"bool",
 				"props":{
 					"name":"false",
-					"jsPrimitive": {"type":"bool", "value":false}
+					"lynxIR": {"type":"bool", "value":false}
 				}
 			},
 			"number":{
 				"type":"number",
 				"props":{
 					"name":"number",
-					"jsPrimitive": {"type":"number", "value":0}
+					"lynxIR": {"type":"number", "value":0}
 				}
 			},
 			"appChildren": {
 				"type":"set",
 				"props": {
 					"name":"appChildren",
-					"jsPrimitive":{ "type": "set", "elements": ["pendulumPlot"] }
+					"lynxIR":{ "type": "set", "elements": ["pendulumPlot"] }
 				}
 			},
 			"name":{
@@ -322,28 +322,28 @@
 				"type":"number",
 				"props":{
 					"name":"plotVisibility",
-					"jsPrimitive": {"type": "number", "value": 1}
+					"lynxIR": {"type": "number", "value": 1}
 				}
 			},
 			"plotChildren":{
 				"type": "set",
 				"props":{
 					"name":"plotChildren",
-					"jsPrimitive": {"type":"set", "elements":["circle", "circle1"]}
+					"lynxIR": {"type":"set", "elements":["circle", "circle1"]}
 				}
 			},
 			"plotWidth":{
 				"type":"number",
 				"props":{
 					"name":"plotWidth",
-					"jsPrimitive": {"type": "number", "value": 400}
+					"lynxIR": {"type": "number", "value": 400}
 				}
 			},
 			"plotHeight":{
 				"type":"number",
 				"props":{
 					"name":"plotHeight",
-					"jsPrimitive": {"type": "number", "value": 450}
+					"lynxIR": {"type": "number", "value": 450}
 				}
 			},
 			"plotPos": {
@@ -358,14 +358,14 @@
 				"type":"number",
 				"props":{
 					"name":"plotX",
-					"jsPrimitive": {"type": "number", "value": 50}
+					"lynxIR": {"type": "number", "value": 50}
 				}
 			},
 			"plotY":{
 				"type":"number",
 				"props":{
 					"name":"plotY",
-					"jsPrimitive": {"type": "number", "value": 500}
+					"lynxIR": {"type": "number", "value": 500}
 				}
 			},
 			"pendulumCoordSys":{
@@ -382,28 +382,28 @@
 				"type":"number",
 				"props":{
 					"name":"xMin",
-					"jsPrimitive": {"type": "number", "value": -30}
+					"lynxIR": {"type": "number", "value": -30}
 				}
 			},
 			"xMax":{
 				"type":"number",
 				"props":{
 					"name":"xMax",
-					"jsPrimitive": {"type": "number", "value": 30}
+					"lynxIR": {"type": "number", "value": 30}
 				}
 			},
 			"yMin":{
 				"type":"number",
 				"props":{
 					"name":"yMin",
-					"jsPrimitive": {"type": "number", "value": -50}
+					"lynxIR": {"type": "number", "value": -50}
 				}
 			},
 			"yMax":{
 				"type":"number",
 				"props":{
 					"name":"yMax",
-					"jsPrimitive": {"type": "number", "value": 10}
+					"lynxIR": {"type": "number", "value": 10}
 				}
 			},
 			"circle": {
@@ -413,14 +413,14 @@
 					"radius":"getCircleRadius",
 					"centerPoint":"circleCenter",
 					"highlighted":"false",
-					"jsPrimitive":{ "type": "circle" }
+					"lynxIR":{ "type": "circle" }
 				}
 			},
 			"getCircleRadius": {
 				"type":"get",
 				"props":{
 					"name":"getCircleRadius",
-					"jsPrimitive": {"type": "get"},
+					"lynxIR": {"type": "get"},
 					"rootObject": "radiusExpression",
 					"attribute": "numericalEquiv"
 				}
@@ -434,14 +434,14 @@
 					"function": "additionFunction",
 					"numericalEquiv": "radiusResult",
 					"textRep": "expressionText",
-					"jsPrimitive": { "type":"apply" }
+					"lynxIR": { "type":"apply" }
 				}
 			},
 			"expressionText":{
 				"type": "string",
 				"props":{
 					"name":"expressionText",
-					"jsPrimitive":{"type": "string", "value":"3+2"}
+					"lynxIR":{"type": "string", "value":"3+2"}
 				}
 			},
 			"numericalEquiv":{
@@ -454,21 +454,21 @@
 				"type": "function",
 				"props": {
 					"name":"additionFunction",
-					"jsPrimitive": { "type":"function", "function": "add"}
+					"lynxIR": { "type":"function", "function": "add"}
 				}
 			},
 			"unionFunction":{
 				"type":"function",
 				"props":{
 					"name":"unionFunction",
-					"jsPrimitive": { "type":"function", "function": "union"}
+					"lynxIR": { "type":"function", "function": "union"}
 				}
 			},
 			"radiusLeft":{
 				"type":"number",
 				"props":{
 					"name":"radiusLeft",
-					"jsPrimitive": {"type": "number", "value": 50}
+					"lynxIR": {"type": "number", "value": 50}
 				}
 			},
 			"radiusResult":{
@@ -476,14 +476,14 @@
 				"props":{
 					"name":"radiusResult",
 					"numericalEquiv": "radiusExpression",
-					"jsPrimitive": { "type": "number" }
+					"lynxIR": { "type": "number" }
 				}
 			},
 			"radiusRight":{
 				"type":"number",
 				"props":{
 					"name":"radiusRight",
-					"jsPrimitive": {"type": "number", "value": 100}
+					"lynxIR": {"type": "number", "value": 100}
 				}
 			},
 			"circleCenter": {
@@ -498,14 +498,14 @@
 				"type":"number",
 				"props":{
 					"name":"radiusX",
-					"jsPrimitive": {"type": "number", "value": 250}
+					"lynxIR": {"type": "number", "value": 250}
 				}
 			},
 			"radiusY":{
 				"type":"number",
 				"props":{
 					"name":"radiusY",
-					"jsPrimitive": {"type": "number", "value": 200}
+					"lynxIR": {"type": "number", "value": 200}
 				}
 			},
 			"circle1": {
@@ -516,13 +516,13 @@
 					"centerPoint":"circle1Center",
 					"expanded":"expandedBool",
 					"highlighted":"false",
-					"jsPrimitive":{ "type": "circle" }
+					"lynxIR":{ "type": "circle" }
 				}
 			},
 			"conditionalBlock": {
 				"type":"ternary",
 				"props":{
-					"jsPrimitive": {"type":"ternary"},
+					"lynxIR": {"type":"ternary"},
 					"condition": "expandedBool",
 					"then":"radiusRight",
 					"else":"radiusLeft"
@@ -532,7 +532,7 @@
 				"type":"bool",
 				"props": {
 					"name":"expandedBool",
-					"jsPrimitive": {"type":"bool", "value":false}
+					"lynxIR": {"type":"bool", "value":false}
 				}
 			},
 			"circle1Center": {
@@ -548,7 +548,7 @@
 				"type": "number",
 				"props":{
 					"name":"radiusY1",
-					"jsPrimitive": {"type": "number", "value": 100}
+					"lynxIR": {"type": "number", "value": 100}
 				}
 			},
 			"coordinateTransform":{

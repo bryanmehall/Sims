@@ -15,7 +15,7 @@ array = new object
     firstElement:new element
         name:"firstElem"
         value:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute:equalTo
             rootObject:new object
                 name:"apply" 
@@ -23,7 +23,7 @@ array = new object
                 function: new function
                     name:"contains"
                     result:new object
-                        jsPrimitive:{contains}
+                        lynxIR:{contains}
                         array:txt.attributes
                         value: contains.caller.value
                 array:txt.attributes //apply.attributes works but array.attributes does not
@@ -32,7 +32,7 @@ array = new object
 getIndex = new function
     name:"getIndex"
     result:new object
-        jsPrimitive:{getIndex}
+        lynxIR:{getIndex}
         array:getIndex.caller.array
         index:getIndex.caller.index
 

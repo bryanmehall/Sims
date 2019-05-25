@@ -1,17 +1,31 @@
 window = new group
-    childElement1: new text
-        name:"text"
-        x:text.op1.index
-        op1:new object
-            value:10
-            name:"element"
-            index:new ternary
-                condition:element.previousElement.name == "undefined"
-                then:30
-                alt:element.previousElement.index
-        y:20
-        innerText:"test"
+    name:"window"
+    childElements:[
+        new get
+            lynxIR:{get}
+            rootObject:slider
+            attribute:graphicalRepresentation
+    ]
 
-list = new object
-length = new attribute
-index = new attribute
+slider = new object
+    name:"slider"
+    value:20
+    graphicalRepresentation: new group
+        childElements:[
+            new line
+                x1:10
+                x2:210
+                y1:60
+                y2:60
+            new text
+                name:"handle"
+                isBeingDragged: handle.mouseOver && app.mouse.down || handle.isBeingDragged.previousState
+                mouseOver:app.mouse.pos.x > slider.value - 5 && app.mouse.pos.x < slider.value + 5
+                innerText:handle.isBeingDragged ? "x" : "o"
+                x:slider.value-5
+                y:65
+        ]
+mouseOver = new attribute
+    name:"mouseOver"
+isBeingDragged = new attribute
+    name:"isBeingDragged"

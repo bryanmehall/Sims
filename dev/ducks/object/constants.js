@@ -7,6 +7,9 @@ export const RELATIVE = 'RELATIVE'
 export const INPUT = 'INPUT'
 export const INDEX = 'INDEX'
 
+//attributes
+export const INTERMEDIATE_REP = 'lynxIR'
+
 
 //undefined
 export const UNDEFINED = 'undef'

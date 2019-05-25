@@ -1,5 +1,5 @@
 import { objectFromName, getHash, getValue, getJSValue, getAttr } from './objectUtils'
-import { GLOBAL_SEARCH } from './constants'
+import { GLOBAL_SEARCH, INTERMEDIATE_REP } from './constants'
 import { getArgsAndVarDefs } from './selectors'
 //import { buildFunction } from './IRutils'
 
@@ -15,14 +15,14 @@ export const resolveDBSearches = (state, combinedArgs) => { //move db searches a
             if (getStack.length > 1) { throw 'get stack length greater than one' }
             let ast, args1, varDefs1
             if (getStack.length === 0){ //generalize for getStack of length n
-                ast = getValue(state, 'jsPrimitive', root)
+                ast = getValue(state, INTERMEDIATE_REP, root)
                 const { args, varDefs } = getArgsAndVarDefs(state, [ast], root)
                 args1 = args
                 varDefs1 = varDefs
             } else {
                 const attr = getAttr(getStack[0], 'attribute')
                 const nextValue = getValue(state, attr, root)
-                ast = getValue(state, 'jsPrimitive', nextValue)
+                ast = getValue(state, INTERMEDIATE_REP, nextValue)
                 const { args, varDefs } = getArgsAndVarDefs(state, [ast], nextValue)
                 args1 = args
                 varDefs1 = varDefs
@@ -62,7 +62,7 @@ export const getDBsearchAst = (state, dbSearchObject, getStack) => {
     const root = rootProps
     if (getStack.length > 1) { throw 'get stack length greater than one' } //todo:make this work for longer paths
     if (getStack.length === 0){
-        const ast = getValue(state, 'jsPrimitive', root)
+        const ast = getValue(state, INTERMEDIATE_REP, root)
         const searchArgs = { query, root, ast }
         dbCache[hash] = searchArgs
         return searchArgs

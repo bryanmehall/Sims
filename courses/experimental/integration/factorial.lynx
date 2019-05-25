@@ -5,13 +5,13 @@ window = new group
         innerText:"test"
         y:20
         x:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute:equalTo
             rootObject: new object
                 name:"appl"
                 equalTo:appl.function.result
                 function: new dbSearch
-                    jsPrimitive:{dbSearch}
+                    lynxIR:{dbSearch}
                     query:"factorial"
                 op1:5
 
@@ -27,12 +27,12 @@ factorial = new funct
             function:multiplication
             op1:factorial.op1
             op2:new get
-                jsPrimitive:{get}
+                lynxIR:{get}
                 attribute:equalTo
                 rootObject: new object
                     name:"appy"
                     equalTo:appy.function.result
                     function: new dbSearch
-                        jsPrimitive:{dbSearch}
+                        lynxIR:{dbSearch}
                         query:"factorial"
                     op1:factorial.op1-1

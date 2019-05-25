@@ -2,7 +2,7 @@ import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
 import { getValue, getJSValue, getName, getAttr, getHash } from './objectUtils'
 import { addContextToArgs } from './contextUtils'
 import { isUndefined } from './utils'
-import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX } from './constants'
+import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
 
 const input = (state, objectData) => {
     const hash = getAttr(objectData, 'hash')
@@ -71,7 +71,7 @@ const array = (state, objectData, valueData) => {
     const parameters = elements.map((elementData) => {
         const hash = getHash(elementData)
         const elementDataWithHash = { ...elementData, hash }
-        const elementPrim = getValue(state, 'jsPrimitive', elementDataWithHash)
+        const elementPrim = getValue(state, INTERMEDIATE_REP, elementDataWithHash)
         return addContextToArgs(state, 'element', elementPrim, objectData)
 
     })
@@ -254,7 +254,7 @@ const search = (state, objectData, valueData) => { //search is get root (local S
 }
 
 const dbSearch = (state, objectData) => {
-    const query = getAttr(getAttr(objectData, 'query'), 'jsPrimitive').value //refactor --get from dbSerachast
+    const query = getAttr(getAttr(objectData, 'query'), INTERMEDIATE_REP).value //refactor --get from dbSerachast
     const hash = getAttr(objectData, 'hash')
     //const { ast } = getDBsearchAst(state, objectData, [])
     //console.log(ast)

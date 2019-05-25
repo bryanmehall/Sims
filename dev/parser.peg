@@ -15,13 +15,13 @@ var symbolTable = {
 
 function createString(str){
 	return {
-        jsPrimitive:{type:"string", value:str}
+        lynxIR:{type:"string", value:str}
 	}
 }
 
 function createNOp(args, op){
     const prim = {
-        jsPrimitive:{type:"apply"},
+        lynxIR:{type:"apply"},
         function:op
     }
     args.forEach((arg, i) => {
@@ -33,7 +33,7 @@ function createNOp(args, op){
 function createFunction(name){
 	return {
         	name:createString(name),
-        	jsPrimitive:{type:"function"}
+        	lynxIR:{type:"function"}
     }
 }
 function createArray(elementValues){
@@ -45,12 +45,12 @@ function createArray(elementValues){
     })
     return {
             instanceOf:"array",
-            jsPrimitive:{ type:"array", value:elements}
+            lynxIR:{ type:"array", value:elements}
     }
 }
 function buildPath(rootObject, attr){
     var getData = {
-        jsPrimitive:{type:"get"},
+        lynxIR:{type:"get"},
         attribute:attr[1]
     }
     if (rootObject !== null){
@@ -161,7 +161,7 @@ New = "new "name:Name _ Comment? {return name}
 
 Search = query:Name {
 	return {
-            jsPrimitive:{type:"search", "query":query}
+            lynxIR:{type:"search", "query":query}
         }
     }
 
@@ -175,7 +175,7 @@ Get "get"
 Number 
 	= value:(Float / Int) {
         return {
-            jsPrimitive:{type:"number", value:value}
+            lynxIR:{type:"number", value:value}
         }
     }
     
@@ -218,7 +218,7 @@ Map "map"
 Bool "bool"
     = value:("true" / "false") {
     return {
-        	jsPrimitive:{type:"bool", value:value==="true"}
+        	lynxIR:{type:"bool", value:value==="true"}
        }
     }
 Primitive "static primitive"

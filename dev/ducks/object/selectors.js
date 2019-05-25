@@ -1,5 +1,5 @@
 /* eslint pure/pure: 2 */
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT, INDEX } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
 import { isUndefined } from './utils'
 import { getValue, getName, objectFromHash, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
@@ -20,7 +20,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
     }
 
     const nextValue = getValue(state, attr, currentObject) //evaluate attr of currentobject
-    const nextJSValue = getValue(state, 'jsPrimitive', nextValue)
+    const nextJSValue = getValue(state, INTERMEDIATE_REP, nextValue)
     //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
     if (isUndefined(nextValue)) { //if the next value is not defined treat it as an inverse (going up the tree)
         //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
@@ -78,7 +78,6 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
             query: childQuery,
             getStack: combinedGetStack
         }
-        console.log(appendedSearchArgs)
         const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
         return argsToVarDefs(state, currentObject, getFunctionData)
     } else {
@@ -99,7 +98,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
 const createVarDef = (state, currentObject, searchArgData) => {
     const { argKey, context } = searchArgData
     //get primitve of the end of the get stack
-    const jsResult = getValue(state, 'jsPrimitive', currentObject)
+    const jsResult = getValue(state, INTERMEDIATE_REP, currentObject)
     const args = jsResult.args
     const argsWithContext = Object.entries(args)
         .reduce((args, entry) => {
@@ -176,7 +175,7 @@ function resolveInverse(state, arg, currentObject) {
 combine arg and varDef movements to create the final args and varDefs
 */
 const reduceFunctionData = (functionData, newFunctionData) => {
-    //this is reversed so var defs will be in the right order -- is this always true?
+    //this is reversed so var defs will be in the right order
     const varDefs = functionData.varDefs.concat(newFunctionData.varDefs)
     const args = Object.assign({}, functionData.args, newFunctionData.args)
     const newVarDefs = newFunctionData.varDefs

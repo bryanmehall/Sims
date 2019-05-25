@@ -15,21 +15,21 @@ const ValueTab = ({ definition, value, objectData, attrId, setProp }) => {
 	const numberChange = (objectId, e) => {
 		const value = parseFloat(e.target.value) || 0
 		const primitive = { type: 'number', value: value }
-		setProp(objectId, 'jsPrimitive', primitive)
+		setProp(objectId, INTERMEDIATE_REP, primitive)
 		const charCode = (typeof e.which == "number") ? e.which : e.keyCode
 		if (charCode === 13){ //backslash is keycode 92
-			setProp(objectId, 'jsPrimitive', primitive)
+			setProp(objectId, INTERMEDIATE_REP, primitive)
 		}
 	}
 	const boolChange = (objectId, e) => {
 		const value = e.target.checked
 		const primitive = { type: 'bool', value: value }
-		setProp(objectId, 'jsPrimitive', primitive)
+		setProp(objectId, INTERMEDIATE_REP, primitive)
 	}
 	const stringChange = (objectId, e) => {
 		const value = e.target.value
 		const primitive = { type: 'string', value: value }
-		setProp(objectId, 'jsPrimitive', primitive)
+		setProp(objectId, INTERMEDIATE_REP, primitive)
 	}
 	const defDisplay = (definition, objectId) => {
 		if (definition === undefined){

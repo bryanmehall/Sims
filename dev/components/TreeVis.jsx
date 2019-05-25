@@ -1,8 +1,8 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
-import { objectFromName, getHash, getPrimitiveType, getAttr } from '../ducks/object/objectUtils'
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE } from '../ducks/object/constants'
+import { objectFromName, getHash, getPrimitiveType } from '../ducks/object/objectUtils'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
 import { getName } from './Debug'
 
 class TreeVis extends React.Component {
@@ -94,11 +94,12 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', 'jsPrimitive', 'id', 'keyboard'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'id', 'keyboard'].includes(entry[0])
         )).map((entry) => {
-            const result = typeof entry[1] === 'string'
-            ? [entry[0], objectFromName(objectTable, entry[1])]
-            : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
+            console.log(entry)
+            const result =
+                typeof entry[1] === 'string'  ? [entry[0], objectFromName(objectTable, entry[1])]
+                : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
             return result
         }).map((entry) => (//combine these
             Object.assign({}, { object: entry[1] }, { attr: entry[0], parId: i, level: level+1 })
@@ -106,7 +107,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 
     let structureChildren = []
     if (getPrimitiveType(first.object) === 'array'){
-        const elements = first.object.jsPrimitive.value
+        const elements = first.object.lynxIR.value
         structureChildren = elements.map((element) => (
             { object: element, attr: 'elements', parId: i, level: level+1 }
         ))
@@ -121,7 +122,7 @@ const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.o
 const addAST = (ast, nodesAndLinks) => { //helper function for addAST
     const { nodes, links } = nodesAndLinks
     const astIndexes = nodes.reduce(function(a, node, i) { //get all indexes
-        if (getHash(node.object) === ast.hash || ast.hash === 'apphash' && node.object.hasOwnProperty('jsPrimitive') && node.object.jsPrimitive.type === 'app')
+        if (getHash(node.object) === ast.hash || ast.hash === 'apphash' && node.object.hasOwnProperty(INTERMEDIATE_REP) && node.object.lynxIR.type === 'app')
             a.push(i)
         return a
     }, [])

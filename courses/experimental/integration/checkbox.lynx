@@ -1,7 +1,7 @@
 window = new group
     name:"window"
     childElement1: new get
-        jsPrimitive:{get}
+        lynxIR:{get}
         rootObject:checkbox
         attribute:graphicalRepresentation
 

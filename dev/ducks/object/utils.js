@@ -1,4 +1,4 @@
-import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED, INPUT } from './constants'
+import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED, INPUT, INTERMEDIATE_REP } from './constants'
 import { getAttr } from './objectUtils'
 
 export const formatGetLog = (query, getStack) => (
@@ -91,7 +91,7 @@ export const isUndefined = (objectData) => {
     if (nameObject === undefined){
         return false
     } else {
-        return getAttr(nameObject, 'jsPrimitive').value === UNDEFINED
+        return getAttr(nameObject, INTERMEDIATE_REP).value === UNDEFINED
     }
 }
 

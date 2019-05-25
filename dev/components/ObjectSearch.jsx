@@ -55,10 +55,10 @@ const mapDispatchToProps = (dispatch) => ({
 		dispatch(ObjectActions.setActiveObject(id))
 	},
 	createPointer: (searchQuerry) => {
-		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { jsPrimitive: { type: 'search', querry: searchQuerry, id: id } }))
+		dispatch(ObjectActions.addObject(`search(${searchQuerry})`, "search", { lynxIR: { type: 'search', querry: searchQuerry, id: id } }))
 	},
 	createNew: (searchQuerry, id) => {
-		dispatch(ObjectActions.addObject(`new(${searchQuerry})`, "new", { jsPrimitive: { type: 'new', querry: searchQuerry, id: id } }))
+		dispatch(ObjectActions.addObject(`new(${searchQuerry})`, "new", { lynxIR: { type: 'new', querry: searchQuerry, id: id } }))
 	}
 })
 export default connect(mapStateToProps, mapDispatchToProps)(ObjectSearch)

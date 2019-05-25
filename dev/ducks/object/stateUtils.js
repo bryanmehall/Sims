@@ -1,11 +1,11 @@
-import { STATE_ARG } from './constants'
+import { STATE_ARG, INTERMEDIATE_REP } from './constants'
 import { primitives } from './primitives'
 import { getValue, getAttr } from './objectUtils'
 import { argsToVarDefs } from './selectors'
 
 export const createStateArg = (state, currentObject, argKey) => {
     const hash = 'state'+getAttr(currentObject, 'hash')
-    const ast = getValue(state, 'jsPrimitive', currentObject)
+    const ast = getValue(state, INTERMEDIATE_REP, currentObject)
     ast.hash = 'state'+ast.hash
     const statePrimitive = primitives.state(state, currentObject, ast)
     const varDef = { //reassign value defined by get hash to the hash of curentObject

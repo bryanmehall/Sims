@@ -11,7 +11,7 @@ array = new object
     firstElement:new element
         name:"firstElem"
         value:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute:equalTo
             rootObject:new object
                 name:"apply"
@@ -23,14 +23,14 @@ array = new object
 getIndex = new function
     name:"getIndex"
     result:new object
-        jsPrimitive:{getIndex}
+        lynxIR:{getIndex}
         array:getIndex.caller.array
         index:getIndex.caller.index
 
 contains = new function
     name:"contains"
     result:new object
-        jsPrimitive:{contains}
+        lynxIR:{contains}
         array:contains.caller.array
         value: contains.caller.value
 

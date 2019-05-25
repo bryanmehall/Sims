@@ -1,5 +1,5 @@
 const ids = {
-	jsPrimitive: 'jsPrim'
+	lynxIR: 'jsPrim'
 }
 let memoTable = {}
 const getValue = (id, attrId) => {
@@ -7,7 +7,7 @@ const getValue = (id, attrId) => {
 	if memoTable.hasOwnProperty(key){
 		return memoTable[key]
 	}
-	if (attrId === ids.jsPrimitive){
+	if (attrId === ids.lynxIR){
 		return
 	}
 

@@ -2,6 +2,7 @@ import { compileToJS } from './utils'
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
 import { getValue, getHash, objectFromName } from './objectUtils'
 import { resolveDBSearches } from './DBsearchUtils'
+import { INTERMEDIATE_REP } from './constants'
 
 /*returns:
     list of outputs
@@ -62,7 +63,7 @@ const getHashesFromTree = (objectData) => (
             const hash = getHash(value)
             if (typeof value === 'string') {
                 return hashTable
-            } else if (prop === 'jsPrimitive') {
+            } else if (prop === INTERMEDIATE_REP) {
                 if (value.type === "array"){ //add hashes for elements of array --need to add map
                     return value.value.reduce((hashTable, element) => {
                         const elementHash = getHash(element)
@@ -86,7 +87,7 @@ export const compileApp = (state) => { //state is in the form name:lynxObject
 }
 //compile a module
 export const compile = (hashTable, objectData) => {
-    const objAST = getValue(hashTable, 'jsPrimitive', objectData)//aWithHash)
+    const objAST = getValue(hashTable, INTERMEDIATE_REP, objectData)//aWithHash)
     const outputs = compileOutput(hashTable, objAST, {})
     const functionTable = combineFunctionTables(outputs)
     return {

@@ -3,7 +3,7 @@ window = new group
     childElement1: new text
         name:"txt"
         x:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute: equalTo
             rootObject: new object
                 name:"apply"

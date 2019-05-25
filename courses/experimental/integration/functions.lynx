@@ -20,12 +20,12 @@ contains = new funct
         then:true
         alt:new get
             attribute:equalTo
-            jsPrimitive:{get}
+            lynxIR:{get}
             rootObject: new object
                 name:"apl"
                 function:new dbSearch
                     query:"contains"
-                    jsPrimitive:{dbSearch}
+                    lynxIR:{dbSearch}
                 list:contains.list.nextElement
                 op1:contains.op1
                 equalTo:true
@@ -53,7 +53,7 @@ factorial = new func
 			op2:new apply
                 function:new search
                     query:"fac"
-                    jsPrimitive:{dbSearch}
+                    lynxIR:{dbSearch}
                 op1:fac.op1-1
 sum = new func
     name:"sum"

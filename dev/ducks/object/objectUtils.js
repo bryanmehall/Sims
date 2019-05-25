@@ -3,6 +3,7 @@ import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
 import { addContextToArgs } from './contextUtils'
+import { INTERMEDIATE_REP } from './constants'
 
 
 export const objectFromName = (state, name) => {
@@ -10,7 +11,7 @@ export const objectFromName = (state, name) => {
     const matches = values.filter((obj) => {
         const nameObject = getAttr(obj, 'name')
         if (typeof nameObject === 'undefined') { return false }
-        const objName = getAttr(nameObject, 'jsPrimitive').value //try is to replace wrapping this\
+        const objName = getAttr(nameObject, INTERMEDIATE_REP).value //try is to replace wrapping this\
         return objName === name
     })
     if (matches.length === 0) {
@@ -55,8 +56,9 @@ export const getObject = function (state, hash) {
 export const getInverseAttr = (state, attr) => (
     getAttr(objectFromName(state, attr), 'inverseAttribute')
 )
- export const getPrimitiveType = (objectData) => {
-    const jsPrim = getAttr(objectData, 'jsPrimitive')
+
+export const getPrimitiveType = (objectData) => {
+    const jsPrim = getAttr(objectData, INTERMEDIATE_REP)
     if (jsPrim === undefined){
         return undefined
     } else {
@@ -73,7 +75,7 @@ const isHash = (str) => (
 const objectValuesToHash = (hashData, entry) => {
     const prop = entry[0]
     const subTree = entry[1]
-    if (typeof subTree === 'string' || prop === 'jsPrimitive'){ //move this check to get Hash eventually
+    if (typeof subTree === 'string' || prop === INTERMEDIATE_REP){ //move this check to get Hash eventually
         return Object.assign({}, hashData, { [prop]: subTree })
     } else {
         return Object.assign({}, hashData, { [prop]: getHash(subTree) })
@@ -82,11 +84,14 @@ const objectValuesToHash = (hashData, entry) => {
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove these attrs before hashing
+    if (typeof objectData === "string"){
+        return "$hash_string_"+ murmurhash.v3(objectData)
+    }
     const exemptProps = ["hash", "parentValue"]
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
-    const name = hasAttribute(objectData, 'jsPrimitive') ? getAttr(objectData, 'jsPrimitive').type : ''
+    const name = hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     //if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
@@ -133,7 +138,7 @@ export const getValue = (state, prop, objectData) => {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
-	} else if (prop === 'jsPrimitive') { // primitive objects
+	} else if (prop === INTERMEDIATE_REP) { // primitive objects
         if (primitives.hasOwnProperty(valueData.type)){
             //console.log(`getting ${valueData.type} subtree named ${name}`)
             return primitives[valueData.type](state, objectData, valueData)
@@ -149,7 +154,6 @@ const checkObjectData = (state, objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
-        console.log('objectData', objectData, )
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'
@@ -162,7 +166,7 @@ export const getJSValue = (state, name, prop, objectData) => {
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-		const primitive = getValue(state , 'jsPrimitive', valueData) //get Value of jsPrimitive works
+		const primitive = getValue(state , INTERMEDIATE_REP, valueData) //get Value of jsPrimitive works
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined
         } else {

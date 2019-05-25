@@ -1920,7 +1920,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, query) {
         	return {
-                    jsPrimitive:{type:"search", "query":query}
+                    lynxIR:{type:"search", "query":query}
                 }
             })(pos0, result0);
         }
@@ -2053,7 +2053,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
                 return {
-                    jsPrimitive:{type:"number", value:value}
+                    lynxIR:{type:"number", value:value}
                 }
             })(pos0, result0);
         }
@@ -2944,7 +2944,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
             return {
-                	jsPrimitive:{type:"bool", value:value==="true"}
+                	lynxIR:{type:"bool", value:value==="true"}
                }
             })(pos0, result0);
         }
@@ -3341,13 +3341,13 @@ module.exports = (function(){
 
       function createString(str){
       	return {
-              jsPrimitive:{type:"string", value:str}
+              lynxIR:{type:"string", value:str}
       	}
       }
 
       function createNOp(args, op){
           const prim = {
-              jsPrimitive:{type:"apply"},
+              lynxIR:{type:"apply"},
               function:op
           }
           args.forEach((arg, i) => {
@@ -3359,7 +3359,7 @@ module.exports = (function(){
       function createFunction(name){
       	return {
               	name:createString(name),
-              	jsPrimitive:{type:"function"}
+              	lynxIR:{type:"function"}
           }
       }
       function createArray(elementValues){
@@ -3371,12 +3371,12 @@ module.exports = (function(){
           })
           return {
                   instanceOf:"array",
-                  jsPrimitive:{ type:"array", value:elements}
+                  lynxIR:{ type:"array", value:elements}
           }
       }
       function buildPath(rootObject, attr){
           var getData = {
-              jsPrimitive:{type:"get"},
+              lynxIR:{type:"get"},
               attribute:attr[1]
           }
           if (rootObject !== null){

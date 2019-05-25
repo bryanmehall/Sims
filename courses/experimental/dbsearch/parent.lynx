@@ -1,7 +1,7 @@
 window = new group
     x:20
     childElement1: new dbSearch
-        jsPrimitive:{dbSearch}
+        lynxIR:{dbSearch}
         query:"dbtext"
 
 dbtext = new text

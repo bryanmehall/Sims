@@ -10,28 +10,27 @@ functionalRepresentation = new object
     name:"functionalRepresentation"
 compile = new object
     name:"compile"
-    jsPrimitive:{compile}
+    lynxIR:{compile}
 app = new object
-    jsPrimitive:{app}
-    functionalRep:compile(app)
+    lynxIR:{app}
     name:"app"
     mouse: new object
         down: new input
             name:"mouseDown"
-            jsPrimitive:{input}
+            lynxIR:{input}
         pos: new coordinatePosition
             x:new input
                 name:"mouseX"
-                jsPrimitive:{input}
+                lynxIR:{input}
             y:new input
                 name:"mouseY"
-                jsPrimitive:{input}
-        clicked: app.mouse.down.previousState
+                lynxIR:{input}
+        clicked: app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState
     keyboard: new object
         currentKeysDown: new array
             name:"currentKeys"
             length:0
-            jsPrimitive:{input}
+            lynxIR:{input}
     graphicalRepresentation:window
 
 previousState = new attribute
@@ -45,9 +44,13 @@ currentKeysDown = new attribute
 
 input = new object
     name:"input"
+number = new object
+    name:"number"
+string = new object
+    name:"string"
 group = new object
     name:"group"
-    jsPrimitive:{group}
+    lynxIR:{group}
 
 childElement1 = new attribute
     name:"childElement1"
@@ -61,8 +64,8 @@ element = new object
     name:"element"
     index:new number
         name:"arrayIndex"
-        jsPrimitive:{arrayIndex}
-    jsPrimitive:{arrayElement}
+        lynxIR:{arrayIndex}
+    lynxIR:{arrayElement}
 
 parentGroup = new attribute
     name:"parentGroup"
@@ -120,11 +123,11 @@ accordianRep = new attribute
 attributes = new attribute
     name:"attributes"
 
-jsPrimitive = new attribute
-    name:"jsPrimitive"
+lynxIR = new attribute
+    name:"lynxIR"
 parse = new func
     name:"parse"
-    jsPrimitive:{parse}
+    lynxIR:{parse}
 childElements = new attribute
     name:"childElements"
 name = new attribute
@@ -151,7 +154,7 @@ mouse = new attribute
     name:"mouse"
 set = new object
     name:"set"
-    jsPrimitive:{set}
+    lynxIR:{set}
 
 array = new object
     name:"array"
@@ -161,20 +164,20 @@ length = new attribute
     name:"length"
 arrayLength = new func
     name:"arrayLength"
-    jsPrimitive:{arrayLength}
+    lynxIR:{arrayLength}
 concat = new func
     name:"concat"
-    jsPrimitive:{concat}
+    lynxIR:{concat}
 
 slice = new func
     name:"slice"
-    jsPrimitive:{slice}
+    lynxIR:{slice}
 splice = new func
     name:"splice"
-    jsPrimitive:{splice}
+    lynxIR:{splice}
 substring = new func
     name:"substring"
-    jsPrimitive:{substring}
+    lynxIR:{substring}
 insert = new func
     name: "insert"
     op1:"insertString"
@@ -192,7 +195,7 @@ subset2 = new attribute
     name:"a"
 
 text = new object
-    jsPrimitive:{text}
+    lynxIR:{text}
     name:"text"
     r:0
     g:0
@@ -226,7 +229,7 @@ height = new attribute
     name:"height"
 
 line = new object
-    jsPrimitive:{line}
+    lynxIR:{line}
     name:"line"
     r:0
     g:0
@@ -252,10 +255,10 @@ forEach = new attribute
 
 ternary = new object
     name:"ternary"
-    jsPrimitive:{ternary}
+    lynxIR:{ternary}
 conditional =new attribute
     name: "conditional"
-    jsPrimitive:{conditional}
+    lynxIR:{conditional}
 
 condition = new attribute
     name:"condition"
@@ -275,55 +278,55 @@ search = new object
 
 func = new object
     name:"func"
-    jsPrimitive:{function}
+    lynxIR:{function}
 
 addition = new func
     name:"addition"
-    jsPrimitive:{addition}
+    lynxIR:{addition}
 
 subtraction = new func
     name:"subtraction"
-    jsPrimitive:{subtraction}
+    lynxIR:{subtraction}
 
 multiplication = new func
     name:"multiplication"
-    jsPrimitive:{multiplication}
+    lynxIR:{multiplication}
 
 division = new func
     name:"division"
-    jsPrimitive:{division}
+    lynxIR:{division}
 
 equal = new func
     name:"equal"
-    jsPrimitive:{equal}
+    lynxIR:{equal}
 
 lessThan = new func
     name:"lessThan"
-    jsPrimitive:{lessThan}
+    lynxIR:{lessThan}
 
 greaterThan = new func
     name:"greaterThan"
-    jsPrimitive:{greaterThan}
+    lynxIR:{greaterThan}
 
 and = new func
     name:"and"
-    jsPrimitive:{and}
+    lynxIR:{and}
 
 or = new func
     name:"or"
-    jsPrimitive:{or}
+    lynxIR:{or}
 
 not = new func
     name:"not"
-    jsPrimitive:{not}
+    lynxIR:{not}
 
 index = new func
     name:"index"
-    jsPrimitive:{index}
+    lynxIR:{index}
 
 apply = new object
     name:"apply"
-    jsPrimitive:{apply}
+    lynxIR:{apply}
 
 op1 = new attribute
     name:"op1"

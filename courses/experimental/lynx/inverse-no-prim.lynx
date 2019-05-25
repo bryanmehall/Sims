@@ -5,7 +5,7 @@ window = new group
         x:20
         y:30
         innerText:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             attribute:equalTo
             rootObject: new object
                 name:"apply"

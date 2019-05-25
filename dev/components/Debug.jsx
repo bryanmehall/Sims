@@ -2,6 +2,7 @@ import React from "react"
 import { cardStyle } from './styles'
 import { getAttr } from '../ducks/object/objectUtils'
 import { formatArg } from '../ducks/object/utils'
+import { INTERMEDIATE_REP } from '../ducks/object/constants'
 import TreeVis from './TreeVis'
 import AstVis from './AstVis'
 import FlowVis from './FlowVis'
@@ -86,7 +87,7 @@ class Debug extends React.Component {
 }
 export const getName = (objectData) => {
     const nameObject = getAttr(objectData, 'name')
-    return typeof nameObject === 'undefined' ? 'object' : getAttr(nameObject, 'jsPrimitive').value
+    return typeof nameObject === 'undefined' ? 'object' : getAttr(nameObject, INTERMEDIATE_REP).value
 }
 
 const ObjectData = ({ node }) => {

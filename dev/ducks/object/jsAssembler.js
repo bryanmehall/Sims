@@ -6,8 +6,8 @@ const buildChildren = (ast, delimiter) => {
     return (delimiter === undefined) ? childList : childList.join(delimiter)
 }
 
-const varDefsToString = (varDefs) => (
-    varDefs.reverse()
+const varDefsToString = (varDefs) => {
+    return varDefs.reverse()
         .map((varDef) => {
             let string =  buildFunction(varDef.ast).string
             if (string.hasOwnProperty('returnStatement')){
@@ -16,7 +16,7 @@ const varDefsToString = (varDefs) => (
             return `\tvar ${varDef.key} = ${string}; ${varDef.comment}\n`
         })
         .join('')
-)
+}
 const input = (ast) => {
     if (ast.varDefs.length === 0){
         return inlineInput(ast)
@@ -25,7 +25,7 @@ const input = (ast) => {
         return `\t//input\n${varDefs}\nreturn ${inlineInput(ast)}`
     }
 }
-const inlineInput = (ast) => (`inputs.${ast.inputName}.value;\n`)
+const inlineInput = (ast) => (`inputs.${ast.inputName}.value`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
@@ -58,8 +58,8 @@ const contains = (ast) => {
 const app = (ast) => {
     const programText = buildChildren(ast, '\n')
     const varDefs = varDefsToString(ast.varDefs)
-    const debug = ''
-    return `\t//app\n${varDefs}\n${debug}\n\treturn function(prim) { ${programText}(prim) }`
+    const debug = ''//'console.log("wasClicked", $hash_get_2662884134, "isClicked", $hash_get_2812171364)'
+    return `\t//app\n${varDefs}\n\t${debug}\n\treturn function(prim) { ${programText}(prim) }`
 }
 
 const group = (ast) => {
@@ -79,7 +79,8 @@ const group = (ast) => {
 const text = (ast) => {
     const programText = buildChildren(ast, ', ') //space is important for unit tests
     const varDefs = varDefsToString(ast.varDefs)
-    return `\t//text\n${varDefs}\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
+    const debug = ''
+    return `\t//text\n${varDefs}\n\t${debug}\n\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
 }
 const line = (ast) => {
     const programText = buildChildren(ast, ', ') //space is important for unit tests
@@ -115,7 +116,8 @@ const apply = (ast) => {
         return inlineApply(ast)
     } else {
         const varDefs = varDefsToString(ast.varDefs)
-        return `\t//apply\n${varDefs}\nreturn ${inlineApply(ast)}`
+        const debug = ''
+        return `\t"use strict";//apply\n${varDefs}\n\t${debug}\n\treturn ${inlineApply(ast)}`
     }
 }
 

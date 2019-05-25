@@ -90,7 +90,7 @@ const mapDispatchToProps = (dispatch) => ({
         return newId
     },
 	createSearchObject: () => {
-		dispatch(ObjectActions.addObject('search1', 'search', {jsPrimitive:{type:'search'}}))
+		dispatch(ObjectActions.addObject('search1', 'search', {lynxIR:{type:'search'}}))
 	},
 	setActiveObject: (objectData) => {
 		dispatch(ObjectActions.setActiveObject(objectData))

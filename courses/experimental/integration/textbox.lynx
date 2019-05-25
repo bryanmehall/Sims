@@ -1,13 +1,13 @@
 window = new group
     name:"window"
     childElement1: new get
-        jsPrimitive:{get}
+        lynxIR:{get}
         rootObject:textbox
         attribute:graphicalRepresentation
     childElement2:new text
         name:"lynxResult"
         op1:new get
-            jsPrimitive:{get}
+            lynxIR:{get}
             rootObject:textbox
             attribute:value
         innerText:parse(lynxResult.op1)

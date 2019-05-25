@@ -1,5 +1,6 @@
 import { compileApp } from './compiler'
-import { INPUT } from './constants'
+import { getValue, objectFromName } from './objectUtils'
+import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
 //import { logFunctionTable } from './utils'
 
@@ -58,10 +59,12 @@ export class Runtime {
         lynxState = lynxParser(lynxText)
         this.hashTable = lynxState
         const { functionTable, outputs } = compileApp(lynxState)
+        const appData = objectFromName(lynxState, 'app')
+        const out = getValue(lynxState, INTERMEDIATE_REP, appData)
         const externalFunctions = {
-            parse: (lynxString) => {
-                return lynxParser(lynxString)
-            },
+            parse: (lynxString) => (
+                lynxParser(lynxString)
+            ),
             compile: (lynxObject) => {
                 const { functionTable, outputs } = compile(lynxState)
             }
@@ -84,6 +87,11 @@ export class Runtime {
                     this.stateBuffer[hash] = { value, available: false, lock: false }
                 } else {
                     this.stateBuffer[hash] = { value, available: true, lock: false }
+                    if (Array.isArray(this.outputs[hash].prevValues)) { //for debug only
+                        this.outputs[hash].prevValues.push(value)
+                    } else {
+                       this.outputs[hash].prevValues = [value]
+                    }
                     this.stateAvailable = true
                 }
 
@@ -98,9 +106,9 @@ export class Runtime {
             const inputs = Object.values(args)
                 .map((arg) => {
                     const inputName = arg.type === INPUT ? arg.name : arg.hash
-                    if (arg.type !== INPUT ){
+                    if (arg.type !== INPUT){
                         Object.assign(runtime.inputs, {
-                            [arg.hash]: { available: true, value: "1" }
+                            [arg.hash]: { available: true, value: false }
                         })
                     }
                     return inputName
@@ -183,7 +191,7 @@ export class Runtime {
     checkOutputs() {
         //pass 'this' to second parameter of forEach to define 'this' in callback
         Object.values(this.outputs).forEach(this.runOutput, this)
-        const stateAvailable = Object.values(this.stateBuffer).some((input) => (input.avaliable))
+        //stateAvailable = Object.values(this.stateBuffer).some((input) => (input.avaliable))
         Object.assign(this.inputs, this.stateBuffer)
         Object.values(this.inputs).forEach((input) => {
             if (input.lock){
@@ -195,9 +203,10 @@ export class Runtime {
         this.stateBuffer = {}
         this.updateDebug(this) //show state of runtime to debug utils --remove for production
         if (this.stateAvailable){
-            //this.checkOutputs()
+            this.stateAvailable = false
+            this.checkOutputs()
         }
-        this.stateAvailable = false
+
 
     }
     runOutput(output) {
@@ -206,7 +215,7 @@ export class Runtime {
             if (inputAvailable){
                 const stateArgs = output.inputs
                     .filter((key) => (key.includes('$hash')))
-                    .map((key) => (typeof this.inputs[key] === 'undefined' ? true : this.inputs[key].value))
+                    .map((key) => (typeof this.inputs[key] === 'undefined' ? false : this.inputs[key].value))
                 output.inputs.forEach((inputKey) => {
                     this.inputs[inputKey].lock = true
                 }, this)
