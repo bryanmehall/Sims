@@ -1,5 +1,6 @@
 window = new group
     name:"window"
+
     childElements:[
         new get
             lynxIR:{get}
@@ -9,7 +10,15 @@ window = new group
 
 slider = new object
     name:"slider"
-    value:20
+    handle:new text
+        name:"sliderHandle"
+        isBeingDragged: sliderHandle.mouseOver && app.mouse.isPressedDown || sliderHandle.isBeingDragged.previousState && app.mouse.down
+        dragOffset: sliderHandle.isBeingDragged && app.mouse.isPressedDown ? app.mouse.pos.x-slider.value : sliderHandle.dragOffset.previousState
+        mouseOver:app.mouse.pos.x > slider.value  && app.mouse.pos.x < slider.value + 10
+        innerText: sliderHandle.isBeingDragged ? "x" :"o"
+        x:sliderHandle.isBeingDragged ? app.mouse.pos.x-sliderHandle.dragOffset : slider.value
+        y:65
+    value:60
     graphicalRepresentation: new group
         childElements:[
             new line
@@ -17,15 +26,17 @@ slider = new object
                 x2:210
                 y1:60
                 y2:60
+            slider.handle
             new text
-                name:"handle"
-                isBeingDragged: handle.mouseOver && app.mouse.down || handle.isBeingDragged.previousState
-                mouseOver:app.mouse.pos.x > slider.value - 5 && app.mouse.pos.x < slider.value + 5
-                innerText:handle.isBeingDragged ? "x" : "o"
-                x:slider.value-5
-                y:65
+                innerText:slider.value
+                x:10
+                y:20
         ]
+handle = new attribute
+    name:"handle"
 mouseOver = new attribute
     name:"mouseOver"
+dragOffset = new attribute
+    name:"dragOffset"
 isBeingDragged = new attribute
     name:"isBeingDragged"

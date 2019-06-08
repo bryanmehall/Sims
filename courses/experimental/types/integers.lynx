@@ -1,0 +1,49 @@
+peanoNumbers = new type
+    subtypeOf: integers
+    subtypeCondition: 
+    name:"naturalNumber"
+    definition: Either
+        zero
+        or successor(NaturalNumber)
+
+binaryNumbers = new type
+    definition: Either
+        binaryDidgit
+        or concat(binaryDigit,binaryNumber)
+
+
+integer = new type
+    subtypeOf: realNumber
+    definition: Either
+        zero
+        or successor(integer) 
+        or predecessor(integer)
+
+floatingPointNumber = new type
+    subtypeOf: realNumber
+    defintion: Contains
+        Exponent
+        Significand
+
+//name is a property
+//subtypeOf is a relation? 
+//isA is a proposition not an attribute? 
+//types must form a poset?
+    
+zero = new naturalNumber
+    isA: naturalNumber
+    name: "zero"
+    successor: one
+    predecessor: negative one
+    symbol:"0"
+
+quantity = new type
+    definition: Combination
+        number
+        and unit
+
+unit = new object
+pixel = new unit
+
+Length = new quantity
+  

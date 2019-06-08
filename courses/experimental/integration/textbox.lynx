@@ -10,7 +10,7 @@ window = new group
             lynxIR:{get}
             rootObject:textbox
             attribute:value
-        innerText:parse(lynxResult.op1)
+        innerText:"abc"
         x:100
         y:50
 

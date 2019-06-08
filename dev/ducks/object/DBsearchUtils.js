@@ -1,7 +1,6 @@
 import { objectFromName, getHash, getValue, getJSValue, getAttr } from './objectUtils'
 import { GLOBAL_SEARCH, INTERMEDIATE_REP } from './constants'
 import { getArgsAndVarDefs } from './selectors'
-//import { buildFunction } from './IRutils'
 
 export const resolveDBSearches = (state, combinedArgs) => { //move db searches at app to variable defs
     return Object.values(combinedArgs)

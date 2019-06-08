@@ -1,4 +1,3 @@
-import { compileToJS } from './utils'
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
 import { getValue, getHash, objectFromName } from './objectUtils'
 import { resolveDBSearches } from './DBsearchUtils'
@@ -23,10 +22,8 @@ const compileOutput = (state, ast, outputs) => { //get rid of dependence on stat
     const varDefs = ast.varDefs.concat(dbASTs) //add db varDefs to ast varDefs
     const astWithDB = Object.assign({}, ast, { varDefs }) //combine these new varDefs with ast
     const functionTable = astToFunctionTable(astWithDB) //create function table from ast
-    const outputString = buildFunction(astWithDB).string //create top level function for ast
-    const valueFunctionArgs = ['functionTable', 'inputs']
-        .concat(stateArgs.map((arg) =>(arg.hash)))
-    const valueFunction = compileToJS(valueFunctionArgs, `${outputString}`)//add inputs here
+    astWithDB.inline = false //needed to force newFunctionTable to be defined
+    const valueFunction = buildFunction(astWithDB).newFunctionTable[astWithDB.hash] //create top level function for ast
     //recursively call compile output for state and then combine the results to this output
     const newOutputs = Object.assign({}, outputs, { [ast.hash]: { functionTable, valueFunction, ast, stateArgs } }) //get rid of ast and state args
     const newOutputsWithState = stateArgs.reduce((currentOutputs, stateArg) => (
@@ -86,15 +83,18 @@ export const compileApp = (state) => { //state is in the form name:lynxObject
     return compile(hashTable, appData)
 }
 //compile a module
-export const compile = (hashTable, objectData) => {
+export const compile = (hashTable, objectData) => { //rename this or remove
     const objAST = getValue(hashTable, INTERMEDIATE_REP, objectData)//aWithHash)
     const outputs = compileOutput(hashTable, objAST, {})
     const functionTable = combineFunctionTables(outputs)
     return {
         functionTable,
         outputs,
-        renderMonad: outputs.apphash.valueFunction,
         objectTable: hashTable,
-        ast: outputs.apphash.ast
     }
+}
+export const assemble = (hashTable, lynxIR) => {
+    const outputs = compileOutput(hashTable, lynxIR, {})
+    const functionTable = combineFunctionTables(outputs)
+    return { functionTable, outputs }
 }

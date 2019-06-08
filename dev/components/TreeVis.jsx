@@ -94,11 +94,11 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'id', 'keyboard'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'mouse', 'id', 'keyboard'].includes(entry[0])
         )).map((entry) => {
-            console.log(entry)
             const result =
-                typeof entry[1] === 'string'  ? [entry[0], objectFromName(objectTable, entry[1])]
+                entry[0] === INTERMEDIATE_REP ? [entry[0], {type: INTERMEDIATE_REP}]
+                : typeof entry[1] === 'string'  ? [entry[0], objectFromName(objectTable, entry[1])]
                 : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
             return result
         }).map((entry) => (//combine these
@@ -112,7 +112,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             { object: element, attr: 'elements', parId: i, level: level+1 }
         ))
     }
-    const contiuneTree = getPrimitiveType(first.object) === 'get' && typeof first.object.rootObject !== 'string'
+    const contiuneTree = getPrimitiveType(first.object) === 'get' && typeof first.object.rootObject !== 'string' && first.object.type !== INTERMEDIATE_REP
     const newQueue = contiuneTree ? objQueue : [...objQueue, ...children, ...structureChildren]
     return bfsObjectTree(objectTable, first.object, newD3Data, newQueue)
 }

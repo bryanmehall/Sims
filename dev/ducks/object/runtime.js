@@ -1,5 +1,5 @@
-import { compileApp } from './compiler'
-import { getValue, objectFromName } from './objectUtils'
+import { compileApp, assemble, flattenState } from './compiler'
+import { getValue, objectFromName, getHash } from './objectUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
 //import { logFunctionTable } from './utils'
@@ -38,6 +38,15 @@ const checkTypes = (type, vars) => {
         }
     })
 }
+function getInputValue(key){ //this can not use arrow notation because then the thisArg is not bound
+    if (this.inputs.hasOwnProperty(key)) {
+        return this.inputs[key].value
+    } else {
+        throw new Error(`LynxError: key:"${key}" not found in inputs`)
+    }
+
+}
+
 
 export class Runtime {
     //all lynx state in handled by this runtime object
@@ -47,28 +56,48 @@ export class Runtime {
         this.outputs = {}
         //when calculating state, put state in buffer so that all outputs are concurrent
         this.stateBuffer = {}
-        this.inputs = {
-            mouseDown: { available: false, value: false },
-            mouseX: { available: false, value: false },
-            mouseY: { available: false, value: false },
-            currentKeys: { available: false, value: [] }
-        }//this list must be complete
-        this.state = {}
         let lynxState
 
         lynxState = lynxParser(lynxText)
+        this.inputs = {
+            lynxTextInput: { available: true, value: lynxText },
+            mouseDown: { available: false, value: false },
+            mouseX: { available: false, value: 0 },
+            mouseY: { available: false, value: 0 },
+            currentKeys: { available: false, value: [] }
+        }//this list must be complete
+        this.state = {}
+
         this.hashTable = lynxState
         const { functionTable, outputs } = compileApp(lynxState)
-        const appData = objectFromName(lynxState, 'app')
-        const out = getValue(lynxState, INTERMEDIATE_REP, appData)
+        this.outputs = outputs
         const externalFunctions = {
-            parse: (lynxString) => (
-                lynxParser(lynxString)
-            ),
+            parse: (lynxString) => {
+                return objectFromName(flattenState(lynxParser(lynxString)), 'app') //returns hash table of objects--eventually this should be part of state
+            },
             compile: (lynxObject) => {
-                const { functionTable, outputs } = compile(lynxState)
+                const lynxIR = getValue(lynxState, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
+                return lynxIR
+            },
+            assemble: (lynxIR) => {
+                const lynxModule = assemble(lynxState, lynxIR) //rename to assemble
+                //console.log(lynxModule)
+                return lynxModule
             }
         }
+
+        const appData = objectFromName(lynxState, 'appRoot')
+        const appIRGenIR = getValue(lynxState, 'lynxIR', appData)
+        const irGenHash = getHash(appIRGenIR)
+        appIRGenIR.hash = irGenHash
+        const appIRGen = assemble(lynxState, appIRGenIR)
+
+        const appIRGenFunction = appIRGen.outputs[irGenHash].valueFunction
+        //const ft = appIRGen.functionTable.$hash_abc_2170191666.toString()
+        Object.assign(appIRGen.functionTable, externalFunctions)
+        const appIR = appIRGenFunction(lynxText, appIRGen.functionTable)
+        console.log(appIR)
+
         this.functionTable = Object.assign(functionTable, externalFunctions)
 
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
@@ -99,7 +128,6 @@ export class Runtime {
         }
 
         Object.keys(outputs).forEach((outputKey) => {
-            //console.log(outputs)
             const output = outputs[outputKey]
             const ast = output.ast
             const args = ast.args
@@ -108,7 +136,7 @@ export class Runtime {
                     const inputName = arg.type === INPUT ? arg.name : arg.hash
                     if (arg.type !== INPUT){
                         Object.assign(runtime.inputs, {
-                            [arg.hash]: { available: true, value: false }
+                            [arg.hash]: { available: true, value: "0" } //default value for state
                         })
                     }
                     return inputName
@@ -161,10 +189,10 @@ export class Runtime {
                 ctx.fillStyle = `rgb(${r}, ${g}, ${b})`
                 ctx.font = `${size}px monospace`
                 checkTypes('number', [x,y,r,g,b])
-                innerText.toString()
-                    .split('\\t')
+                const str = typeof innerText === 'string' || typeof innerText === 'number' ? innerText.toString() : JSON.stringify(innerText, null, 2)
+                str.split('\t')
                     .join('    ') //replace all tabs sith 4 spaces for display
-                    .split('\\n')
+                    .split('\n')
                     .forEach((line, i) => {
                         ctx.fillText(line, x, y+i*size)
                     })
@@ -214,12 +242,11 @@ export class Runtime {
             const inputAvailable = this.inputAvailable(output)
             if (inputAvailable){
                 const stateArgs = output.inputs
-                    .filter((key) => (key.includes('$hash')))
-                    .map((key) => (typeof this.inputs[key] === 'undefined' ? false : this.inputs[key].value))
+                    .map(getInputValue, this)
                 output.inputs.forEach((inputKey) => {
                     this.inputs[inputKey].lock = true
                 }, this)
-                const args = [this.functionTable, this.inputs].concat(stateArgs)
+                const args = [...stateArgs, this.functionTable]
                 const value = output.value.apply(null, args) //inputs go here
                 output.hook(value, output.hash)
             }

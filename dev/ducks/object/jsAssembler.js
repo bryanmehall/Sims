@@ -24,7 +24,7 @@ const input = (ast) => {
         return `\t//input\n${varDefs}\nreturn ${inlineInput(ast)}`
     }
 }
-const inlineInput = (ast) => (`inputs.${ast.inputName}.value`)
+const inlineInput = (ast) => (`${ast.inputName} //input: ${ast.inputName}`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
@@ -165,13 +165,15 @@ const splice         = () => ('splice')
 const substring      = () => ('substring')
 const concat         = () => ('concat')
 const parse          = () => ('functionTable.parse')
-const compile          = () => ('functionTable.compile')
+const compile        = () => ('functionTable.compile')
+const assemble       = () => ('functionTable.assemble')
 
 const evaluate = () => ('evaluate()')
 
 export const jsAssembler = {
     parse,
     compile,
+    assemble,
     index,
     arrayLength,
     slice,

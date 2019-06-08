@@ -4,5 +4,5 @@ window = new group
         name:"box"
         op1: 10 + box.x
         innerText: box.op1
-        x:app.mouse.pos.x
+        x:app.mouse.pos.x+10
         y:150

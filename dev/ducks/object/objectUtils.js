@@ -91,7 +91,8 @@ export const getHash = (objectData) => { //this should check that all children a
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
-    const name = hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
+    //console.log(objectData)
+    const name = 'abc'//hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     //if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
@@ -104,6 +105,14 @@ const returnWithHash = (state, attr, attrData, valueData) => {
     const hash = getHash(valueData)
     const newProps = Object.assign({}, valueData, { hash }) //only calculate hash in first state transform
     return newProps
+}
+
+const compile = (state, valueData, objectData) => { //move to primitives?
+    if (primitives.hasOwnProperty(valueData.type)){
+        return primitives[valueData.type](state, objectData, valueData)
+    } else {
+        throw new Error(`LynxError:unknown type. definition: ${JSON.stringify(valueData)}`)
+    }
 }
 
 export const getValue = (state, prop, objectData) => {
@@ -139,13 +148,10 @@ export const getValue = (state, prop, objectData) => {
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
-        if (primitives.hasOwnProperty(valueData.type)){
-            //console.log(`getting ${valueData.type} subtree named ${name}`)
-            return primitives[valueData.type](state, objectData, valueData)
-        } else {
-            throw new Error(`unknown type. definition: ${JSON.stringify(def)}`)
-        }
-	} else {
+        return compile(state, valueData, objectData, def)
+	} else if (prop === "jsRep"){
+
+    } else {
         return returnWithHash(state, prop, attrData, valueData)
 	}
 }
@@ -154,6 +160,7 @@ const checkObjectData = (state, objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
+        console.log(objectData)
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'
@@ -166,7 +173,7 @@ export const getJSValue = (state, name, prop, objectData) => {
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-		const primitive = getValue(state , INTERMEDIATE_REP, valueData) //get Value of jsPrimitive works
+		const primitive = getValue(state , INTERMEDIATE_REP, valueData)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined
         } else {

@@ -12,7 +12,7 @@ const input = (state, objectData) => {
         type: 'input',
         children: {},
         inputName: name,
-        args: { [hash]: { type: INPUT, name } },
+        args: { [hash]: { type: INPUT, name, hash } },
         varDefs: [],
         inline: true
     }
@@ -44,6 +44,16 @@ const compile = (state, objectData) => (
     {
         hash: getAttr(objectData, 'hash'),
         type: 'compile',
+        varDefs: [],
+        children: {},
+        args: {},
+        inline: true
+    }
+)
+const assemble = (state, objectData) => (
+    {
+        hash: getAttr(objectData, 'hash'),
+        type: 'assemble',
         varDefs: [],
         children: {},
         args: {},
@@ -390,7 +400,7 @@ const app = (state, objectData) => {
         hash: 'apphash',//change this to actual hash...why isn't it there?
         children: { graphicalRep: parameters[0] },
         args,
-        inline: true,
+        inline: false,
         type: 'app',
         varDefs,
     }
@@ -404,6 +414,7 @@ const evaluate = () => ({
 export const primitives = {
     parse,
     compile,
+    assemble,
     input,
     number,
     bool,

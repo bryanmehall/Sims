@@ -11,9 +11,23 @@ functionalRepresentation = new object
 compile = new object
     name:"compile"
     lynxIR:{compile}
+assemble = new object
+    name:"assemble"
+    lynxIR:{assemble}
+appRoot = new get
+    name:"appRoot"
+    lynxIR:{get}
+    rootObject:app
+    attribute:op1
 app = new object
     lynxIR:{app}
     name:"app"
+    lynxText: new string
+        name:"lynxTextInput"
+        lynxIR:{input}
+    op3:parse(app.lynxText)
+    op1:compile(app.op3)
+    op2:assemble(app.op1)
     mouse: new object
         down: new input
             name:"mouseDown"
@@ -26,6 +40,7 @@ app = new object
                 name:"mouseY"
                 lynxIR:{input}
         clicked: app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState
+        isPressedDown: !app.mouse.down.previousState && app.mouse.down && !app.mouse.isPressedDown.previousState
     keyboard: new object
         currentKeysDown: new array
             name:"currentKeys"
@@ -35,13 +50,15 @@ app = new object
 
 previousState = new attribute
     name:"previousState"
-
+lynxText = new attribute
+    name:"lynxText"
 keyboard = new attribute
     name: "keyboard"
 
 currentKeysDown = new attribute
     name:"currentKeysDown"
-
+isPressedDown = new attribute
+    name:"isPressedDown"
 input = new object
     name:"input"
 number = new object

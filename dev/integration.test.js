@@ -5,8 +5,9 @@ console.groupEnd = function(){}
 var fs = require('fs');
 
 const runTest = (objects, done) => {
-    const { renderMonad, functionTable } = compileApp(objects)
-    const render = renderMonad(functionTable, {})
+    const { outputs, functionTable } = compileApp(objects)
+    const renderMonad = outputs.apphash.valueFunction
+    const render = renderMonad(functionTable)
     let xTest, yTest, innerTextTest
 
     const prim = {
@@ -65,7 +66,7 @@ const coreTests = [
 ]
 const dbTests = [
     //'simple-get',
-    'direct-child',
+    //'direct-child',
     //'parent'
 ]
 const generateTestSuite = (testNames, folder) => (

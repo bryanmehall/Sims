@@ -1,19 +1,22 @@
 import { compileToJS } from './utils'
 import { jsAssembler } from './jsAssembler'
-import { STATE_ARG } from './constants'
+import { STATE_ARG, INPUT } from './constants'
 
 //build string of function from ast node and add that function to the function table
 export const buildFunction = (ast) => {
     checkAST(ast)
+
     const string = jsAssembler[ast.type](ast)
+
     if (ast.inline && !ast.isFunction){
         return { string , newFunctionTable: {} }
     } else {
-        const argsList = Object.keys(ast.args)
+        const argsList = Object.entries(ast.args)
+            .map((entry) => (entry[1].type === INPUT ? entry[1].name : entry[0]))
             .concat('functionTable')//list of child args
         try {
             const func = string.hasOwnProperty('varDefs') ?
-                compileToJS(argsList, `${string.varDefs} return ${string.returnStatement}`) :
+                compileToJS(argsList, `${string.varDefs} \treturn ${string.returnStatement}`) :
                 compileToJS(argsList, string)
             const newFunctionTable = { [ast.hash]: func }
             if (ast.isFunction){
@@ -22,8 +25,9 @@ export const buildFunction = (ast) => {
                     newFunctionTable
                 }
             }
+
             return {
-                string: `functionTable.${ast.hash}(${argsList.join(",")})`,
+                string: `functionTable.${ast.hash}(${argsList.join(",")}) /*${ast.type}*/`,
                 newFunctionTable
             }
         } catch (e) {
