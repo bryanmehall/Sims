@@ -1,37 +1,16 @@
 window = new group
     name:"window"
-
-    childElements:[
-        new get
-            lynxIR:{get}
-            rootObject:slider
-            attribute:graphicalRepresentation
-    ]
-
-slider = new object
-    name:"slider"
-    handle:new text
-        name:"sliderHandle"
-        isBeingDragged: sliderHandle.mouseOver && app.mouse.isPressedDown || sliderHandle.isBeingDragged.previousState && app.mouse.down
-        dragOffset: sliderHandle.isBeingDragged && app.mouse.isPressedDown ? app.mouse.pos.x-slider.value : sliderHandle.dragOffset.previousState
-        mouseOver:app.mouse.pos.x > slider.value  && app.mouse.pos.x < slider.value + 10
-        innerText: sliderHandle.isBeingDragged ? "x" :"o"
-        x:sliderHandle.isBeingDragged ? app.mouse.pos.x-sliderHandle.dragOffset : slider.value
+    value: window.isBeingDragged || window.mouseOver
+    isBeingDragged: window.value.previousState
+    mouseOver: window.value.previousState
+    childElement1: new text
+        name:"windowHandle"
+        innerText:"x"
+        x:window.value
         y:65
-    value:60
-    graphicalRepresentation: new group
-        childElements:[
-            new line
-                x1:10
-                x2:210
-                y1:60
-                y2:60
-            slider.handle
-            new text
-                innerText:slider.value
-                x:10
-                y:20
-        ]
+
+isChanged = new attribute
+    name:"isChanged"
 handle = new attribute
     name:"handle"
 mouseOver = new attribute

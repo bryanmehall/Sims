@@ -237,6 +237,13 @@
 					"length":10
 				},
                 {
+					"id": "slider",
+					"title":"Slider",
+					"text":"slider",
+					"type":"anim",
+					"length":10
+				},
+                {
 					"id": "metacircular",
 					"title":"Metacircular",
 					"text":"develop homoiconic behavior",

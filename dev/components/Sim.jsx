@@ -1,9 +1,8 @@
-import React, { PropTypes } from "react"
+import React from "react"
 import { connect } from "react-redux"
 import SimActions from '../ducks/sim/actions'
 import ObjectActions from '../ducks/object/actions'
 import { getLoadState } from '../ducks/sim/selectors'
-import { compileApp } from '../ducks/object/compiler'
 import { Runtime } from '../ducks/object/runtime'
 import Debug from './Debug'
 import { cardStyle } from './styles'

@@ -60,6 +60,17 @@ const assemble = (state, objectData) => (
         inline: true
     }
 )
+const run = (state, objectData, valueData) => {
+    console.log(objectData, valueData)
+    return {
+        hash: getAttr(objectData, 'hash'),
+        type: 'run',
+        varDefs: [],
+        children: {},
+        args: {},
+        inline: true
+    }
+}
 //data constants
 const number = (...args) => (primitive(...args))
 const bool =   (...args) => (primitive(...args))
@@ -136,6 +147,7 @@ const set = (state, objectData) => {
 const not           = (...args) => (binOp(...args))
 const arrayLength   = (...args) => (binOp(...args))
 const concat        = (...args) => (binOp(...args))
+const map           = (...args) => (binOp(...args))
 
 //operation primitives --refactor
 const addition       = (...args) => (binOp(...args))
@@ -297,6 +309,9 @@ const apply = (state, objectData) => {
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
+    if (parameters[1].type === 'run'){
+        console.log(parameters[1])
+    }
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     const children =
           parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
@@ -415,6 +430,7 @@ export const primitives = {
     parse,
     compile,
     assemble,
+    run,
     input,
     number,
     bool,
@@ -439,6 +455,7 @@ export const primitives = {
     splice,
     substring,
     concat,
+    map,
     getIndex,//remove
     contains,
     get,

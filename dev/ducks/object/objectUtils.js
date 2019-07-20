@@ -5,8 +5,7 @@ import { deleteKeys, isUndefined } from './utils'
 import { addContextToArgs } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
-
-export const objectFromName = (state, name) => {
+const filterNames = (state, name) => {
     const values = Object.values(state)
     const matches = values.filter((obj) => {
         const nameObject = getAttr(obj, 'name')
@@ -14,12 +13,28 @@ export const objectFromName = (state, name) => {
         const objName = getAttr(nameObject, INTERMEDIATE_REP).value //try is to replace wrapping this\
         return objName === name
     })
+    return matches
+}
+
+export const objectFromName = (state, name) => {
+    const matches = filterNames(state, name)
     if (matches.length === 0) {
         throw new Error(`LynxError: object "${name}" not found, ${matches.length}`)
+
     } else if (matches.length > 1){
         throw new Error(`LynxError: multiple objects named "${name}" found (${matches.length})`)
     }
     return matches[0]
+}
+export const tableContainsName = (hashTable, name) => {
+    const matches = filterNames(hashTable, name)
+    if (matches.length === 0) {
+        return false
+    } else if (matches.length === 1){
+        return true
+    } else {
+        throw new Error(`LynxError: multiple objects named "${name}" found (${matches.length})`)
+    }
 }
 
 export const getAttr = (objectData, attr) => (
@@ -100,7 +115,7 @@ export const getHash = (objectData) => { //this should check that all children a
 	return digest
 }
 
-const returnWithHash = (state, attr, attrData, valueData) => {
+const returnWithHash = (attr, attrData, valueData) => {
     //adds hash
     const hash = getHash(valueData)
     const newProps = Object.assign({}, valueData, { hash }) //only calculate hash in first state transform
@@ -116,7 +131,7 @@ const compile = (state, valueData, objectData) => { //move to primitives?
 }
 
 export const getValue = (state, prop, objectData) => {
-    checkObjectData(state, objectData)
+    checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
@@ -135,13 +150,18 @@ export const getValue = (state, prop, objectData) => {
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
-			return returnWithHash(state, prop, attrData, valueData)
+			return returnWithHash(prop, attrData, valueData)
 		} else {
 			let attrs = Object.keys(objectData)
 			attrs.unshift('prevVal')
 			attrs.unshift('attributes')
-			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrs)//switch to set
-			return returnWithHash(state, prop,attrData, attrSet)
+            const attrObjects = attrs.map((attrName) => ({
+                instanceOf: "element",
+                elementValue: objectLib.constructString(attrName) //should this be an attribute not just a string of the name?
+                 }))
+			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
+            console.log(attrSet)
+			return returnWithHash(prop,attrData, attrSet)
 		}
 	} else if (def === undefined) {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
@@ -152,11 +172,11 @@ export const getValue = (state, prop, objectData) => {
 	} else if (prop === "jsRep"){
 
     } else {
-        return returnWithHash(state, prop, attrData, valueData)
+        return returnWithHash(prop, attrData, valueData)
 	}
 }
 
-const checkObjectData = (state, objectData) => {
+const checkObjectData = (objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){

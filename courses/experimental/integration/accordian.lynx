@@ -1,26 +1,30 @@
 window = new group
     name:"window"
-    x:10 //referencing here instead of inner group
-    childElement1: window.accordianRep
+    pos: new coordinatePosition
+        x:20
+        y:30
+    childElements: [
+        window.accordianRep
+    ]
     accordianRep: new group
         name:"accordianRepresentation"
-        pos: new coordinatePosition
-            x:20+20
-            y:20+30
-        childElements: new text
-            name:"objectName"
-            x:accordianRepresentation.pos.x
-            y:accordianRepresentation.pos.y
-            innerText:accordianRepresentation.parentConcept.name
-        childElement2:new group
-            name:"objectAttributes"
-            x:100
-            childElement1: objectAttributes.firstElement
-            firstElement:new text
-                innerText:"abc"
-                x:objectAttributes.x
-                y:100 //div.parentGroup.pos.y
-                nextElement: new text
+        pos: accordianRepresentation.parentConcept.pos
+        childElements:new apply
+            function: map
+            op1:accordianRepresentation.parentConcept.attributes
+            op2:new element
+                elementValue:new text
+                    name:"txt"
+                    x:20
+                    y:txt.parentElement.index*25
                     innerText:"abc"
-                    x:10
-                    y:100
+
+map = new func
+    name:"map"
+    lynxIR:{map}
+
+inputArray = new attribute
+    name:"inputArray"
+
+result = new attribute
+    name:"result"

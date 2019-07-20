@@ -1,12 +1,13 @@
 /* eslint pure/pure: 2 */
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
-import { isUndefined } from './utils'
+import { isUndefined, limiter } from './utils'
 import { getValue, getName, objectFromHash, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
 import { createStateArg, resolveState } from './stateUtils'
 import { addContextToGetStack } from './contextUtils'
 
 const getNext = (state, currentObject, searchArgData) => { //this remaps args as a result of getting the next value
+
     const { argKey, getStack, context } = searchArgData
     const nextGet = getStack[0]
     const newGetStack = getStack.slice(1)
@@ -15,6 +16,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
         if (newGetStack.length > 0){
             throw new Error('LynxError: handle case where get stack does not end at previous state')
         }
+
         const stateFD = createStateArg(state, currentObject, argKey)
         return stateFD
     }
@@ -56,6 +58,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
             ]
         }//this arg key needs to be removed and a new dbSearch argument needs to be added
     } else if (nextJSValue.type === 'get') {
+        //console.log('next get', attr, currentObject)
         //for direct get: if root is not search or get
         const root = getValue(state, "rootObject", nextValue)
         const rootType = getPrimitiveType(root)
@@ -68,18 +71,20 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
             }
             const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs)
             return argsToVarDefs(state, currentObject, nextValueFunctionData)
+        } else {
+            const arg = Object.values(nextJSValue.args)[0]
+            const childQuery = arg.query
+            const childGetStack = arg.getStack
+            //console.log(attr, childGetStack)
+            const combinedGetStack = childGetStack.concat(newGetStack)
+            const appendedSearchArgs = {
+                ...searchArgData,
+                query: childQuery,
+                getStack: combinedGetStack
+            }
+            const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
+            return argsToVarDefs(state, currentObject, getFunctionData)
         }
-        const arg = Object.values(nextJSValue.args)[0]
-        const childQuery = arg.query
-        const childGetStack = arg.getStack
-        const combinedGetStack = childGetStack.concat(newGetStack)
-        const appendedSearchArgs = {
-            ...searchArgData,
-            query: childQuery,
-            getStack: combinedGetStack
-        }
-        const getFunctionData = { args: { [argKey]: appendedSearchArgs }, varDefs: [] }
-        return argsToVarDefs(state, currentObject, getFunctionData)
     } else {
         const newSearchArgs = {
             ...searchArgData,
@@ -93,12 +98,19 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
 }
 
 
-//the end of the get path is the target object
+/*
+definition --------> evaluatedObject
+    |                      |
+    |                      |
+    \/                     \/
+definitionIR----------->resultIR
 
-const createVarDef = (state, currentObject, searchArgData) => {
+*/
+//the end of the get path is the target object
+const createVarDef = (state, evaluatedObject, searchArgData) => {
     const { argKey, context } = searchArgData
     //get primitve of the end of the get stack
-    const jsResult = getValue(state, INTERMEDIATE_REP, currentObject)
+    const jsResult = getValue(state, INTERMEDIATE_REP, evaluatedObject)
     const args = jsResult.args
     const argsWithContext = Object.entries(args)
         .reduce((args, entry) => {
@@ -108,9 +120,9 @@ const createVarDef = (state, currentObject, searchArgData) => {
             return { ...{}, ...args, [entry[0]]: argWithAppendedContext }
         }, {})
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.varDefs }
-    const inverseFunctionData = argsToVarDefs(state, currentObject, targetFunctionData)
+    const inverseFunctionData = argsToVarDefs(state, evaluatedObject, targetFunctionData)
 
-    const searchName = getName(state, currentObject) //remove for debug
+    const searchName = getName(state, evaluatedObject) //remove for debug
     if (isUndefined(jsResult)) {
         throw new Error('LynxError: adding recursive function at varDef')
     } else {
@@ -158,13 +170,14 @@ function resolveInverse(state, arg, currentObject) {
     const matchingContext = arg.context
     .filter((contextPath) => (contextPath.attr === inverseAttr))
     if (matchingContext.length === 0){
-        console.log('context: ', arg.context)
+        console.log('context: ', arg.context, arg, currentObject)
         throw new Error(`LynxError: context not found for ${inverseAttr}`)
     } else if (matchingContext.length > 1){
-        throw new Error(`LynxError: multiple context found for ${inverseAttr}: ${arg.context}`)
+        throw new Error(`LynxError: multiple context found for ${inverseAttr}: \n${arg.context.map((ctx) => (ctx.debug)).join('\n\t')}`)
     }
     const contextPath = matchingContext[0]
     const newSearchArgs = { ...arg, type: RELATIVE }
+
     const nextValue = objectFromHash(state, contextPath.value)
     const nextValueFunctionData = reduceGetStack(state, nextValue, newSearchArgs) //think of this as getting the child args
     const returnFunctionData = argsToVarDefs(state, currentObject, nextValueFunctionData)
@@ -190,17 +203,19 @@ const reduceFunctionData = (functionData, newFunctionData) => {
 //resolved and is added to varDefs
 export const argsToVarDefs = (state, currentObject, functionData) => {
     const combinedArgs = functionData.args
+    limiter(2000, 5000)
+    //console.log(currentObject)
     const resolvedFunctionData = Object.entries(combinedArgs)
         .map((entry) => {
             const arg = { ...entry[1], argKey: entry[0] }
             try {
-                if (arg.type === RELATIVE){
+                if (arg.type === RELATIVE) {
                     return reduceGetStack(state, currentObject, arg)
                 } else if (arg.type === LOCAL_SEARCH) {
                     return resolveLocalSearch(state, currentObject, arg)
                 } else if (arg.type === INVERSE) {
                     return resolveInverse(state, arg, currentObject)
-                } else if (arg.type === STATE_ARG){
+                } else if (arg.type === STATE_ARG) {
                     return resolveState(state, arg, currentObject)
                 } else if (arg.type === GLOBAL_SEARCH) {
                     return { args: {}, varDefs: [] }
@@ -212,7 +227,7 @@ export const argsToVarDefs = (state, currentObject, functionData) => {
                     throw new Error(`LynxError: arg type "${arg.type}" not found`)
                 }
             } catch (e){ //catch compiler errors so it can complete but with an incorrect output for debugging
-                console.log(e)
+                console.warn(e)
                 return { args: {}, varDefs: [] }
             }
         })
@@ -249,6 +264,14 @@ if STATE_ARG:
     state arg has ast. run argsToVarDefs on ast, then put back into state arg
 if GLOBAL_SEARCH:
     place in current o
+*/
+/*
+get app.jsRep
+
+app has jsPrimitive that requires app.graphicalRepresentation
+get parse(appText).result
+
+
 */
 
 const combineArgs = (childAsts) => (

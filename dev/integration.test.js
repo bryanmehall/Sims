@@ -2,6 +2,7 @@ import { lynxParser } from './lynxParser'
 import { compileApp } from './ducks/object/compiler'
 console.group = function(){}
 console.groupEnd = function(){}
+
 var fs = require('fs');
 
 const runTest = (objects, done) => {

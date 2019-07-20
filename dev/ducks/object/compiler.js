@@ -43,13 +43,13 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
 export const flattenState = (state) => {
     const hashTable = Object.values(state).reduce((hashTable, obj) => {
         const hash = getHash(obj)
-        const objWithHash = obj//{ ...obj, hash }
+        const objWithHash = obj//{ ...obj, hash }//remove this--hashes added in getHashesFromTree
         const hashes = getHashesFromTree(obj)
         return Object.assign(hashTable, hashes, { [hash]: objWithHash })
     }, {})
     return hashTable
 }
-const getHashesFromTree = (objectData) => (
+export const getHashesFromTree = (objectData) => (
     Object.entries(objectData)
         .filter((entry) => (
             typeof entry[1] !== 'string' //is this filter needed? test without
@@ -79,7 +79,7 @@ const getHashesFromTree = (objectData) => (
 
 export const compileApp = (state) => { //state is in the form name:lynxObject
     const hashTable = flattenState(state)
-    const appData = objectFromName(hashTable, 'app')
+    const appData = objectFromName(hashTable, 'appRoot')
     return compile(hashTable, appData)
 }
 //compile a module

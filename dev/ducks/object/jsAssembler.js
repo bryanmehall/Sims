@@ -24,7 +24,7 @@ const input = (ast) => {
         return `\t//input\n${varDefs}\nreturn ${inlineInput(ast)}`
     }
 }
-const inlineInput = (ast) => (`${ast.inputName} //input: ${ast.inputName}`)
+const inlineInput = (ast) => (`${ast.inputName}`)
 const number = (ast) => (JSON.stringify(ast.value))
 const boolean = (ast) => (JSON.stringify(ast.value))
 const string = (ast) => (JSON.stringify(ast.value))//todo: !!!!!!!!!!!!!!!XSS risk!!!!!!!!!!!!!
@@ -66,7 +66,7 @@ const group = (ast) => {
     if (elementsList !== undefined && (elementsList.type === 'array' || elementsList.type === 'apply')){ //remove this check when all elements are arrays
         const childrenText = buildChildren(ast)
         const varDefs = varDefsToString(ast.varDefs)
-        return `\t//group\n${varDefs}\tvar children = ${childrenText};\n\treturn function(prim) { children.forEach(function(elem, i, array){elem(i, array)(prim)}) }`
+        return `\t//group\n${varDefs}\n\treturn function(prim) { \n\tvar children = ${childrenText};\n\tchildren.forEach(function(elem, i, array){elem(i, array)(prim)}) }`
     } else {
         const programText = buildChildren(ast, '(prim)\n')
         const varDefs = varDefsToString(ast.varDefs)
@@ -111,7 +111,7 @@ const globalSearch = (ast) => {
 }
 
 const apply = (ast) => {
-    if (ast.varDefs.length === 0){
+    if (ast.varDefs.length === 0 && ast.inline === true){
         return inlineApply(ast)
     } else {
         const varDefs = varDefsToString(ast.varDefs)
@@ -121,6 +121,7 @@ const apply = (ast) => {
 }
 
 const objectOperators = ["slice", "splice", "substring", 'concat'] //list of operators in the form object.function(arg1, ...)
+const objectFunctionOperators = ['map'] //object operators that need to be wrapped in a function
 const inlineApply = (ast) => { //helper function for apply
     const children = buildChildren(ast)
     if (children[1] === "index"){ //index operator
@@ -130,6 +131,9 @@ const inlineApply = (ast) => { //helper function for apply
     } else if (objectOperators.includes(children[1])) {
         const argsList = children.slice(2).join(", ")
         return `${children[0]}.${children[1]}(${argsList})`
+    } else if (objectFunctionOperators.includes(children[1])) {
+        const argsList = children.slice(2).join(", ")
+        return `${children[0]}.${children[1]}(function() {return ${argsList}})`
     } else if (children.length === 2){ //unop
         return `${children[1]}(${children[0]})`
     } else if (children.length === 4){ //ternop
@@ -164,9 +168,11 @@ const slice          = () => ('slice')
 const splice         = () => ('splice')
 const substring      = () => ('substring')
 const concat         = () => ('concat')
+const map            = () => ('map')
 const parse          = () => ('functionTable.parse')
 const compile        = () => ('functionTable.compile')
 const assemble       = () => ('functionTable.assemble')
+const run            = () => ('functionTable.run')
 
 const evaluate = () => ('evaluate()')
 
@@ -174,12 +180,14 @@ export const jsAssembler = {
     parse,
     compile,
     assemble,
+    run,
     index,
     arrayLength,
     slice,
     splice,
     substring,
     concat,
+    map,
     evaluate,
     input,
     number,

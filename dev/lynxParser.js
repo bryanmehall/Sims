@@ -26,12 +26,8 @@ export const lynxParser = (lynxString) => {
             outString += ("}#}".repeat(Math.abs(change))+"\n"+line)
         }
     })
-    try {
-        const out = parser.parse(outString)
-        //const hashTable = flattenState(out)
-        return out
-    } catch (e) {
-        console.log(outString)
-        throw new Error(`parsing failed: ${e.message} line: ${e.line} column:${e.column}`)
-    }
+
+    return parser.parse(outString)
+    //throw new Error(`parsing failed: ${e.message} line: ${e.line} column:${e.column}`)
+
 }

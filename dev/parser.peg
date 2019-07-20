@@ -108,7 +108,7 @@ Conditional "conditional"
     / Or
 
 MultilineConditional "multiline conditional" 
-    = "condition" "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "*Expression _ )"}#}"{
+    = "condition" "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "* Expression _ )"}#}"{
         return cases.reduceRight((elseValue, conditionalCase) => {
             return createNOp([conditionalCase.condition, conditionalCase.value, elseValue], "conditional")
         }, defaultCase[2])
@@ -143,7 +143,13 @@ ComputedMemberAccess "computed member access"
     = iterator: Value"[" key:Expression "]" {
         return createNOp([iterator, key], "index")
     }
-    / Apply / Value
+    / Apply / GroupedExpression
+    
+GroupedExpression "grouped expression"
+    = "("expr:Expression")"{
+        return expr
+    }
+    / Value
     
 Value "value"
 	=  Primitive / Bool / Number / String / Get / Object / Name

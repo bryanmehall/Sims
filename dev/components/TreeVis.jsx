@@ -8,7 +8,7 @@ import { getName } from './Debug'
 class TreeVis extends React.Component {
     constructor(props){
         super(props)
-        const appObject = objectFromName(this.props.objectTable, 'app')
+        const appObject = objectFromName(this.props.objectTable, 'appRoot')
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
         addAST(this.props.ast, { nodes, links })
         this.state = { nodes, links }

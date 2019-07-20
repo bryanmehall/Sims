@@ -117,16 +117,17 @@ export const compileToJS = (args, string) => {
 }
 
 
-
-/*let timer = performance.now()|| 0
+let timer = 0//performance.now()|| 0
 let counter = 0
 export const limiter = (timeLimit, countLimit) => {
-    const dt = performance.now()||0-timer
+    //const dt = performance.now()||0-timer
     counter+=1
     if (counter>countLimit){
         throw `compilation exceeded ${countLimit} cycles`
-    } else if (dt>timeLimit){
+    }/* else if (dt>timeLimit){
         throw `compilation timed out after ${timeLimit} ms`
-    }
-}*/
-export const limiter = (a,b) => (a+b)
+    }*/
+}
+export const resetLimiter = () => {
+    counter = 0
+}

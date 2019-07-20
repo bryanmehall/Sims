@@ -10,16 +10,29 @@ window = new group
             lynxIR:{get}
             rootObject:textbox
             attribute:value
-        innerText:run(assemble(compile(parse(lynxResult.op1))))
+        innerText:parse(lynxResult.op1)
         x:100
         y:50
 
-
+app = new object
+    keyboard: new object
+        keys:{
+            Backspace:new key
+                isPressed: 
+                keypress: new event
+                    trigger: {input}
+                    actions:{
+                        move cursor 1 space to the left //triggers move event
+                        remove character //these events subscribe to the key press event
+                    }
+        }
 textbox = new object
     name:"textbox"
     value:textbox.graphicalRepresentation.childElement1.innerText
+    cursor:new line
+        row: 
     cursorColumn:condition
-        if app.keyboard.currentKeysDown[0] == "ArrowLeft" || app.keyboard.currentKeysDown[0] == "Backspace" then textbox.cursorColumn.previousState-1
+        if  keyboard.arrowLeft.isPressed or keyboard.backspace.isPressed then textbox.cursorColumn.previousState-1
         if app.keyboard.currentKeysDown[0] == "Shift" then textbox.cursorColumn.previousState
         if arrayLength(app.keyboard.currentKeysDown) == 1 then textbox.cursorColumn.previousState+1
         textbox.cursorColumn.previousState

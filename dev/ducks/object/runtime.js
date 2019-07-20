@@ -1,7 +1,8 @@
-import { compileApp, assemble, flattenState } from './compiler'
-import { getValue, objectFromName, getHash } from './objectUtils'
+import { assemble, flattenState, getHashesFromTree } from './compiler'
+import { getValue, objectFromName, getHash, getName, objectFromHash, tableContainsName } from './objectUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
+import { limiter, resetLimiter } from './utils'
 //import { logFunctionTable } from './utils'
 
 /*
@@ -47,6 +48,15 @@ function getInputValue(key){ //this can not use arrow notation because then the 
 
 }
 
+const initInputs = (lynxText) => ({
+    lynxTextInput: { available: true, value: lynxText },
+    mouseDown: { available: false, value: false },
+    mouseX: { available: false, value: 0 },
+    mouseY: { available: false, value: 0 },
+    currentKeys: { available: false, value: [] }
+})
+
+
 
 export class Runtime {
     //all lynx state in handled by this runtime object
@@ -56,49 +66,133 @@ export class Runtime {
         this.outputs = {}
         //when calculating state, put state in buffer so that all outputs are concurrent
         this.stateBuffer = {}
-        let lynxState
-
-        lynxState = lynxParser(lynxText)
-        this.inputs = {
-            lynxTextInput: { available: true, value: lynxText },
-            mouseDown: { available: false, value: false },
-            mouseX: { available: false, value: 0 },
-            mouseY: { available: false, value: 0 },
-            currentKeys: { available: false, value: [] }
-        }//this list must be complete
+        let lynxState = flattenState(lynxParser(lynxText))
+        this.inputs = initInputs(lynxText)//this list must be complete
         this.state = {}
 
         this.hashTable = lynxState
-        const { functionTable, outputs } = compileApp(lynxState)
-        this.outputs = outputs
-        const externalFunctions = {
-            parse: (lynxString) => {
-                return objectFromName(flattenState(lynxParser(lynxString)), 'app') //returns hash table of objects--eventually this should be part of state
+
+        const externalFunctions = { //these external functions are not pure. they should be refactored into pure functions
+            parse: (lynxString) => { //modify lynx state here (side effect)
+                //console.time('parse')
+                let hashTable = {}
+                try {
+                    const parsed = lynxParser(lynxString)
+                    hashTable = flattenState(parsed) //returns hash table of objects--eventually this should be part of state
+                    Object.assign(lynxState, hashTable)
+                    const containsApp = tableContainsName(hashTable, 'app')
+                    if (containsApp){
+                        return objectFromName(hashTable, 'app')
+                    } else {
+                        //const key = Object.keys(hashTable)[0]
+                        //const obj = objectFromHash(hashTable, key)
+                        console.log(getHashesFromTree(parsed))
+                        return parsed
+
+                    }
+                } catch (e) {
+                    console.warn(e)
+                    return 'parsing error'//return lynx error object
+                }
+                //console.timeEnd('parse')
             },
             compile: (lynxObject) => {
-                const lynxIR = getValue(lynxState, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
-                return lynxIR
+                resetLimiter()
+                try {
+                    console.time('compile')
+                    //const name = getName(lynxState, lynxObject)
+                    const lynxIR = getValue(lynxState, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
+                    console.timeEnd('compile')
+                    return lynxIR
+                } catch (e){
+                    console.warn(e)
+                    return 'compile error'
+                }
+
+
             },
             assemble: (lynxIR) => {
-                const lynxModule = assemble(lynxState, lynxIR) //rename to assemble
-                //console.log(lynxModule)
-                return lynxModule
+                if (lynxIR.hasOwnProperty('args')){ //success condition-- make this more robust
+                    console.time('assemble')
+                    const lynxModule = assemble(lynxState, lynxIR)
+                    console.timeEnd('assemble')
+                    return lynxModule
+                } else { //error condition
+                    return {functionTable:{}, outputs:{}}
+                }
+            },
+            run: (module) => { //takes the result of assemble and runs each output
+                const outputs = Object.values(module.outputs)
+                if (outputs.length === 0){
+                    return 'error'
+                } else {
+                    const mainOutput = outputs[0]//make more robust
+                    const valueFunction = mainOutput.valueFunction
+                    const inputs = getInputs(mainOutput)
+                    //console.log(mainOutput, inputs)
+                    /*console.log(mainOutput)
+                    const args = mainOutput.inputs
+                        .map(getInputValue, this)
+                    mainOutput.inputs.forEach((inputKey) => {
+                        this.inputs[inputKey].lock = true
+                    }, this)
+                    const fnArgs = [...args, this.functionTable]
+                    const value = mainOutput.value.apply(null, fnArgs)
+                    console.log(mainOutput, args, value)*/
+                    return valueFunction(50)
+                }
             }
         }
 
-        const appData = objectFromName(lynxState, 'appRoot')
-        const appIRGenIR = getValue(lynxState, 'lynxIR', appData)
+        const getInputs = (output) => {
+            const ast = output.ast
+            const args = ast.args
+            const inputs = Object.values(args)
+                .map((arg) => {
+                    const inputName = arg.type === INPUT ? arg.name : arg.hash
+                    if (arg.type !== INPUT){ //if it is a state arg--move this to otuside of app module
+                        Object.assign(runtime.inputs, {
+                            [arg.hash]: { available: true, value: "1" } //default value for state
+                        })
+                    }
+                    return inputName
+                })
+                .filter((input) => (typeof input !== 'undefined'))
+            return inputs
+        }
+        /*
+        const appParse = objectFromName(lynxState, 'appParse')
+        const appParseIR = getValue(lynxState, INTERMEDIATE_REP, appParse)
+        const appParseHash = getHash(appParse)
+        appParseIR.hash = appParseHash
+        appParseIR.inline = false
+        const appParseGen = assemble(lynxState, appParseIR)
+        const appGenFunction = appParseGen.outputs[appParseHash].valueFunction
+        Object.assign(appParseGen.functionTable, externalFunctions)
+        const appModule = appGenFunction(lynxText, appParseGen.functionTable)
+        */
+        const evalIR = (lynxIR) => {
+            const IRhash = getHash(lynxIR)
+            lynxIR.hash = IRhash
+            const assembledModule = assemble(lynxState, appIRGenIR) //get rid of lynxState here
+            const valueFunction = assembledModule.outputs[IRhash].valueFunction
+            Object.assign(appIRGen.functionTable, externalFunctions)
+            const result = 'abc'
+
+        }
+        const appData = objectFromName(lynxState, 'appRoot')//getObject
+        const appIRGenIR = getValue(lynxState, INTERMEDIATE_REP, appData) //get primitive
         const irGenHash = getHash(appIRGenIR)
         appIRGenIR.hash = irGenHash
         const appIRGen = assemble(lynxState, appIRGenIR)
 
         const appIRGenFunction = appIRGen.outputs[irGenHash].valueFunction
-        //const ft = appIRGen.functionTable.$hash_abc_2170191666.toString()
         Object.assign(appIRGen.functionTable, externalFunctions)
-        const appIR = appIRGenFunction(lynxText, appIRGen.functionTable)
-        console.log(appIR)
+        const appModule = appIRGenFunction(lynxText, appIRGen.functionTable)
+        console.log(appModule.toString())//appResult
 
-        this.functionTable = Object.assign(functionTable, externalFunctions)
+        this.functionTable = Object.assign(appModule.functionTable, externalFunctions)
+        this.outputs = appModule.outputs
 
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
@@ -115,6 +209,8 @@ export class Runtime {
                 if (value === this.inputs[hash].value){
                     this.stateBuffer[hash] = { value, available: false, lock: false }
                 } else {
+                    //console.log(hash, value)
+                    //limiter(1000, 20)
                     this.stateBuffer[hash] = { value, available: true, lock: false }
                     if (Array.isArray(this.outputs[hash].prevValues)) { //for debug only
                         this.outputs[hash].prevValues.push(value)
@@ -127,21 +223,10 @@ export class Runtime {
             }
         }
 
-        Object.keys(outputs).forEach((outputKey) => {
-            const output = outputs[outputKey]
+        Object.keys(this.outputs).forEach((outputKey) => {
+            const output = this.outputs[outputKey]
             const ast = output.ast
-            const args = ast.args
-            const inputs = Object.values(args)
-                .map((arg) => {
-                    const inputName = arg.type === INPUT ? arg.name : arg.hash
-                    if (arg.type !== INPUT){
-                        Object.assign(runtime.inputs, {
-                            [arg.hash]: { available: true, value: "0" } //default value for state
-                        })
-                    }
-                    return inputName
-                })
-                .filter((input) => (typeof input !== 'undefined'))
+            const inputs = getInputs(output)
             this.outputs[outputKey] = {
                 evaluation: 'lazy',
                 open: true,
@@ -168,8 +253,8 @@ export class Runtime {
             this.checkOutputs()
         })
         document.addEventListener('keydown', (e) => {
-            if (e.key === "Tab") {
-                e.preventDefault() //prevent tab from capturing input
+            if (e.key === "Tab" || e.key === "Space") {
+                e.preventDefault() //prevent tab from capturing input and space from scrolling
             }
             this.inputs.currentKeys = { available: true, value: [e.key] } //make it possible to have multiple keys
             this.checkOutputs()
@@ -232,7 +317,8 @@ export class Runtime {
         this.updateDebug(this) //show state of runtime to debug utils --remove for production
         if (this.stateAvailable){
             this.stateAvailable = false
-            this.checkOutputs()
+            const next = () => (this.checkOutputs())
+            setTimeout(next, 200)
         }
 
 
@@ -241,13 +327,13 @@ export class Runtime {
         if (output.open){
             const inputAvailable = this.inputAvailable(output)
             if (inputAvailable){
-                const stateArgs = output.inputs
+                const args = output.inputs
                     .map(getInputValue, this)
                 output.inputs.forEach((inputKey) => {
                     this.inputs[inputKey].lock = true
                 }, this)
-                const args = [...stateArgs, this.functionTable]
-                const value = output.value.apply(null, args) //inputs go here
+                const fnArgs = [...args, this.functionTable]
+                const value = output.value.apply(null, fnArgs) //inputs go here
                 output.hook(value, output.hash)
             }
         }

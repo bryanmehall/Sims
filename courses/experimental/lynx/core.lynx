@@ -11,23 +11,39 @@ functionalRepresentation = new object
 compile = new object
     name:"compile"
     lynxIR:{compile}
+definition = new attribute
+    name: "definition"
 assemble = new object
     name:"assemble"
     lynxIR:{assemble}
+run = new object
+    name:"run"
+    lynxIR:{run}
 appRoot = new get
     name:"appRoot"
     lynxIR:{get}
     rootObject:app
-    attribute:op1
+    attribute:op2
+
+appParse = new object
+    name:"appParse"
+    lynxIR:{apply}
+    function:assemble
+    lynxText:new string
+        name:"lynxTextInput"
+        lynxIR:{input}
+    op1: compile(parse(appParse.lynxText))
+
 app = new object
     lynxIR:{app}
     name:"app"
     lynxText: new string
         name:"lynxTextInput"
         lynxIR:{input}
-    op3:parse(app.lynxText)
-    op1:compile(app.op3)
+    definition:parse(app.lynxText)
+    op1:compile(app.definition)
     op2:assemble(app.op1)
+    canvasRep:run(app.op2)
     mouse: new object
         down: new input
             name:"mouseDown"
@@ -42,12 +58,19 @@ app = new object
         clicked: app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState
         isPressedDown: !app.mouse.down.previousState && app.mouse.down && !app.mouse.isPressedDown.previousState
     keyboard: new object
+        name:"appkeyboard"
         currentKeysDown: new array
             name:"currentKeys"
             length:0
             lynxIR:{input}
+        currentKeysPressed: [
+            appkeyboard.currentKeysDown[0]
+        ]
     graphicalRepresentation:window
-
+canvasRep = new attribute
+    name:"canvasRep"
+currentKeysPressed = new attribute
+    name:"currentKeyPressed"
 previousState = new attribute
     name:"previousState"
 lynxText = new attribute
@@ -205,11 +228,11 @@ insert = new func
 index = new attribute
     name:"index"
 setEquiv = new attribute
-    name:"a"
+    name:"setEquiv"
 subset1 = new attribute
-    name:"a"
+    name:"subset1"
 subset2 = new attribute
-    name:"a"
+    name:"subset2"
 
 text = new object
     lynxIR:{text}

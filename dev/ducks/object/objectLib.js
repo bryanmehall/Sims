@@ -47,7 +47,7 @@ export const objectLib = {
     constructString,
     constructArray: function(name, elements){
         return {
-                name: "array",
+                name: constructString("array"),
                 instanceOf: "array",
                 lynxIR: { type: "array", value: elements }
             }
