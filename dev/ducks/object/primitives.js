@@ -309,9 +309,7 @@ const apply = (state, objectData) => {
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-    if (parameters[1].type === 'run'){
-        console.log(parameters[1])
-    }
+
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     const children =
           parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
@@ -319,6 +317,11 @@ const apply = (state, objectData) => {
         : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
         : parameters.length === 5 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3], op4: parameters[4] } //quadOp --make this an array?
         : {} //error
+    if (parameters[1].type === 'run'){
+        //mark arguments of run as a definition so the args of result can be added
+        //when creating variable definition
+        Object.values(args).forEach((arg) => { arg.isDefinition = true })
+    }
     return {
         hash: getAttr(objectData, 'hash'),
         args,

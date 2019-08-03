@@ -1,0 +1,11 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:20
+        y:30
+        op1:new string
+            name:"lynxTextInput1"
+            lynxIR:{input}
+        op2:"x"
+        innerText:run(assemble(compile(parse(txt.op1+txt.op2))))

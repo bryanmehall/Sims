@@ -196,7 +196,7 @@ Float "number"
     }
 
 String "string"
-     = '"'characters:[a-zA-Z0-9\\]*'"' {
+     = '"'characters:[.a-zA-Z0-9\\]*'"' {
          var value = characters.join("")
          return createString(value)
      }

@@ -28,6 +28,7 @@ export const lynxParser = (lynxString) => {
     })
 
     return parser.parse(outString)
+    return parser.parse(outString)
     //throw new Error(`parsing failed: ${e.message} line: ${e.line} column:${e.column}`)
 
 }

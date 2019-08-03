@@ -145,6 +145,13 @@
 					"text":"test for when dbSearch needs to get context",
 					"type":"anim",
 					"length":10
+				},
+                {
+					"id": "self-interpret",
+					"title":"Self Interpret",
+					"text":"test self-interpreter",
+					"type":"anim",
+					"length":10
 				}
             ]
         },

@@ -50,6 +50,7 @@ function getInputValue(key){ //this can not use arrow notation because then the 
 
 const initInputs = (lynxText) => ({
     lynxTextInput: { available: true, value: lynxText },
+    lynxTextInput1: { available: true, value: 'app.mouse.pos.' },
     mouseDown: { available: false, value: false },
     mouseX: { available: false, value: 0 },
     mouseY: { available: false, value: 0 },
@@ -118,10 +119,10 @@ export class Runtime {
                     console.timeEnd('assemble')
                     return lynxModule
                 } else { //error condition
-                    return {functionTable:{}, outputs:{}}
+                    return { functionTable: {}, outputs: {} }
                 }
             },
-            run: (module) => { //takes the result of assemble and runs each output
+            run: (module) => { //takes the result of assemble and runs each (main?) output
                 const outputs = Object.values(module.outputs)
                 if (outputs.length === 0){
                     return 'error'
@@ -189,7 +190,7 @@ export class Runtime {
         const appIRGenFunction = appIRGen.outputs[irGenHash].valueFunction
         Object.assign(appIRGen.functionTable, externalFunctions)
         const appModule = appIRGenFunction(lynxText, appIRGen.functionTable)
-        console.log(appModule.toString())//appResult
+        console.log(appModule)//appResult
 
         this.functionTable = Object.assign(appModule.functionTable, externalFunctions)
         this.outputs = appModule.outputs
@@ -338,4 +339,5 @@ export class Runtime {
             }
         }
     }
+
 }
