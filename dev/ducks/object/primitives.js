@@ -1,6 +1,6 @@
-import { getArgsAndVarDefs, argsToVarDefs } from './selectors'
-import { getValue, getJSValue, getName, getAttr, getHash } from './objectUtils'
-import { addContextToArgs } from './contextUtils'
+import { getArgsAndVarDefs, argsToVarDefs, resolveLocalSearch, reduceFunctionData } from './selectors'
+import { getValue, getJSValue, getName, getAttr, getHash, objectFromHash  } from './objectUtils'
+import { addContextToArgs, createParentContext } from './contextUtils'
 import { isUndefined } from './utils'
 import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
 
@@ -60,17 +60,14 @@ const assemble = (state, objectData) => (
         inline: true
     }
 )
-const run = (state, objectData, valueData) => {
-    console.log(objectData, valueData)
-    return {
-        hash: getAttr(objectData, 'hash'),
-        type: 'run',
-        varDefs: [],
-        children: {},
-        args: {},
-        inline: true
-    }
-}
+const run = (state, objectData) => ({
+    hash: getAttr(objectData, 'hash'),
+    type: 'run',
+    varDefs: [],
+    children: {},
+    args: {},
+    inline: true
+})
 //data constants
 const number = (...args) => (primitive(...args))
 const bool =   (...args) => (primitive(...args))
@@ -245,6 +242,7 @@ const get = (state, objectData) => {
         const hash = getAttr(objectData, 'hash')
         const args = {
             [hash]: {
+                hash,
                 query,
                 context: [],
                 type: LOCAL_SEARCH,
@@ -302,26 +300,49 @@ const dbSearch = (state, objectData) => {
         }
     }
 }
-
-const apply = (state, objectData) => {
+const evaluate = (state, lynxIR, context) => {
+    //context can include more than names so should this be with parent object instead?
+    //just keep track of parent hashes in a linked list so that this can be done lazily instead of eagerly
+    //this would mean less data passed around and more flexibility for matching on things other than names
+    //also keps track of scope ordering ie child nodes are matched before parent nodes
+    const args = lynxIR.args
+    const parentContext = context[0] //todo: need a better way of structuring this -- structure with context
+    if (parentContext.attr === "parentValue") { //todo: need to iterate for parent of parent etc.
+        const nextObjectData = objectFromHash(state, parentContext.value)
+        const functionData = argsToVarDefs(state, nextObjectData, { args: args, varDefs: [] })
+        const newIR = Object.assign({}, lynxIR, reduceFunctionData(lynxIR, functionData))
+        const runtime = state.runtime
+        const assembled = runtime.assemble(newIR)
+        //console.log(assembled.outputs.$hash_abc_2571984726.valueFunction.toString())
+        const run = runtime.run(assembled)
+        //console.log('run', run)
+        return run
+    }
+}
+const apply = (state, objectData, valueData, context) => {
     const paramNames = ['op1','function', 'op2', 'op3', 'op4']
     const parameters = paramNames.map((paramName) => (
             getJSValue(state, 'placeholder', paramName, objectData)
         ))
         .filter((param) => (param !== undefined))
-
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
+    if (parameters[1].type === 'run'){
+        const compileApply = parameters[0].children.op1
+        //we want the ir not the assembled code?
+        const runIR = evaluate(state, compileApply, context)
+        Object.values(args).forEach((arg) => { arg.isDefinition = true })
+        Object.values(runIR.args).forEach((arg) => { arg.isDefinition = false })
+        console.log(runIR)
+        Object.assign(runIR.args, args)
+        return runIR
+    }
     const children =
           parameters.length === 2 ? { op1: parameters[0], function: parameters[1] } //unop
         : parameters.length === 3 ? { op1: parameters[0], function: parameters[1], op2: parameters[2] } //binop
         : parameters.length === 4 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3] } //ternop
         : parameters.length === 5 ? { op1: parameters[0], function: parameters[1], op2: parameters[2], op3: parameters[3], op4: parameters[4] } //quadOp --make this an array?
         : {} //error
-    if (parameters[1].type === 'run'){
-        //mark arguments of run as a definition so the args of result can be added
-        //when creating variable definition
-        Object.values(args).forEach((arg) => { arg.isDefinition = true })
-    }
+
     return {
         hash: getAttr(objectData, 'hash'),
         args,
@@ -352,7 +373,7 @@ const ternary = (state, objectData) => {
 const text = (state, objectData) => {
     const paramNames = ["x", "y", "innerText", "r", "g", "b"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, 'placeholder', paramName, objectData) //todo: change txt here
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
@@ -424,10 +445,6 @@ const app = (state, objectData) => {
     }
 }
 
-const evaluate = () => ({
-    //this is a lazy node wherewhen it is called, every non-ternary operator below it evaluates
-	type: 'evaluate'
-})
 
 export const primitives = {
     parse,

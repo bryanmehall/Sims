@@ -1,5 +1,12 @@
 import { getName, getInverseAttr, getAttr } from './objectUtils'
 
+export const createParentContext = (objectData, forwardAttr) => ({
+    debug: `${getAttr(objectData, 'name')}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
+    attr: "parentValue",
+    value: getAttr(objectData, 'hash'),
+    source: "sourceHash" //remove for debug
+})
+
 export const addContextToGetStack = (state, context, attr, currentObject, sourceHash) => {
     const hash = getAttr(currentObject, 'hash')
     const searchName = getName(state, currentObject) //remove for debug

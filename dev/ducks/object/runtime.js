@@ -50,12 +50,29 @@ function getInputValue(key){ //this can not use arrow notation because then the 
 
 const initInputs = (lynxText) => ({
     lynxTextInput: { available: true, value: lynxText },
-    lynxTextInput1: { available: true, value: 'app.mouse.pos.' },
+    lynxTextInput1: { available: true, value: 'app.mouse.pos.x' },
     mouseDown: { available: false, value: false },
     mouseX: { available: false, value: 0 },
     mouseY: { available: false, value: 0 },
     currentKeys: { available: false, value: [] }
 })
+
+const getInputs = (runtime, output) => {
+    const ast = output.ast
+    const args = ast.args
+    const inputs = Object.values(args)
+        .map((arg) => {
+            const inputName = arg.type === INPUT ? arg.name : arg.hash
+            if (arg.type !== INPUT){ //if it is a state arg--move this to otuside of app module
+                Object.assign(runtime.inputs, {
+                    [arg.hash]: { available: true, value: "1" } //default value for state
+                })
+            }
+            return inputName
+        })
+        .filter((input) => (typeof input !== 'undefined'))
+    return inputs
+}
 
 
 
@@ -69,98 +86,18 @@ export class Runtime {
         this.stateBuffer = {}
         let lynxState = flattenState(lynxParser(lynxText))
         this.inputs = initInputs(lynxText)//this list must be complete
-        this.state = {}
+        this.state = {}//combine this and hashTable
 
-        this.hashTable = lynxState
+        this.hashTable = Object.assign(lynxState, { runtime: this })
 
-        const externalFunctions = { //these external functions are not pure. they should be refactored into pure functions
-            parse: (lynxString) => { //modify lynx state here (side effect)
-                //console.time('parse')
-                let hashTable = {}
-                try {
-                    const parsed = lynxParser(lynxString)
-                    hashTable = flattenState(parsed) //returns hash table of objects--eventually this should be part of state
-                    Object.assign(lynxState, hashTable)
-                    const containsApp = tableContainsName(hashTable, 'app')
-                    if (containsApp){
-                        return objectFromName(hashTable, 'app')
-                    } else {
-                        //const key = Object.keys(hashTable)[0]
-                        //const obj = objectFromHash(hashTable, key)
-                        console.log(getHashesFromTree(parsed))
-                        return parsed
-
-                    }
-                } catch (e) {
-                    console.warn(e)
-                    return 'parsing error'//return lynx error object
-                }
-                //console.timeEnd('parse')
-            },
-            compile: (lynxObject) => {
-                resetLimiter()
-                try {
-                    console.time('compile')
-                    //const name = getName(lynxState, lynxObject)
-                    const lynxIR = getValue(lynxState, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
-                    console.timeEnd('compile')
-                    return lynxIR
-                } catch (e){
-                    console.warn(e)
-                    return 'compile error'
-                }
-
-
-            },
-            assemble: (lynxIR) => {
-                if (lynxIR.hasOwnProperty('args')){ //success condition-- make this more robust
-                    console.time('assemble')
-                    const lynxModule = assemble(lynxState, lynxIR)
-                    console.timeEnd('assemble')
-                    return lynxModule
-                } else { //error condition
-                    return { functionTable: {}, outputs: {} }
-                }
-            },
-            run: (module) => { //takes the result of assemble and runs each (main?) output
-                const outputs = Object.values(module.outputs)
-                if (outputs.length === 0){
-                    return 'error'
-                } else {
-                    const mainOutput = outputs[0]//make more robust
-                    const valueFunction = mainOutput.valueFunction
-                    const inputs = getInputs(mainOutput)
-                    //console.log(mainOutput, inputs)
-                    /*console.log(mainOutput)
-                    const args = mainOutput.inputs
-                        .map(getInputValue, this)
-                    mainOutput.inputs.forEach((inputKey) => {
-                        this.inputs[inputKey].lock = true
-                    }, this)
-                    const fnArgs = [...args, this.functionTable]
-                    const value = mainOutput.value.apply(null, fnArgs)
-                    console.log(mainOutput, args, value)*/
-                    return valueFunction(50)
-                }
-            }
+        this.externalFunctions = { //these external functions are not pure. they should be refactored into pure functions
+            parse: (lynxString) => (runtime.parse(lynxString)),
+            compile: (lynxObject) => (runtime.compile(lynxObject)),
+            assemble: (lynxIR) => (runtime.assemble(lynxIR)),
+            run: (lynxModule) => (runtime.run(lynxModule))
         }
 
-        const getInputs = (output) => {
-            const ast = output.ast
-            const args = ast.args
-            const inputs = Object.values(args)
-                .map((arg) => {
-                    const inputName = arg.type === INPUT ? arg.name : arg.hash
-                    if (arg.type !== INPUT){ //if it is a state arg--move this to otuside of app module
-                        Object.assign(runtime.inputs, {
-                            [arg.hash]: { available: true, value: "1" } //default value for state
-                        })
-                    }
-                    return inputName
-                })
-                .filter((input) => (typeof input !== 'undefined'))
-            return inputs
-        }
+
         /*
         const appParse = objectFromName(lynxState, 'appParse')
         const appParseIR = getValue(lynxState, INTERMEDIATE_REP, appParse)
@@ -175,24 +112,23 @@ export class Runtime {
         const evalIR = (lynxIR) => {
             const IRhash = getHash(lynxIR)
             lynxIR.hash = IRhash
-            const assembledModule = assemble(lynxState, appIRGenIR) //get rid of lynxState here
+            const assembledModule = assemble(runtime.hashTable, appIRGenIR) //get rid of lynxState here
             const valueFunction = assembledModule.outputs[IRhash].valueFunction
-            Object.assign(appIRGen.functionTable, externalFunctions)
+            Object.assign(appIRGen.functionTable, runtime.externalFunctions)
             const result = 'abc'
 
         }
-        const appData = objectFromName(lynxState, 'appRoot')//getObject
-        const appIRGenIR = getValue(lynxState, INTERMEDIATE_REP, appData) //get primitive
+        const appData = objectFromName(runtime.hashTable, 'appRoot')//getObject
+        const appIRGenIR = getValue(runtime.hashTable, INTERMEDIATE_REP, appData) //get primitive
         const irGenHash = getHash(appIRGenIR)
         appIRGenIR.hash = irGenHash
-        const appIRGen = assemble(lynxState, appIRGenIR)
+        const appIRGen = assemble(runtime.hashTable, appIRGenIR)
 
         const appIRGenFunction = appIRGen.outputs[irGenHash].valueFunction
-        Object.assign(appIRGen.functionTable, externalFunctions)
+        Object.assign(appIRGen.functionTable, runtime.externalFunctions)
         const appModule = appIRGenFunction(lynxText, appIRGen.functionTable)
-        console.log(appModule)//appResult
 
-        this.functionTable = Object.assign(appModule.functionTable, externalFunctions)
+        this.functionTable = Object.assign(appModule.functionTable, runtime.externalFunctions)
         this.outputs = appModule.outputs
 
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
@@ -227,7 +163,7 @@ export class Runtime {
         Object.keys(this.outputs).forEach((outputKey) => {
             const output = this.outputs[outputKey]
             const ast = output.ast
-            const inputs = getInputs(output)
+            const inputs = getInputs(runtime, output)
             this.outputs[outputKey] = {
                 evaluation: 'lazy',
                 open: true,
@@ -339,5 +275,74 @@ export class Runtime {
             }
         }
     }
+    parse(lynxString) { //modify lynx state here (side effect)
+        console.log('parse lynxString', lynxString)
+        //console.time('parse')
+        let hashTable = {}
+        try {
+            const parsed = lynxParser(lynxString)
+            hashTable = flattenState(parsed) //returns hash table of objects--eventually this should be part of state
+            Object.assign(this.hashTable, hashTable)
+            const containsApp = tableContainsName(hashTable, 'app')
+            if (containsApp){
+                return objectFromName(hashTable, 'app')
+            } else {
+                //const key = Object.keys(hashTable)[0]
+                //const obj = objectFromHash(hashTable, key)
+                const hash = getHash(parsed)
+                return Object.assign(parsed, {hash})
 
+            }
+        } catch (e) {
+            console.warn(e)
+            return 'parsing error'//return lynx error object
+        }
+        //console.timeEnd('parse')
+    }
+    compile(lynxObject){ //make compile accept a target. ie. canvas, js, GLSL, wasm
+        console.log('compile lynxObject', lynxObject)
+        resetLimiter()
+        try {
+            console.time('compile')
+            //const name = getName(lynxState, lynxObject)
+            const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
+            console.timeEnd('compile')
+            return lynxIR
+        } catch (e){
+            console.warn(e)
+            return 'compile error'
+        }
+    }
+    assemble(lynxIR) {
+        console.log('assemble lynxIR', lynxIR)
+        if (lynxIR.hasOwnProperty('args')){ //success condition-- make this more robust
+            console.time('assemble')
+            const lynxModule = assemble(this.hashTable, lynxIR)
+            console.timeEnd('assemble')
+            Object.assign(lynxModule.functionTable, this.externalFunctions)
+            return lynxModule
+        } else { //error condition
+            return { functionTable: {}, outputs: {} }
+        }
+    }
+    run(module) {//remove this?
+        const outputs = Object.values(module.outputs)
+        const runtime = this
+        if (outputs.length === 0){
+            return 'error'
+        } else {
+            const mainOutput = outputs[0]//make more robust
+            const valueFunction = mainOutput.valueFunction
+            const inputs = getInputs(runtime, mainOutput)
+            const args = inputs
+                .map(getInputValue, runtime)
+            inputs.forEach((inputKey) => {
+                this.inputs[inputKey].lock = true
+            }, this)
+            const fnArgs = [...args, module.functionTable]
+            const value = valueFunction.apply(null, fnArgs)
+            //console.log(value, valueFunction.toString())
+            return value
+        }
+    }
 }

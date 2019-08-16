@@ -7,5 +7,6 @@ window = new group
         op1:new string
             name:"lynxTextInput1"
             lynxIR:{input}
-        op2:"x"
-        innerText:run(assemble(compile(parse(txt.op1+txt.op2))))
+        op2:"app.mouse.pos.y"
+        op3: app.mouse.down ? txt.op1 : txt.op2
+        innerText:run(assemble(compile(parse(txt.op3))))

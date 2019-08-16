@@ -151,7 +151,7 @@ const reduceGetStack = (state, currentObject, searchArgData) => { // get all arg
     }
 }
 
-const resolveLocalSearch = (state, currentObject, searchArgData) => {
+export const resolveLocalSearch = (state, currentObject, searchArgData) => {
     const { query } = searchArgData
     const searchName = getName(state, currentObject)
     if (query === searchName){
@@ -187,7 +187,7 @@ function resolveInverse(state, arg, currentObject) {
 /*
 combine arg and varDef movements to create the final args and varDefs
 */
-const reduceFunctionData = (functionData, newFunctionData) => {
+export const reduceFunctionData = (functionData, newFunctionData) => { //should this take all of the IR?
     //this is reversed so var defs will be in the right order
     const varDefs = newFunctionData.varDefs.concat(functionData.varDefs)
     const args = Object.assign({}, functionData.args, newFunctionData.args)

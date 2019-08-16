@@ -2,7 +2,7 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
-import { addContextToArgs } from './contextUtils'
+import { addContextToArgs, createParentContext } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
 const filterNames = (state, name) => {
@@ -10,7 +10,7 @@ const filterNames = (state, name) => {
     const matches = values.filter((obj) => {
         const nameObject = getAttr(obj, 'name')
         if (typeof nameObject === 'undefined') { return false }
-        const objName = getAttr(nameObject, INTERMEDIATE_REP).value //try is to replace wrapping this\
+        const objName = getAttr(nameObject, INTERMEDIATE_REP).value //try is to replace wrapping this
         return objName === name
     })
     return matches
@@ -122,15 +122,15 @@ const returnWithHash = (attr, attrData, valueData) => {
     return newProps
 }
 
-const compile = (state, valueData, objectData) => { //move to primitives?
+const compile = (state, valueData, objectData, context) => { //move to primitives?
     if (primitives.hasOwnProperty(valueData.type)){
-        return primitives[valueData.type](state, objectData, valueData)
+        return primitives[valueData.type](state, objectData, valueData, context)
     } else {
         throw new Error(`LynxError:unknown type. definition: ${JSON.stringify(valueData)}`)
     }
 }
 
-export const getValue = (state, prop, objectData) => {
+export const getValue = (state, prop, objectData, context) => {
     checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
     if (typeof def === "string" && isHash(def)){
@@ -168,10 +168,8 @@ export const getValue = (state, prop, objectData) => {
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
-        return compile(state, valueData, objectData, def)
-	} else if (prop === "jsRep"){
-
-    } else {
+        return compile(state, valueData, objectData, context)
+	} else {
         return returnWithHash(prop, attrData, valueData)
 	}
 }
@@ -189,11 +187,12 @@ const checkObjectData = (objectData) => {
 
 //getJSValue should always return an ast?
 export const getJSValue = (state, name, prop, objectData) => {
+    const context = [createParentContext(objectData, name)]//should this context be attached to the args instead?
 	const valueData = getValue(state, prop, objectData)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-		const primitive = getValue(state , INTERMEDIATE_REP, valueData)
+		const primitive = getValue(state , INTERMEDIATE_REP, valueData, context)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined
         } else {
