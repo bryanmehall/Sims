@@ -1,7 +1,7 @@
-import { getName, getInverseAttr, getAttr } from './objectUtils'
+import { getName, getInverseAttr, getAttr, getNameFromAttr } from './objectUtils'
 
 export const createParentContext = (objectData, forwardAttr) => ({
-    debug: `${getAttr(objectData, 'name')}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
+    debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
     attr: "parentValue",
     value: getAttr(objectData, 'hash'),
     source: "sourceHash" //remove for debug

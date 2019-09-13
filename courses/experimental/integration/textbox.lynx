@@ -10,7 +10,7 @@ window = new group
             lynxIR:{get}
             rootObject:textbox
             attribute:value
-        innerText:assemble(compile(parse(lynxResult.op1)))
+        innerText:call(assemble(compile(parse(lynxResult.op1))))
         x:100
         y:50
 

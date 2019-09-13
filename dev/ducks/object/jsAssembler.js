@@ -78,7 +78,7 @@ const group = (ast) => {
 const text = (ast) => {
     const programText = buildChildren(ast, ', ') //space is important for unit tests
     const varDefs = varDefsToString(ast.varDefs)
-    const debug = ''
+    const debug = ``
     return `\t//text\n${varDefs}\n\t${debug}\n\treturn function(prim) { prim.text( ${programText}, 0, 0, 0 ) }`//space is important for unit tests
 }
 const line = (ast) => {
@@ -119,27 +119,47 @@ const apply = (ast) => {
         return `\t"use strict";//apply\n${varDefs}\n\t${debug}\n\treturn ${inlineApply(ast)}`
     }
 }
+const binaryOperators = [
+    '+',
+    '-',
+    '*',
+    '/',
+    '===',
+    '<',
+    '>',
+    '&&',
+    '||'
+] //list of operators in the form arg1 op arg2
 
-const objectOperators = ["slice", "splice", "substring", 'concat'] //list of operators in the form object.function(arg1, ...)
+const objectOperators = [  //list of operators in the form object.function(arg1, ...)
+    "slice",
+    "splice",
+    "substring",
+    'concat'
+]
+
 const objectFunctionOperators = ['map'] //object operators that need to be wrapped in a function
 const inlineApply = (ast) => { //helper function for apply
     const children = buildChildren(ast)
-    if (children[1] === "index"){ //index operator
+    const op = children[1]
+    if (op === "index"){ //index operator
         return `${children[0]}[${children[2]}]`
-    } else if (children[1] === "arrayLength") {
+    } else if (op === "arrayLength") {
         return `${children[0]}.length`
-    } else if (objectOperators.includes(children[1])) {
+    } else if (binaryOperators.includes(op)){
+         return `( ${children.join(' ')})`
+    } else if (objectOperators.includes(op)) {
         const argsList = children.slice(2).join(", ")
-        return `${children[0]}.${children[1]}(${argsList})`
-    } else if (objectFunctionOperators.includes(children[1])) {
+        return `${children[0]}.${op}(${argsList})`
+    } else if (objectFunctionOperators.includes(op)) {
         const argsList = children.slice(2).join(", ")
         return `${children[0]}.${children[1]}(function() {return ${argsList}})`
     } else if (children.length === 2){ //unop
         return `${children[1]}(${children[0]})`
     } else if (children.length === 4){ //ternop
         return `${children[0]} ? ${children[2]} : ${children[3]}`
-    } else { //binop
-        return `( ${children.join(' ')})`
+    } else {
+        return `${op}(${children[0]}, ${children.slice(2).join(' ')})`
     }
 }
 
@@ -172,7 +192,7 @@ const map            = () => ('map')
 const parse          = () => ('functionTable.parse')
 const compile        = () => ('functionTable.compile')
 const assemble       = () => ('functionTable.assemble')
-const run            = () => ('functionTable.run')
+const call            = () => ('functionTable.call')//remove?
 
 const evaluate = () => ('evaluate()')
 
@@ -180,7 +200,7 @@ export const jsAssembler = {
     parse,
     compile,
     assemble,
-    run,
+    call,//remove
     index,
     arrayLength,
     slice,

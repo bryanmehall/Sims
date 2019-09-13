@@ -4,6 +4,7 @@ object = new object
 
 attribute = new object
     name:"attribute"
+
 functionalRep = new attribute
     name:"functionalRep"
 functionalRepresentation = new object
@@ -16,9 +17,9 @@ definition = new attribute
 assemble = new object
     name:"assemble"
     lynxIR:{assemble}
-run = new object
-    name:"run"
-    lynxIR:{run}
+call = new object
+    name:"call"
+    lynxIR:{call}
 appRoot = new get
     name:"appRoot"
     lynxIR:{get}
@@ -37,13 +38,13 @@ appParse = new object
 app = new object
     lynxIR:{app}
     name:"app"
-    lynxText: new string
+    lynxText: new object
         name:"lynxTextInput"
         lynxIR:{input}
-    definition:parse(app.lynxText)
+    definition:parse(app.lynxText, "app")
     op1:compile(app.definition)
-    op2:assemble(app.op1)
-    canvasRep:run(app.op2)
+    op2:assemble(app.op1) //for canvas: assemble(compile(app.definition, canvasPrimitive))
+    canvasRep:call(app.op2)
     mouse: new object
         down: new input
             name:"mouseDown"
@@ -69,6 +70,8 @@ app = new object
     graphicalRepresentation:window
 canvasRep = new attribute
     name:"canvasRep"
+canvasIR = new attribute
+    name:"canvasIR"
 currentKeysPressed = new attribute
     name:"currentKeyPressed"
 previousState = new attribute

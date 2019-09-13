@@ -62,7 +62,7 @@ class Sim extends React.Component {
 		const simCardStyle = {
 			...cardStyle, 
 			width: 600,
-			height: 200,
+			height: 400,
 			position: "relative",
 			overflow: 'hidden',
 			left: 0,
@@ -86,7 +86,7 @@ class Sim extends React.Component {
                     style={simCardStyle}
                 >
                 </canvas>
-                <div style = {{ ...cardStyle, backgroundColor: 'white', padding: 10, top: 305 }}>
+                <div style = {{ ...cardStyle, backgroundColor: 'white', padding: 10, top: 505 }}>
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "tree" }) }}>tree</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "ast" }) }}> ast</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "code" }) }}> code</span> |

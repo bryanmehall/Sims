@@ -1,8 +1,8 @@
 window = new group
     name:"window"
     pos: new coordinatePosition
-        x:20
-        y:30
+        x:100
+        y:100
     childElements: [
         window.accordianRep
     ]
@@ -15,9 +15,9 @@ window = new group
             op2:new element
                 elementValue:new text
                     name:"txt"
-                    x:20
-                    y:txt.parentElement.index*25
-                    innerText:"abc"
+                    x:accordianRepresentation.pos.x
+                    y:txt.parentElement.index*25+accordianRepresentation.pos.y
+                    innerText:txt.parentElement.value
 
 map = new func
     name:"map"

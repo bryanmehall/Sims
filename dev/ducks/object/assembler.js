@@ -1,5 +1,5 @@
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
-import { getValue, getHash, objectFromName } from './objectUtils'
+import { getHash } from './objectUtils'
 import { resolveDBSearches } from './DBsearchUtils'
 import { INTERMEDIATE_REP } from './constants'
 
@@ -11,7 +11,7 @@ import { INTERMEDIATE_REP } from './constants'
         dbSearch?
 
 */
-const compileOutput = (state, ast, outputs) => { //get rid of dependence on state?
+const assembleOutput = (state, ast, outputs) => { //get rid of dependence on state?
     //ast is undefined if state arg has already been created
     //outputs will have own property if output has already been created
     if (typeof ast === 'undefined' || outputs.hasOwnProperty(ast.hash)){
@@ -21,13 +21,18 @@ const compileOutput = (state, ast, outputs) => { //get rid of dependence on stat
     const stateArgs = getStateArgs(ast) //get all state args from ast
     const varDefs = ast.varDefs.concat(dbASTs) //add db varDefs to ast varDefs
     const astWithDB = Object.assign({}, ast, { varDefs }) //combine these new varDefs with ast
-    const functionTable = astToFunctionTable(astWithDB) //create function table from ast
     astWithDB.inline = false //needed to force newFunctionTable to be defined
-    const valueFunction = buildFunction(astWithDB).newFunctionTable[astWithDB.hash] //create top level function for ast
+    const newOutput = {
+        functionTable: astToFunctionTable(astWithDB), //create function table from ast,
+        valueFunction: buildFunction(astWithDB).newFunctionTable[astWithDB.hash], //create top level function for ast
+        ast,
+        stateArgs
+    }
     //recursively call compile output for state and then combine the results to this output
-    const newOutputs = Object.assign({}, outputs, { [ast.hash]: { functionTable, valueFunction, ast, stateArgs } }) //get rid of ast and state args
+
+    const newOutputs = Object.assign({}, outputs, { [ast.hash]: newOutput }) //get rid of ast and state args
     const newOutputsWithState = stateArgs.reduce((currentOutputs, stateArg) => (
-        Object.assign(currentOutputs, compileOutput(state, stateArg.ast, newOutputs))
+        Object.assign(currentOutputs, assembleOutput(state, stateArg.ast, newOutputs))
     ), newOutputs)
     return newOutputsWithState
 }
@@ -77,24 +82,9 @@ export const getHashesFromTree = (objectData) => (
         }, {})
 )
 
-export const compileApp = (state) => { //state is in the form name:lynxObject
-    const hashTable = flattenState(state)
-    const appData = objectFromName(hashTable, 'appRoot')
-    return compile(hashTable, appData)
-}
-//compile a module
-export const compile = (hashTable, objectData) => { //rename this or remove
-    const objAST = getValue(hashTable, INTERMEDIATE_REP, objectData)//aWithHash)
-    const outputs = compileOutput(hashTable, objAST, {})
-    const functionTable = combineFunctionTables(outputs)
-    return {
-        functionTable,
-        outputs,
-        objectTable: hashTable,
-    }
-}
 export const assemble = (hashTable, lynxIR) => {
-    const outputs = compileOutput(hashTable, lynxIR, {})
+    const outputs = assembleOutput(hashTable, lynxIR, {})
     const functionTable = combineFunctionTables(outputs)
-    return { functionTable, outputs }
+    const mainOutput = lynxIR.hash
+    return { functionTable, outputs, mainOutput }
 }

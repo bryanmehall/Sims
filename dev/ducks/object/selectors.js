@@ -26,7 +26,7 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
     //const nextJSValue = addContext(state, attr, nextJSValueNoContext, currentObject)
     if (isUndefined(nextValue)) { //if the next value is not defined treat it as an inverse (going up the tree)
         //this must be nextValue not nextjsvalue because otherwise it triggers for no js primitive not where attr is not defined --refactor jsprim to be able to tell the difference?
-        const newSearchArgs = { argKey: argKey, query: attr, type: INVERSE, context, getStack: newGetStack }//don't slice get stack here --slice it when evaluating inverse arg
+        const newSearchArgs = { ...searchArgData, query: attr, type: INVERSE, getStack: newGetStack }//don't slice get stack here --slice it when evaluating inverse arg
         return { args: { [argKey]: newSearchArgs }, varDefs: [] }
     } else if (nextJSValue.type === GLOBAL_SEARCH) { //combine this with local get handler below?
         //this gets the ast of the end of the get stack not the root
@@ -109,6 +109,7 @@ definitionIR----------->resultIR
 //the end of the get path is the target object
 const createVarDef = (state, evaluatedObject, searchArgData) => {
     const { argKey, context } = searchArgData
+
     //get primitve of the end of the get stack
     const jsResult = getValue(state, INTERMEDIATE_REP, evaluatedObject)
     const args = jsResult.args
@@ -121,7 +122,13 @@ const createVarDef = (state, evaluatedObject, searchArgData) => {
         }, {})
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.varDefs }
     const inverseFunctionData = argsToVarDefs(state, evaluatedObject, targetFunctionData)
-
+    //add 'isDefinition' flag to args if it modifys a definition
+    const definitionArgs = Object.fromEntries(
+        Object.entries(inverseFunctionData.args).map(([argKey, arg]) => (
+            [argKey, { ...arg, isDefinition: true }]
+        )
+    ))
+    //const functionData = { varDefs: targetFunctionData.varDefs, args: definitionArgs }
     const searchName = getName(state, evaluatedObject) //remove for debug
     if (isUndefined(jsResult)) {
         throw new Error('LynxError: adding recursive function at varDef')
@@ -134,7 +141,7 @@ const createVarDef = (state, evaluatedObject, searchArgData) => {
             comment: `//${searchName}`,
             context
         }
-        return { args: inverseFunctionData.args, varDefs: [variableDefinition, ...inverseFunctionData.varDefs] }
+        return { args: definitionArgs, varDefs: [variableDefinition, ...inverseFunctionData.varDefs] }
     }
 }
 

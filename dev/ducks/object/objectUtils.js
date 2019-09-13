@@ -26,6 +26,7 @@ export const objectFromName = (state, name) => {
     }
     return matches[0]
 }
+
 export const tableContainsName = (hashTable, name) => {
     const matches = filterNames(hashTable, name)
     if (matches.length === 0) {
@@ -46,8 +47,20 @@ export const hasAttribute = (objectData, prop) => (
 )
 
 export const getName = (state, objectData) => {
-    const namePrimitive = getJSValue(state, 'placeholder', "name", objectData)
+    const namePrimitive = getJSValue(state, "name", objectData)
     return namePrimitive === undefined ? null : namePrimitive.value//switch to comparing hashes?
+}
+export const getNameFromAttr = (objectData) => {
+    if (typeof objectData === 'undefined'){
+        return 'undef'
+    }
+    const nameObject = getAttr(objectData, 'name')
+    if (typeof nameObject === 'undefined'){
+        return 'unnamed'
+    } else {
+        return getAttr(nameObject, INTERMEDIATE_REP).value
+    }
+
 }
 
 export const objectFromHash = (state, hash) => {
@@ -96,6 +109,7 @@ const objectValuesToHash = (hashData, entry) => {
         return Object.assign({}, hashData, { [prop]: getHash(subTree) })
     }
 }
+let hashMemoTable = {}
 
 export const getHash = (objectData) => { //this should check that all children are hashes before hashing ie not hashing the whole tree
     //remove these attrs before hashing
@@ -105,9 +119,11 @@ export const getHash = (objectData) => { //this should check that all children a
     const exemptProps = ["hash", "parentValue"]
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
+    //console.log(expandedHashData)
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
     //console.log(objectData)
-    const name = 'abc'//hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
+
+    const name = getNameFromAttr(objectData)//hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
     //if(objectData.id === 'app'){ //use for debugging
         //console.log(digest, JSON.stringify(objectData, null, 2))
@@ -185,18 +201,30 @@ const checkObjectData = (objectData) => {
     }
 }
 
-//getJSValue should always return an ast?
-export const getJSValue = (state, name, prop, objectData) => {
-    const context = [createParentContext(objectData, name)]//should this context be attached to the args instead?
+let memoTable = {}
+export const resetMemo = () => {
+    memoTable = {}
+}
+export const getJSValue = (state, prop, objectData, context) => {
+    const hash = getAttr(objectData, 'hash') || getHash(objectData)
+    objectData.hash = hash
+    const key = prop + hash
+    if (memoTable.hasOwnProperty(key) && hash !== undefined){
+        return memoTable[key]
+    }
+
 	const valueData = getValue(state, prop, objectData)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-		const primitive = getValue(state , INTERMEDIATE_REP, valueData, context)
+        context = context || []
+        const newContext = [createParentContext(objectData, prop), ...context]//should this context be attached to the args instead?
+		const primitive = getValue(state , INTERMEDIATE_REP, valueData, newContext)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined
         } else {
             const primitiveWithContext = addContextToArgs(state, prop, primitive, objectData)
+            memoTable[key] = primitiveWithContext
             return primitiveWithContext
         }
 

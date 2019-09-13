@@ -68,7 +68,7 @@ class FlowVis extends React.Component {
              )
         })
         return (
-            <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 347 }}>
+            <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 547 }}>
             <svg height={height} width={width}>
                 <text x={padding} y={vPadding-10} textAnchor="middle">inputs</text>
                 <text x={width-padding} y={vPadding-10} textAnchor="middle">outputs</text>

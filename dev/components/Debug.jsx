@@ -47,14 +47,14 @@ class Debug extends React.Component {
                 `\n\n\n${entry[0]}:\n${entry[1].value.toString()}`
             ))
         const codeVis = (
-            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily: 'courier new', padding: 20, top: 347 }}>
+            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily: 'courier new', padding: 20, top: 547 }}>
                 {rootASTs}
                 {tableVis}
             </pre>
         )
         if (this.props.debugType === 'tree' || this.props.debugType === 'ast'){
             return (
-                <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 347 }}>
+                <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 547 }}>
                     <ObjectData node={this.state.activeNode}></ObjectData>
                     <svg
                         id="treeVis"

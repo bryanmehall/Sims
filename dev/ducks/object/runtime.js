@@ -1,8 +1,8 @@
-import { assemble, flattenState, getHashesFromTree } from './compiler'
-import { getValue, objectFromName, getHash, getName, objectFromHash, tableContainsName } from './objectUtils'
+import { assemble, flattenState, getHashesFromTree } from './assembler'
+import { getValue, objectFromName, getHash, tableContainsName, resetMemo } from './objectUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
-import { limiter, resetLimiter } from './utils'
+import { limiter, resetLimiter, isUndefined } from './utils'
 //import { logFunctionTable } from './utils'
 
 /*
@@ -39,39 +39,46 @@ const checkTypes = (type, vars) => {
         }
     })
 }
-function getInputValue(key){ //this can not use arrow notation because then the thisArg is not bound
-    if (this.inputs.hasOwnProperty(key)) {
-        return this.inputs[key].value
+function getInputValue(input){ //this can not use arrow notation because then the thisArg is not bound
+    if (this.inputs.hasOwnProperty(input.name)) {
+        return this.inputs[input.name].value
     } else {
-        throw new Error(`LynxError: key:"${key}" not found in inputs`)
+        throw new Error(`LynxError: key:"${input.name}" not found in inputs`)
     }
-
 }
 
 const initInputs = (lynxText) => ({
-    lynxTextInput: { available: true, value: lynxText },
-    lynxTextInput1: { available: true, value: 'app.mouse.pos.x' },
-    mouseDown: { available: false, value: false },
-    mouseX: { available: false, value: 0 },
-    mouseY: { available: false, value: 0 },
-    currentKeys: { available: false, value: [] }
+    lynxTextInput:  { available: true,  value: lynxText },
+    lynxTextInput1: { available: true,  value: 'app.mouse.pos.x' },
+    mouseDown:      { available: false, value: false },
+    mouseX:         { available: false, value: 0 },
+    mouseY:         { available: false, value: 0 },
+    currentKeys:    { available: false, value: [] }
 })
 
-const getInputs = (runtime, output) => {
+const getInputs = (output) => {
     const ast = output.ast
     const args = ast.args
     const inputs = Object.values(args)
         .map((arg) => {
             const inputName = arg.type === INPUT ? arg.name : arg.hash
-            if (arg.type !== INPUT){ //if it is a state arg--move this to otuside of app module
-                Object.assign(runtime.inputs, {
-                    [arg.hash]: { available: true, value: "1" } //default value for state
-                })
-            }
-            return inputName
+            //todo: replace with check that isDefinition is always true or false not undefined
+            return { name: inputName, isDefinition: arg.isDefinition ? true : false }
         })
         .filter((input) => (typeof input !== 'undefined'))
     return inputs
+}
+
+const addInputsToRuntime = (runtime, output) => {
+    const ast = output.ast
+    const args = ast.args
+    Object.values(args).forEach((arg) => {
+        if (arg.type !== INPUT && !runtime.inputs.hasOwnProperty(arg.hash)){ //if it is a state arg--move this to otuside of app module
+            Object.assign(runtime.inputs, {
+                [arg.hash]: { available: true, value: "1" } //default value for state
+            })
+        }
+    })
 }
 
 
@@ -84,60 +91,26 @@ export class Runtime {
         this.outputs = {}
         //when calculating state, put state in buffer so that all outputs are concurrent
         this.stateBuffer = {}
-        let lynxState = flattenState(lynxParser(lynxText))
+        this.lynxText = lynxText
+        this.hashTable = { runtime: this }
+        this.functionTable = {}
         this.inputs = initInputs(lynxText)//this list must be complete
-        this.state = {}//combine this and hashTable
-
-        this.hashTable = Object.assign(lynxState, { runtime: this })
 
         this.externalFunctions = { //these external functions are not pure. they should be refactored into pure functions
-            parse: (lynxString) => (runtime.parse(lynxString)),
+            parse: (lynxString, searchName) => (runtime.parse(lynxString, searchName)),
             compile: (lynxObject) => (runtime.compile(lynxObject)),
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-
-
-        /*
-        const appParse = objectFromName(lynxState, 'appParse')
-        const appParseIR = getValue(lynxState, INTERMEDIATE_REP, appParse)
-        const appParseHash = getHash(appParse)
-        appParseIR.hash = appParseHash
-        appParseIR.inline = false
-        const appParseGen = assemble(lynxState, appParseIR)
-        const appGenFunction = appParseGen.outputs[appParseHash].valueFunction
-        Object.assign(appParseGen.functionTable, externalFunctions)
-        const appModule = appGenFunction(lynxText, appParseGen.functionTable)
-        */
-        const evalIR = (lynxIR) => {
-            const IRhash = getHash(lynxIR)
-            lynxIR.hash = IRhash
-            const assembledModule = assemble(runtime.hashTable, appIRGenIR) //get rid of lynxState here
-            const valueFunction = assembledModule.outputs[IRhash].valueFunction
-            Object.assign(appIRGen.functionTable, runtime.externalFunctions)
-            const result = 'abc'
-
-        }
-        const appData = objectFromName(runtime.hashTable, 'appRoot')//getObject
-        const appIRGenIR = getValue(runtime.hashTable, INTERMEDIATE_REP, appData) //get primitive
-        const irGenHash = getHash(appIRGenIR)
-        appIRGenIR.hash = irGenHash
-        const appIRGen = assemble(runtime.hashTable, appIRGenIR)
-
-        const appIRGenFunction = appIRGen.outputs[irGenHash].valueFunction
-        Object.assign(appIRGen.functionTable, runtime.externalFunctions)
-        const appModule = appIRGenFunction(lynxText, appIRGen.functionTable)
-
-        this.functionTable = Object.assign(appModule.functionTable, runtime.externalFunctions)
-        this.outputs = appModule.outputs
-
+        this.appData = this.parse(this.lynxText, 'appRoot')
+        this.initApp(lynxText)
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
         canvas.width = width
         canvas.height = height
         const ctx = canvas.getContext('2d')
 
-        const hooks = {
+        this.hooks = {
             render: (renderer) => {
                 renderFunctions.clear()
                 renderer(renderFunctions, runtime.inputs)
@@ -160,20 +133,6 @@ export class Runtime {
             }
         }
 
-        Object.keys(this.outputs).forEach((outputKey) => {
-            const output = this.outputs[outputKey]
-            const ast = output.ast
-            const inputs = getInputs(runtime, output)
-            this.outputs[outputKey] = {
-                evaluation: 'lazy',
-                open: true,
-                hash: ast.hash,
-                ast,
-                value: output.valueFunction,
-                hook: ast.hash === 'apphash' ? hooks.render : hooks.state,
-                inputs
-            }
-        }, this)
         canvas.addEventListener('mousemove', (e) => {
             const mouseX = e.pageX - e.currentTarget.offsetLeft || 0
             const mouseY = e.pageY - e.currentTarget.offsetTop || 0
@@ -232,16 +191,51 @@ export class Runtime {
         this.updateDebug(this)
         this.checkOutputs()
     }
+    initApp(){
+        const runtime = this
+        const appIRGenIR = this.compile(this.appData)
+
+        const appIRGen = this.assemble(appIRGenIR)
+        const appModule = this.run(appIRGen)
+        Object.assign(this.functionTable, appModule.functionTable)
+
+        this.outputs = appModule.outputs
+        Object.keys(this.outputs).forEach((outputKey) => {
+            const output = this.outputs[outputKey]
+            const ast = output.ast
+            const inputs = getInputs(output)
+            addInputsToRuntime(runtime, output)
+            this.outputs[outputKey] = {
+                open: true,
+                hash: ast.hash,
+                ast,
+                value: output.valueFunction,
+                hookType: ast.hash === 'apphash' ? 'render' : 'state',
+                inputs
+            }
+        }, this)
+    }
     //check if any of "output"'s inputs are available
     inputAvailable(output){
-        return output.inputs.some((name) => (this.inputs[name].available)) || output.inputs.length === 0
+        return output.inputs.some((input) => (this.inputs[input.name].available)) || output.inputs.length === 0
+    }
+    defArgChange(output){
+        return output.inputs.some((input) => (this.inputs[input.name].available && input.isDefinition))
     }
 
     //for each output if it is available check inputs. if it has input available then run hook
     checkOutputs() {
+        const runtime = this
         //pass 'this' to second parameter of forEach to define 'this' in callback
-        Object.values(this.outputs).forEach(this.runOutput, this)
+        const recompile = Object.values(this.outputs)
+            .map(this.runOutput, this)
+            .some((val) => (val))//check if some are true without short-circuiting the values
+        //console.log('recompile', recompile)
         //stateAvailable = Object.values(this.stateBuffer).some((input) => (input.avaliable))
+        if (recompile){
+            resetMemo()
+            runtime.initApp()
+        }
         Object.assign(this.inputs, this.stateBuffer)
         Object.values(this.inputs).forEach((input) => {
             if (input.lock){
@@ -254,44 +248,46 @@ export class Runtime {
         this.updateDebug(this) //show state of runtime to debug utils --remove for production
         if (this.stateAvailable){
             this.stateAvailable = false
-            const next = () => (this.checkOutputs())
-            setTimeout(next, 200)
         }
-
-
     }
     runOutput(output) {
+        const runtime = this
         if (output.open){
             const inputAvailable = this.inputAvailable(output)
+
             if (inputAvailable){
+                const recompile = this.defArgChange(output)
+
                 const args = output.inputs
                     .map(getInputValue, this)
-                output.inputs.forEach((inputKey) => {
-                    this.inputs[inputKey].lock = true
+                output.inputs.forEach((input) => {
+                    this.inputs[input.name].lock = true
                 }, this)
                 const fnArgs = [...args, this.functionTable]
                 const value = output.value.apply(null, fnArgs) //inputs go here
-                output.hook(value, output.hash)
+                this.hooks[output.hookType](value, output.hash)
+
+                return recompile //split this functinality into a different function?
             }
+
+        } else {
+            return false
         }
+
     }
-    parse(lynxString) { //modify lynx state here (side effect)
-        console.log('parse lynxString', lynxString)
+    parse(lynxString, searchName) { //modify lynx state here (side effect)
         //console.time('parse')
         let hashTable = {}
+        if (searchName === undefined){console.log('parsing', lynxString)}
         try {
             const parsed = lynxParser(lynxString)
             hashTable = flattenState(parsed) //returns hash table of objects--eventually this should be part of state
             Object.assign(this.hashTable, hashTable)
-            const containsApp = tableContainsName(hashTable, 'app')
-            if (containsApp){
-                return objectFromName(hashTable, 'app')
-            } else {
-                //const key = Object.keys(hashTable)[0]
-                //const obj = objectFromHash(hashTable, key)
+            if (searchName === undefined){
                 const hash = getHash(parsed)
-                return Object.assign(parsed, {hash})
-
+                return Object.assign(parsed, { hash })
+            } else {
+                return objectFromName(hashTable, searchName)
             }
         } catch (e) {
             console.warn(e)
@@ -300,49 +296,53 @@ export class Runtime {
         //console.timeEnd('parse')
     }
     compile(lynxObject){ //make compile accept a target. ie. canvas, js, GLSL, wasm
-        console.log('compile lynxObject', lynxObject)
+        //console.log('compiling', lynxObject)
         resetLimiter()
         try {
-            console.time('compile')
+            //console.time('compile')
             //const name = getName(lynxState, lynxObject)
             const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
-            console.timeEnd('compile')
+            //console.timeEnd('compile')
+            if (isUndefined(lynxIR)){
+                return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}
+            }
             return lynxIR
         } catch (e){
             console.warn(e)
-            return 'compile error'
+            return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}
         }
     }
     assemble(lynxIR) {
-        console.log('assemble lynxIR', lynxIR)
         if (lynxIR.hasOwnProperty('args')){ //success condition-- make this more robust
-            console.time('assemble')
+            //console.time('assemble')
             const lynxModule = assemble(this.hashTable, lynxIR)
-            console.timeEnd('assemble')
+            //console.timeEnd('assemble')
             Object.assign(lynxModule.functionTable, this.externalFunctions)
             return lynxModule
         } else { //error condition
             return { functionTable: {}, outputs: {} }
         }
     }
-    run(module) {//remove this?
-        const outputs = Object.values(module.outputs)
+    run(module) { //run a top level module(only inputs as args)
+        const outputs = Object.keys(module.outputs)
         const runtime = this
         if (outputs.length === 0){
-            return 'error'
-        } else {
-            const mainOutput = outputs[0]//make more robust
-            const valueFunction = mainOutput.valueFunction
-            const inputs = getInputs(runtime, mainOutput)
-            const args = inputs
-                .map(getInputValue, runtime)
-            inputs.forEach((inputKey) => {
-                this.inputs[inputKey].lock = true
-            }, this)
-            const fnArgs = [...args, module.functionTable]
-            const value = valueFunction.apply(null, fnArgs)
-            //console.log(value, valueFunction.toString())
-            return value
+            return 'module must have at least one output'
         }
+        const mainOutput = module.outputs[module.mainOutput]
+        const valueFunction = mainOutput.valueFunction
+        const inputs = getInputs(mainOutput)
+        //console.log(inputs)
+        addInputsToRuntime(runtime, mainOutput)
+        const args = inputs
+            .map(getInputValue, runtime)
+
+        inputs.forEach((input) => {
+            this.inputs[input.name].lock = true
+        }, this)
+        const fnArgs = [...args, module.functionTable]
+        //console.log(fnArgs, valueFunction.toString())
+        const value = valueFunction(...fnArgs)
+        return value
     }
 }

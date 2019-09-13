@@ -1,5 +1,5 @@
 import { getArgsAndVarDefs, argsToVarDefs, resolveLocalSearch, reduceFunctionData } from './selectors'
-import { getValue, getJSValue, getName, getAttr, getHash, objectFromHash  } from './objectUtils'
+import { getValue, getJSValue, getName, getAttr, getHash, objectFromHash } from './objectUtils'
 import { addContextToArgs, createParentContext } from './contextUtils'
 import { isUndefined } from './utils'
 import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
@@ -60,9 +60,9 @@ const assemble = (state, objectData) => (
         inline: true
     }
 )
-const run = (state, objectData) => ({
+const call = (state, objectData) => ({
     hash: getAttr(objectData, 'hash'),
-    type: 'run',
+    type: 'call',
     varDefs: [],
     children: {},
     args: {},
@@ -110,7 +110,7 @@ const arrayElement = (state, objectData) => {
     const paramNames = ['elementValue']
 
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData)
     ))
     //if the parameter has index as an arg then remove it --need to modify for nested arrays
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
@@ -183,7 +183,7 @@ const conditional = (state, objectData, valueData) => ({
 const getIndex = (state, objectData) => {
     const paramNames = ['array', 'index']
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData)
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
@@ -200,7 +200,7 @@ const getIndex = (state, objectData) => {
 const contains = (state, objectData) => { //eventually switch to set
     const paramNames = ['array', 'value']
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData)
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
     return {
@@ -216,13 +216,13 @@ const contains = (state, objectData) => { //eventually switch to set
 
 const get = (state, objectData) => {
     const root = getValue(state, "rootObject", objectData)
-    const rootObject = getJSValue(state, 'placeholder', "rootObject", objectData)
+    const rootObject = getJSValue(state, "rootObject", objectData)
     if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
         const attributeObject = getValue(state, 'attribute', objectData)
         const attribute = getName(state, attributeObject)
-        const next = getJSValue(state, 'placeholder', attribute, root)
+        const next = getJSValue(state, attribute, root)
         const { args, varDefs } = getArgsAndVarDefs(state, [next], root)
         if (isUndefined(next)){ throw new Error('next is undef') }
         return {
@@ -306,33 +306,45 @@ const evaluate = (state, lynxIR, context) => {
     //this would mean less data passed around and more flexibility for matching on things other than names
     //also keps track of scope ordering ie child nodes are matched before parent nodes
     const args = lynxIR.args
-    const parentContext = context[0] //todo: need a better way of structuring this -- structure with context
+    console.log('context', context, args)
+    const newIR = context.reduce((IR, parentContext) => {
+        const parentObjectData = objectFromHash(state, parentContext.value)
+        const functionData = argsToVarDefs(state, parentObjectData, { args: IR.args, varDefs: IR.varDefs })
+        return Object.assign({}, lynxIR, reduceFunctionData(lynxIR, functionData))
+    }, lynxIR)
+    const runtime = state.runtime
+    const assembled = runtime.assemble(newIR)
+    console.log(assembled)
+    const run = runtime.run(assembled)
+
+    return run
+    /*const parentContext = context[0] //todo: need a better way of structuring this -- structure with context
     if (parentContext.attr === "parentValue") { //todo: need to iterate for parent of parent etc.
-        const nextObjectData = objectFromHash(state, parentContext.value)
-        const functionData = argsToVarDefs(state, nextObjectData, { args: args, varDefs: [] })
+        const parentObjectData = objectFromHash(state, parentContext.value)
+        const functionData = argsToVarDefs(state, parentObjectData, { args: args, varDefs: [] })
+        console.log(functionData,args)
         const newIR = Object.assign({}, lynxIR, reduceFunctionData(lynxIR, functionData))
         const runtime = state.runtime
         const assembled = runtime.assemble(newIR)
-        //console.log(assembled.outputs.$hash_abc_2571984726.valueFunction.toString())
+        console.group('run')
         const run = runtime.run(assembled)
-        //console.log('run', run)
+        console.groupEnd()
         return run
-    }
+    }*/
 }
-const apply = (state, objectData, valueData, context) => {
+const apply = (state, objectData, valueData, context) => { //todo: context here is just parent value --need to restructire to include all parent values
     const paramNames = ['op1','function', 'op2', 'op3', 'op4']
     const parameters = paramNames.map((paramName) => (
-            getJSValue(state, 'placeholder', paramName, objectData)
+            getJSValue(state, paramName, objectData, context)
         ))
         .filter((param) => (param !== undefined))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
-    if (parameters[1].type === 'run'){
+    if (parameters[1].type === 'call'){
         const compileApply = parameters[0].children.op1
         //we want the ir not the assembled code?
         const runIR = evaluate(state, compileApply, context)
         Object.values(args).forEach((arg) => { arg.isDefinition = true })
         Object.values(runIR.args).forEach((arg) => { arg.isDefinition = false })
-        console.log(runIR)
         Object.assign(runIR.args, args)
         return runIR
     }
@@ -353,10 +365,10 @@ const apply = (state, objectData, valueData, context) => {
     }
 }
  //remove this?
-const ternary = (state, objectData) => {
+const ternary = (state, objectData, valueData, context) => {
     const paramNames = ["condition", "then", "alt"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData, context)
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     if (varDefs.length !== 0){ throw new Error('ternary should not have variable definition') }
@@ -370,10 +382,10 @@ const ternary = (state, objectData) => {
     }
 }
 
-const text = (state, objectData) => {
+const text = (state, objectData, valueData, context) => {
     const paramNames = ["x", "y", "innerText", "r", "g", "b"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData) //todo: change txt here
+        getJSValue(state, paramName, objectData, context) //todo: change txt here
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
@@ -386,10 +398,10 @@ const text = (state, objectData) => {
         vis: { name: getName(state, objectData) }
     }
 }
-const line = (state, objectData) => {
+const line = (state, objectData, valueData, context) => {
     const paramNames = ["x1", "y1", "x2", "y2", "r", "g", "b"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData, context)
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
@@ -403,10 +415,10 @@ const line = (state, objectData) => {
     }
 }
 
-const group = (state, objectData) => {
+const group = (state, objectData, valueData, context) => {
     const paramNames = ["childElement1", "childElement2", "childElements"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData, context)
         ))
         .filter((child) => (child !== undefined))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
@@ -432,7 +444,7 @@ const group = (state, objectData) => {
 const app = (state, objectData) => {
     const paramNames = ["graphicalRepresentation"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, 'placeholder', paramName, objectData)
+        getJSValue(state, paramName, objectData)
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {
@@ -450,7 +462,7 @@ export const primitives = {
     parse,
     compile,
     assemble,
-    run,
+    call,
     input,
     number,
     bool,

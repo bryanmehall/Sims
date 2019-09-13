@@ -1,5 +1,4 @@
 import parser from './parser'
-import { flattenState } from './ducks/object/compiler'
 //pegjs --track-line-and-column --cache parser.peg
 
 export const lynxParser = (lynxString) => {
