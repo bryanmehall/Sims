@@ -73,9 +73,14 @@ const addInputsToRuntime = (runtime, output) => {
     const ast = output.ast
     const args = ast.args
     Object.values(args).forEach((arg) => {
+
         if (arg.type !== INPUT && !runtime.inputs.hasOwnProperty(arg.hash)){ //if it is a state arg--move this to otuside of app module
+            let def = "1" //remove --require states to have default state
+            if (arg.defaultState.hasOwnProperty("value")){
+                def = arg.defaultState.value
+            }
             Object.assign(runtime.inputs, {
-                [arg.hash]: { available: true, value: "1" } //default value for state
+                [arg.hash]: { available: true, value: def} //default value for state
             })
         }
     })
@@ -102,7 +107,10 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        this.appData = this.parse(this.lynxText, 'appRoot')
+        const appData = this.parse(this.lynxText, 'appRoot')
+        const appGenIR = this.compile(appData)
+        this.appIRGen = this.assemble(appGenIR)
+
         this.initApp(lynxText)
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
@@ -193,10 +201,7 @@ export class Runtime {
     }
     initApp(){
         const runtime = this
-        const appIRGenIR = this.compile(this.appData)
-
-        const appIRGen = this.assemble(appIRGenIR)
-        const appModule = this.run(appIRGen)
+        const appModule = this.run(this.appIRGen)
         Object.assign(this.functionTable, appModule.functionTable)
 
         this.outputs = appModule.outputs
@@ -235,6 +240,7 @@ export class Runtime {
         if (recompile){
             resetMemo()
             runtime.initApp()
+            runtime.updateDebug(runtime)
         }
         Object.assign(this.inputs, this.stateBuffer)
         Object.values(this.inputs).forEach((input) => {
@@ -296,11 +302,9 @@ export class Runtime {
         //console.timeEnd('parse')
     }
     compile(lynxObject){ //make compile accept a target. ie. canvas, js, GLSL, wasm
-        //console.log('compiling', lynxObject)
         resetLimiter()
         try {
             //console.time('compile')
-            //const name = getName(lynxState, lynxObject)
             const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
             //console.timeEnd('compile')
             if (isUndefined(lynxIR)){

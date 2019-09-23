@@ -1,6 +1,6 @@
 /* eslint pure/pure: 2 */
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, RELATIVE, STATE_ARG, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
-import { isUndefined, limiter } from './utils'
+import { isUndefined, limiter, mapObject } from './utils'
 import { getValue, getName, objectFromHash, getAttr, getPrimitiveType } from './objectUtils'
 import { getDBsearchAst } from './DBsearchUtils'
 import { createStateArg, resolveState } from './stateUtils'
@@ -16,7 +16,6 @@ const getNext = (state, currentObject, searchArgData) => { //this remaps args as
         if (newGetStack.length > 0){
             throw new Error('LynxError: handle case where get stack does not end at previous state')
         }
-
         const stateFD = createStateArg(state, currentObject, argKey)
         return stateFD
     }
@@ -123,11 +122,8 @@ const createVarDef = (state, evaluatedObject, searchArgData) => {
     const targetFunctionData = { args: argsWithContext, varDefs: jsResult.varDefs }
     const inverseFunctionData = argsToVarDefs(state, evaluatedObject, targetFunctionData)
     //add 'isDefinition' flag to args if it modifys a definition
-    const definitionArgs = Object.fromEntries(
-        Object.entries(inverseFunctionData.args).map(([argKey, arg]) => (
-            [argKey, { ...arg, isDefinition: true }]
-        )
-    ))
+    const addDef = ([argKey, arg]) => ([argKey, { ...arg, isDefinition: true }])
+    const definitionArgs = mapObject(inverseFunctionData.args, addDef)
     //const functionData = { varDefs: targetFunctionData.varDefs, args: definitionArgs }
     const searchName = getName(state, evaluatedObject) //remove for debug
     if (isUndefined(jsResult)) {

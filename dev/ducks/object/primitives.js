@@ -1,7 +1,7 @@
 import { getArgsAndVarDefs, argsToVarDefs, resolveLocalSearch, reduceFunctionData } from './selectors'
 import { getValue, getJSValue, getName, getAttr, getHash, objectFromHash } from './objectUtils'
-import { addContextToArgs, createParentContext } from './contextUtils'
-import { isUndefined } from './utils'
+import { addContextToArgs } from './contextUtils'
+import { isUndefined, filterObject } from './utils'
 import { GLOBAL_SEARCH, LOCAL_SEARCH, INPUT, INDEX, INTERMEDIATE_REP } from './constants'
 
 const input = (state, objectData) => {
@@ -30,36 +30,30 @@ const stateNode = (state, objectData, valueData) => {
 }
 
 //lynx primitives
-const parse = (state, objectData) => (
-    {
-        hash: getAttr(objectData, 'hash'),
-        type: 'parse',
-        varDefs: [],
-        children: {},
-        args: {},
-        inline: true
-    }
-)
-const compile = (state, objectData) => (
-    {
-        hash: getAttr(objectData, 'hash'),
-        type: 'compile',
-        varDefs: [],
-        children: {},
-        args: {},
-        inline: true
-    }
-)
-const assemble = (state, objectData) => (
-    {
-        hash: getAttr(objectData, 'hash'),
-        type: 'assemble',
-        varDefs: [],
-        children: {},
-        args: {},
-        inline: true
-    }
-)
+const parse = (state, objectData) => ({
+    hash: getAttr(objectData, 'hash'),
+    type: 'parse',
+    varDefs: [],
+    children: {},
+    args: {},
+    inline: true
+})
+const compile = (state, objectData) => ({
+    hash: getAttr(objectData, 'hash'),
+    type: 'compile',
+    varDefs: [],
+    children: {},
+    args: {},
+    inline: true
+})
+const assemble = (state, objectData) => ({
+    hash: getAttr(objectData, 'hash'),
+    type: 'assemble',
+    varDefs: [],
+    children: {},
+    args: {},
+    inline: true
+})
 const call = (state, objectData) => ({
     hash: getAttr(objectData, 'hash'),
     type: 'call',
@@ -114,9 +108,7 @@ const arrayElement = (state, objectData) => {
     ))
     //if the parameter has index as an arg then remove it --need to modify for nested arrays
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData)
-    const argEntries = Object.entries(args)
-        .filter((entry) => (entry[1].type !== INDEX))
-    const filteredArgs = Object.fromEntries(argEntries)
+    const filteredArgs = filterObject(args, (entry) => (entry[1].type !== INDEX))
     return {
         hash: getAttr(objectData, 'hash'),
         args: filteredArgs,
@@ -346,6 +338,7 @@ const apply = (state, objectData, valueData, context) => { //todo: context here 
         Object.values(args).forEach((arg) => { arg.isDefinition = true })
         Object.values(runIR.args).forEach((arg) => { arg.isDefinition = false })
         Object.assign(runIR.args, args)
+        console.log(runIR)
         return runIR
     }
     const children =

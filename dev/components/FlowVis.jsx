@@ -40,7 +40,7 @@ class FlowVis extends React.Component {
         const outputMarkers = outputEntries.map((entry, i) => {
             const inputList = entry[1].inputs
             const inputLines = inputList.map((inputKey, j) => {
-                const inputY = getIOPosition(getInputIndex(inputKey), inputSpacing)
+                const inputY = getIOPosition(getInputIndex(inputKey.name), inputSpacing)
                 const outputY = getIOPosition(i, outputSpacing)
                 return <line key={`${i}-${j}`} x1={padding} x2={width-padding} y1={inputY} y2={outputY} stroke="gray"></line>
 

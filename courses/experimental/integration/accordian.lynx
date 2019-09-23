@@ -17,7 +17,7 @@ window = new group
                     name:"txt"
                     x:accordianRepresentation.pos.x
                     y:txt.parentElement.index*25+accordianRepresentation.pos.y
-                    innerText:txt.parentElement.value
+                    innerText:txt.parentElement.index
 
 map = new func
     name:"map"

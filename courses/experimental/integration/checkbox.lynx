@@ -8,7 +8,7 @@ window = new group
     ]
 checkbox = new object
     name:"checkbox"
-    isChecked: condition
+    isChecked: condition(false)
         if checkbox.graphicalRepresentation.isClicked then !checkbox.isChecked.previousState
         checkbox.isChecked.previousState
     graphicalRepresentation: new text
@@ -22,8 +22,6 @@ checkbox = new object
 state = new object
     name:"state"
 
-previousState = new attribute
-    name:"previousState"
 isChecked = new attribute
     name:"isChecked"
 mouseOver = new attribute

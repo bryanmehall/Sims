@@ -1,6 +1,15 @@
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED, INPUT, INTERMEDIATE_REP } from './constants'
 import { getAttr } from './objectUtils'
 
+const fromEntries = (array) => (
+    array.reduce((obj, entry) => ({ ...obj, [entry[0]]: entry[1] }), {})
+)
+export const mapObject = (object, mapFunction) => (
+    fromEntries(Object.entries(object).map(mapFunction))
+)
+export const filterObject = (object, filterFunction) => (
+    fromEntries(Object.entries(object).filter(filterFunction))
+)
 export const formatGetLog = (query, getStack) => (
     query+'.'+getStack.map((get) => (getAttr(get, 'attribute'))).join('.')
 )

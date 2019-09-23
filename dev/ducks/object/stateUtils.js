@@ -19,9 +19,17 @@ export const createStateArg = (state, currentObject, argKey) => {
     const astArgs = Object.assign({}, ast.args, { [hash]: { hash, type: STATE_ARG } })
     delete astArgs[argKey]
     const astVarDefs = ast.varDefs.concat(varDef)
+    let defaultState = false
+    if (currentObject.hasOwnProperty("defaultState")){
+        defaultState = getValue(state, INTERMEDIATE_REP, currentObject.defaultState)
+    } else {
+        console.warn('LynxError: must have default value for state', currentObject)
+        //throw new Error('LynxError: must have default value for state')
+    }
     const arg = {
         hash: hash,
         type: STATE_ARG,
+        defaultState: defaultState,
         getStack: [],
         ast: Object.assign({}, ast, { args: astArgs, varDefs: astVarDefs }),
         searchContext: currentObject.inverses

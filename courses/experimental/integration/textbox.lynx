@@ -18,12 +18,21 @@ window = new group
 textbox = new object
     name:"textbox"
     value:textbox.graphicalRepresentation.childElement1.innerText
-    cursorColumn:condition
-        if app.keyboard.currentKeysDown[0] == "ArrowLeft" || app.keyboard.currentKeysDown[0] == "Backspace" then textbox.cursorColumn.previousState-1
-        if app.keyboard.currentKeysDown[0] == "Shift" then textbox.cursorColumn.previousState
+    currentKey: app.keyboard.currentKeysDown[0]
+    lines:condition ([])
+        if textbox.currentKey == "Enter" then textbox.lines.previousState+1
+        textbox.lines.previousState
+    cursorColumn:condition(0)
+        if textbox.currentKey == "ArrowLeft" || textbox.currentKey == "Backspace" then textbox.cursorColumn.previousState-1
+        if textbox.currentKey == "Enter" then 0
+        if textbox.currentKey == "ArrowUp" || textbox.currentKey == "ArrowDown" || textbox.currentKey == "Shift" then textbox.cursorColumn.previousState
         if arrayLength(app.keyboard.currentKeysDown) == 1 then textbox.cursorColumn.previousState+1
         textbox.cursorColumn.previousState
-    cursorRow:0
+    cursorRow:condition(0)
+        if textbox.currentKey == "ArrowUp"  then textbox.cursorRow.previousState-1
+        if textbox.currentKey == "Backspace" && textbox.cursorColumn.previousState == 0 then textbox.cursorColumn.previousState-1
+        if textbox.currentKey == "ArrowDown" || textbox.currentKey == "Enter" then textbox.cursorRow.previousState+1
+        textbox.cursorRow.previousState
     pos: new coordinatePosition
         x:30
         y:30
@@ -31,11 +40,11 @@ textbox = new object
         childElement1:new text
             name:"box"
             currentKey: app.keyboard.currentKeysDown[0]
-            innerText:condition
+            innerText:condition("")
                 if box.currentKey == "Backspace" then slice(box.innerText.previousState, 0, textbox.cursorColumn)+slice(box.innerText.previousState, textbox.cursorColumn+1)
                 if box.currentKey == "Enter" then box.innerText.previousState+"\n"
                 if box.currentKey == "Tab" then box.innerText.previousState+"\t"
-                if box.currentKey == "Shift" || box.currentKey == "ArrowRight" || box.currentKey == "ArrowLeft" then box.innerText.previousState
+                if box.currentKey == "Shift" || box.currentKey == "ArrowRight" || box.currentKey == "ArrowLeft" || box.currentKey == "ArrowUp" || box.currentKey == "ArrowDown" then box.innerText.previousState
                 if arrayLength(app.keyboard.currentKeysDown) == 0 then box.innerText.previousState
                 substring(box.innerText.previousState, 0, textbox.cursorColumn-1)+box.currentKey+substring(box.innerText.previousState, textbox.cursorColumn-1)
             x:textbox.pos.x
@@ -49,6 +58,8 @@ textbox = new object
             x2:cursor.x
             y2:cursor.y+2
 
+lines = new attribute
+    name:"lines"
 cursorRow = new attribute
     name:"cursorRow"
 cursorColumn = new attribute

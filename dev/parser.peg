@@ -19,10 +19,13 @@ function createString(str){
 	}
 }
 
-function createNOp(args, op){
+function createNOp(args, op, defaultState){
     const prim = {
         lynxIR:{type:"apply"},
         function:op
+    }
+    if (typeof defaultState !== 'undefined' && defaultState !== ""){
+        prim.defaultState = defaultState
     }
     args.forEach((arg, i) => {
         prim["op"+(i+1)] = arg
@@ -100,6 +103,9 @@ Attribute
 Expression "expression"
 	=  Conditional / Array
 
+DefaultState "defaultState"
+    = "("defaultState:Expression")" {return defaultState}
+
 Conditional "conditional"
     =  condition:Or _ "?"_ then:Expression _":"_ alt:Expression {
     return createNOp([condition, then, alt], "conditional")
@@ -108,9 +114,9 @@ Conditional "conditional"
     / Or
 
 MultilineConditional "multiline conditional" 
-    = "condition" "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "* Expression _ )"}#}"{
+    = "condition" _ defaultState:DefaultState? "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "* Expression _ )"}#}"{
         return cases.reduceRight((elseValue, conditionalCase) => {
-            return createNOp([conditionalCase.condition, conditionalCase.value, elseValue], "conditional")
+            return createNOp([conditionalCase.condition, conditionalCase.value, elseValue], "conditional", defaultState)
         }, defaultCase[2])
     }
 

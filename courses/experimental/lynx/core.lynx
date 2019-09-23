@@ -48,6 +48,7 @@ app = new object
     mouse: new object
         down: new input
             name:"mouseDown"
+            defaultState:false
             lynxIR:{input}
         pos: new coordinatePosition
             x:new input
@@ -56,8 +57,12 @@ app = new object
             y:new input
                 name:"mouseY"
                 lynxIR:{input}
-        clicked: app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState
-        isPressedDown: !app.mouse.down.previousState && app.mouse.down && !app.mouse.isPressedDown.previousState
+        clicked: condition(false)
+            if app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState then true
+            false
+        isPressedDown: condition(false)
+            if !app.mouse.down.previousState && app.mouse.down && !app.mouse.isPressedDown.previousState then true
+            false
     keyboard: new object
         name:"appkeyboard"
         currentKeysDown: new array
