@@ -1,0 +1,10 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:txt.op1[0]
+        op1:[
+            20
+        ]
+        y:30
+        innerText:"test"

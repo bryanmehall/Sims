@@ -508,8 +508,7 @@ module.exports = (function(){
             	var props = {}
             	attributes.forEach(function(attr){props[attr[2].name] = attr[2].value})
                 props.instanceOf = props.hasOwnProperty('instanceOf') ? props.instanceOf : value
-                var type = props.hasOwnProperty('type') ? props.type : value //override type property
-                //--get rid of this when switching type system
+                props.definition = props.hasOwnProperty('definition') ? props.definition : createDef("new object"+textRep(props)+"\n")
             	return props
             })(pos0, result0[0], result0[2]);
         }
@@ -2207,7 +2206,8 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
                 return {
-                    lynxIR:{type:"number", value:value}
+                    lynxIR:{type:"number", value: value},
+                    definition: createDef(value.toString())
                 }
             })(pos0, result0);
         }
@@ -2487,7 +2487,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, characters) {
                  var value = characters.join("")
-                 return createString(value)
+                 return Object.assign(createString(value), {definition: createDef(value)})
              })(pos0, result0[1]);
         }
         if (result0 === null) {
@@ -3098,7 +3098,8 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
             return {
-                	lynxIR:{type:"bool", value:value==="true"}
+                	lynxIR: {type:"bool", value:value==="true"},
+                    definition: createDef(value)
                }
             })(pos0, result0);
         }
@@ -3499,6 +3500,16 @@ module.exports = (function(){
       	}
       }
 
+      function textRep(obj) {
+          return Object.entries(obj).reduce(function(textRep, entry){
+              return `${textRep}\n\t${entry[0]}:20`
+          }, "")
+      }
+      function createDef(str){
+          var string = createString(str)
+          return createNOp([string], "parse")
+      }
+
       function createNOp(args, op, defaultState){
           const prim = {
               lynxIR:{type:"apply"},
@@ -3531,9 +3542,10 @@ module.exports = (function(){
                   lynxIR:{ type:"array", value:elements}
           }
       }
-      function buildPath(rootObject, attr){
+      function buildPath(rootObject, attr, str){
           var getData = {
               lynxIR:{type:"get"},
+              instanceOf:"get",
               attribute:attr[1]
           }
           if (rootObject !== null){

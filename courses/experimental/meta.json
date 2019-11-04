@@ -112,9 +112,16 @@
 					"type":"anim",
 					"length":10
                 },
-                 {
+                {
                     "id": "parent-of-new-get",
 					"title":"parent-of-new-get",
+					"text":"local search goes out of new get" ,
+					"type":"anim",
+					"length":10
+                },
+                {
+                    "id": "recursive-get",
+					"title":"recursive Get",
 					"text":"local search goes out of new get" ,
 					"type":"anim",
 					"length":10
@@ -150,6 +157,13 @@
 					"id": "self-interpret",
 					"title":"Self Interpret",
 					"text":"test self-interpreter",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "call-primitive",
+					"title":"Call Primitive",
+					"text":"test call first system",
 					"type":"anim",
 					"length":10
 				}

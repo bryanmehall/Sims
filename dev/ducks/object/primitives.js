@@ -206,13 +206,13 @@ const contains = (state, objectData) => { //eventually switch to set
     }
 }
 
-const get = (state, objectData) => {
-    const root = getValue(state, "rootObject", objectData)
+const get = (state, objectData, valueData, context) => {
+    const root = getValue(state, "rootObject", objectData, context)
     const rootObject = getJSValue(state, "rootObject", objectData)
     if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches
         //does this only work for one level deep?
         //change to rootObject.type == new?
-        const attributeObject = getValue(state, 'attribute', objectData)
+        const attributeObject = getValue(state, 'attribute', objectData, context)
         const attribute = getName(state, attributeObject)
         const next = getJSValue(state, attribute, root)
         const { args, varDefs } = getArgsAndVarDefs(state, [next], root)
@@ -298,7 +298,6 @@ const evaluate = (state, lynxIR, context) => {
     //this would mean less data passed around and more flexibility for matching on things other than names
     //also keps track of scope ordering ie child nodes are matched before parent nodes
     const args = lynxIR.args
-    console.log('context', context, args)
     const newIR = context.reduce((IR, parentContext) => {
         const parentObjectData = objectFromHash(state, parentContext.value)
         const functionData = argsToVarDefs(state, parentObjectData, { args: IR.args, varDefs: IR.varDefs })
@@ -306,7 +305,6 @@ const evaluate = (state, lynxIR, context) => {
     }, lynxIR)
     const runtime = state.runtime
     const assembled = runtime.assemble(newIR)
-    console.log(assembled)
     const run = runtime.run(assembled)
 
     return run
@@ -352,6 +350,7 @@ const apply = (state, objectData, valueData, context) => { //todo: context here 
         hash: getAttr(objectData, 'hash'),
         args,
         children,
+        context,
         varDefs,
         inline: true,
         type: "apply",
@@ -368,6 +367,7 @@ const ternary = (state, objectData, valueData, context) => {
     return {
         hash: getAttr(objectData, 'hash'),
         type: 'ternary',
+        context,
         children: { condition: parameters[0],then: parameters[1], alt: parameters[2] },
         args,
         varDefs,
@@ -386,6 +386,7 @@ const text = (state, objectData, valueData, context) => {
         args, //combine args of x,y,text
         children: { x: parameters[0], y: parameters[1], innerText: parameters[2] },
         type: 'text',
+        context,
         varDefs,
         inline: false,
         vis: { name: getName(state, objectData) }
@@ -402,6 +403,7 @@ const line = (state, objectData, valueData, context) => {
         args, //combine args of x,y,text
         children: { x1: parameters[0], y1: parameters[1], x2: parameters[2], y2: parameters[3] },
         type: 'line',
+        context,
         varDefs,
         inline: false,
         vis: { name: getName(state, objectData) }
@@ -428,6 +430,7 @@ const group = (state, objectData, valueData, context) => {
         hash: getAttr(objectData, 'hash'),
         type: 'group',
         children,
+        context,
         args,
         varDefs,
         vis: { name: getName(state, objectData) }

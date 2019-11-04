@@ -206,7 +206,7 @@ export const reduceFunctionData = (functionData, newFunctionData) => { //should 
 //resolved and is added to varDefs
 export const argsToVarDefs = (state, currentObject, functionData) => {
     const combinedArgs = functionData.args
-    limiter(2000, 5000)
+    //limiter(2000, 5000)
     //console.log(currentObject)
     const resolvedFunctionData = Object.entries(combinedArgs)
         .map((entry) => {

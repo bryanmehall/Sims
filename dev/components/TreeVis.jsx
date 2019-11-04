@@ -1,8 +1,9 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
-import { objectFromName, getHash, getPrimitiveType } from '../ducks/object/objectUtils'
+import { objectFromName, getHash, getPrimitiveType, getValue } from '../ducks/object/objectUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
+import  { createParentContext } from '../ducks/object/contextUtils'
 import { getName } from './Debug'
 
 class TreeVis extends React.Component {
@@ -12,10 +13,9 @@ class TreeVis extends React.Component {
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
         addAST(this.props.ast, { nodes, links })
         this.state = { nodes, links }
-
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
-                .id((d) => (d.id))
+                .id((d, i, n) => {return d.object.hash})
                 .strength(0)
                 )
             .force("forceY", d3.forceY()
@@ -29,7 +29,14 @@ class TreeVis extends React.Component {
         const orderingForce = () => {
             for (var i = 0; i < vis.state.nodes.length; i++) {
                 const currNode = vis.state.nodes[i]
-                const prevNode = i === 0 ? { level: -1, x: 0 } : vis.state.nodes[i-1]
+                let prevIndex = i-1
+                for (var p = prevIndex; p>0; p--){
+                    if (vis.state.nodes[p].level === currNode.level){
+                        prevIndex = p
+                        break;
+                    }
+                }
+                const prevNode = i === 0 ? { level: -1, x: 0 } : vis.state.nodes[prevIndex]
                 if (currNode.level === prevNode.level){
                     if (currNode.x < prevNode.x+150){
                         const acc = (150-(currNode.x-prevNode.x))
@@ -58,20 +65,42 @@ class TreeVis extends React.Component {
     componentWillUnmount(){
         this.simulation.stop()
     }
+
 	render() {
         const { nodes, links } = this.state
         getPath(nodes, this.props.activeNode.object.hash)
+        const setActive = (node, index) => {
+            const defNode = getValue(this.props.objectTable, "definition", node.object, [])
+            const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }] )
+            const defNodes = defTree.nodes
+            const defLinks = defTree.links
+            const left = nodes.slice(0,index)
+            const right = nodes.slice(index)
+            this.state.nodes = left.concat(defNodes, right)
+            const defLink = {source:node.object.hash, target: defNode.hash, attr:"definition"}
+            this.state.links.push(defLink)
+            console.log(this.state.links, this.state.links.concat([defLink]))
+            this.simulation
+                .nodes(this.state.nodes)
+            //this.simulation.links(this.graph.links);
+            this.simulation.alpha(0.3).restart()
+            //const contextLinks = node.context.map()
+            this.props.setActive(node)
+
+        }
         const nodesVis = nodes.map((node, i) => (
             <Node
                 x={node.x}
                 y={node.y}
                 level={node.level}
-                id={i}
+                nodeIndex={i}
                 key={i}
                 ast={node.ast}
                 object={node.object}
+                parId={node.parId}
+                context={node.context}
                 activeNode={this.props.activeNode}
-                setActive={this.props.setActive}/>
+                setActive={setActive}/>
         ), this) //set this for context
         const linksVis = links.map((link, i) => (<Link source={link.source} target={link.target} attr={link.attr} key={i}></Link>))
         return <g>{nodesVis}{linksVis}</g>
@@ -81,29 +110,29 @@ class TreeVis extends React.Component {
 
 
 const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
-    objQueue = objQueue || [{object: currentObj, level: 0 }]
+    objQueue = objQueue || [{ object: currentObj, level: 0 }]
     if (objQueue.length === 0) { return d3Data }
     d3Data = d3Data || { nodes: [], links: [] }
     const first = objQueue.shift()
     const level = first.level
     const i = d3Data.nodes.length
     const newD3Data = {
-        nodes: d3Data.nodes.concat({ id: i, parId: first.parId, object: first.object, objQueue, level }),
-        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: i, attr: first.attr })
+        nodes: d3Data.nodes.concat({ id: i, parId: first.parId, object: first.object, context: first.context, objQueue, level }),
+        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: first.object.hash, attr: first.attr })
     }
-
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'mouse', 'id', 'keyboard'].includes(entry[0])
-        )).map((entry) => {
-            const result =
-                entry[0] === INTERMEDIATE_REP ? [entry[0], {type: INTERMEDIATE_REP}]
-                : typeof entry[1] === 'string'  ? [entry[0], objectFromName(objectTable, entry[1])]
-                : [entry[0], { ...entry[1], hash: getHash(entry[1]) }] //add hash to object
-            return result
-        }).map((entry) => (//combine these
-            Object.assign({}, { object: entry[1] }, { attr: entry[0], parId: i, level: level+1 })
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep'].includes(entry[0])
         ))
+        .map((entry) => {
+            const context = first.context || []
+            const attr = entry[0]
+            const newContext = createParentContext(context, first.object, attr)
+            const object = getValue(objectTable, attr, first.object, newContext)
+            //const sourceHash = getHash(object)
+            //newContext[0].sourceHash = sourceHash
+            return { object: object, context: context, attr, parId: first.object.hash, level: level+1 }
+        })
 
     let structureChildren = []
     if (getPrimitiveType(first.object) === 'array'){
@@ -151,7 +180,6 @@ const getPath = (nodes, hash) => {
             return false
         }
     })
-
     return { defNode, rootNodes }
 }
 
@@ -169,9 +197,10 @@ const displayArg = (arg, argKey) => {
     return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
 }
 
-const Node = ({ x, y, object, setActive, ast, activeNode }) => {
+const Node = (node) => {
+    const { x, y, object, setActive, ast, activeNode, context, nodeIndex } = node
     const activeHash = activeNode.object.hash
-    const active = activeHash === object.hash
+    const active = activeHash === getHash(object)
     const name = getName(object)
     const isPrimitive = ast !== undefined
     let label = ''
@@ -188,14 +217,20 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
             label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
         }
 
+    } else if (object.hasOwnProperty(INTERMEDIATE_REP)) {
+        if (object.lynxIR.hasOwnProperty('value')){
+            label = JSON.stringify(object.lynxIR.value)
+        } else {
+            label = name
+        }
     } else {
         label = name
     }
 
     return (
         <text
-            onMouseOver={function(){
-                setActive({ object, ast })
+            onClick={function(){
+                setActive(node, nodeIndex)
             }}
             onMouseLeave={function(){
 
@@ -207,7 +242,7 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
             x={x}
             y={y}
             >
-            {label}
+            {label}{nodeIndex}
         </text>
     )
 }
@@ -216,20 +251,20 @@ const Node = ({ x, y, object, setActive, ast, activeNode }) => {
 const Link = ({ source, target, attr }) => (
     <g>
         <line
-            x1={source.x}
-            y1={source.y+5}
-            x2={target.x}
-            y2={target.y-15}
+            x1={attr === "definition" ? source.x-40 : source.x}
+            y1={attr === "definition" ? source.y-5 : source.y+5}
+            x2={attr === "definition" ? target.x+40 : target.x}
+            y2={attr === "definition" ? target.y-5 : target.y-15}
             style={{
-              stroke: "#000",
-              strokeOpacity: ".9",
-              strokeWidth: 1.6
+                stroke: attr === "definition" ? 'red' : 'black',
+                strokeOpacity: ".7",
+                strokeWidth: 1.6
 
             }}
         />
         <text
             x={source.x+(target.x-source.x)/2}
-            y={source.y+30}
+            y={source.y+(target.y-source.y)/2}
             textAnchor="middle"
             opacity = {0.3}
             >

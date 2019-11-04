@@ -1,11 +1,21 @@
-import { getName, getInverseAttr, getAttr, getNameFromAttr } from './objectUtils'
+import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute } from './objectUtils'
 
-export const createParentContext = (objectData, forwardAttr) => ({
-    debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
-    attr: "parentValue",
-    value: getAttr(objectData, 'hash'),
-    source: "sourceHash" //remove for debug
-})
+export const createParentContext = (context, objectData, forwardAttr) => { //make this accept and return context
+    if (hasAttribute(objectData, forwardAttr)){
+        //append to context
+        const contextElement = {
+            debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
+            attr: "parentValue",
+            value: getAttr(objectData, 'hash'),
+            source: "sourceHash" //remove for debug
+        }
+        return [contextElement, ...context]
+    } else {
+        //pop from context
+    }
+
+}
+export const getParent = (state, context) => (state[context[0].value])
 
 export const addContextToGetStack = (state, context, attr, currentObject, sourceHash) => {
     const hash = getAttr(currentObject, 'hash')

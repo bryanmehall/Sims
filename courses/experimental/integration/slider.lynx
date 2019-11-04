@@ -9,16 +9,15 @@ window = new group
 
 slider = new object
     name:"slider"
-    value:condition
-        if slider.handle.isBeingDragged then mouse.pos.x-slider.handle.dragOffset
+    value:condition (10)
+        if slider.handle.isBeingDragged then app.mouse.pos.x-slider.handle.dragOffset
         slider.value.previousState
     handle:new text
         name:"sliderHandle"
-        isBeingDragged: sliderHandle.mouseOver && app.mouse.isPressedDown || sliderHandle.isBeingDragged.previousState && app.mouse.down
-        dragOffset: sliderHandle.isBeingDragged && app.mouse.isPressedDown ? app.mouse.pos.x-slider.value.previousState : sliderHandle.dragOffset.previousState
-        isChanged: sliderHandle.isBeingDragged && !(app.mouse.pos.x == app.mouse.pos.x.previousState)
+        dragOffset:10
+        isBeingDragged:app.mouse.down
         mouseOver:app.mouse.pos.x > slider.value.previousState  && app.mouse.pos.x < slider.value.previousState + 10
-        innerText:"x"
+        innerText:sliderHandle.mouseOver ? "x" : "0"
         x:slider.value
         y:65
     graphicalRepresentation: new group
@@ -30,7 +29,7 @@ slider = new object
                 y2:60
             slider.handle
             new text
-                innerText:"abc"
+                innerText:slider.value
                 x:10
                 y:20
         ]

@@ -19,6 +19,16 @@ function createString(str){
 	}
 }
 
+function textRep(obj) {
+    return Object.entries(obj).reduce(function(textRep, entry){
+        return `${textRep}\n\t${entry[0]}:20`
+    }, "")
+}
+function createDef(str){
+    var string = createString(str)
+    return createNOp([string], "parse")
+}
+
 function createNOp(args, op, defaultState){
     const prim = {
         lynxIR:{type:"apply"},
@@ -51,9 +61,10 @@ function createArray(elementValues){
             lynxIR:{ type:"array", value:elements}
     }
 }
-function buildPath(rootObject, attr){
+function buildPath(rootObject, attr, str){
     var getData = {
         lynxIR:{type:"get"},
+        instanceOf:"get",
         attribute:attr[1]
     }
     if (rootObject !== null){
@@ -88,8 +99,7 @@ Object "object"
     	var props = {}
     	attributes.forEach(function(attr){props[attr[2].name] = attr[2].value})
         props.instanceOf = props.hasOwnProperty('instanceOf') ? props.instanceOf : value
-        var type = props.hasOwnProperty('type') ? props.type : value //override type property 
-        //--get rid of this when switching type system
+        props.definition = props.hasOwnProperty('definition') ? props.definition : createDef("new object"+textRep(props)+"\n")
     	return props
     }
 
@@ -187,7 +197,8 @@ Get "get"
 Number 
 	= value:(Float / Int) {
         return {
-            lynxIR:{type:"number", value:value}
+            lynxIR:{type:"number", value: value},
+            definition: createDef(value.toString())
         }
     }
     
@@ -204,7 +215,7 @@ Float "number"
 String "string"
      = '"'characters:[.a-zA-Z0-9\\]*'"' {
          var value = characters.join("")
-         return createString(value)
+         return Object.assign(createString(value), {definition: createDef(value)})
      }
 
 ArrayElement "array element"
@@ -230,7 +241,8 @@ Map "map"
 Bool "bool"
     = value:("true" / "false") {
     return {
-        	lynxIR:{type:"bool", value:value==="true"}
+        	lynxIR: {type:"bool", value:value==="true"},
+            definition: createDef(value)
        }
     }
 Primitive "static primitive"

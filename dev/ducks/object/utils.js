@@ -96,6 +96,9 @@ export const logFunctionTable = (functionTable) => {
 }
 
 export const isUndefined = (objectData) => {
+    if (typeof objectData === 'undefined'){
+        throw new Error("objectData is JS undefined")
+    }
     const nameObject = getAttr(objectData, 'name')
     if (nameObject === undefined){
         return false

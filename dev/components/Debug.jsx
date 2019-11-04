@@ -52,6 +52,11 @@ class Debug extends React.Component {
                 {tableVis}
             </pre>
         )
+        const lynxTextVis = (
+            <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily: 'courier new', padding: 20, top: 547 }}>
+                {runtime.lynxText}
+            </pre>
+        )
         if (this.props.debugType === 'tree' || this.props.debugType === 'ast'){
             return (
                 <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 547 }}>
@@ -79,6 +84,8 @@ class Debug extends React.Component {
             )
         } else if (this.props.debugType === 'flow') {
             return <FlowVis runtime={this.props.runtime}></FlowVis>
+        } else if (this.props.debugType === "lynxText"){
+            return lynxTextVis
         } else {
             return codeVis
         }
@@ -96,19 +103,28 @@ const ObjectData = ({ node }) => {
     if (node.hasOwnProperty('object')){
         const name = getName(node.object)
         const hash = node.object.hash
-        objectData = <div>{name} : {hash}</div>
+
+        objectData = <div style={{overflowY:"scroll", height:300, width:350}}><pre>{name} : {hash}: {JSON.stringify(node.object, null, 2)}</pre></div>
     }
     if( typeof node.ast !== 'undefined'){
         const varDefs = node.ast.varDefs
         const args = node.ast.args
+        const context = node.context || []
         astData = <div>
                 Args:
                 {Object.values(args).map((arg) => (
                     <div>
                         {formatArg(arg)}
-                        <pre>{/*JSON.stringify(arg.context, null, 2)*/}</pre>
                     </div>
                 ))}
+                <div>
+                    Context:
+                    {Object.values(context).map((context, i) => (
+                        <div key={i}>
+                            {context.debug}
+                        </div>
+                    ))}
+                </div>
             </div>
 
     }

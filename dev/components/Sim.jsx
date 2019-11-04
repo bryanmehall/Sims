@@ -16,7 +16,7 @@ class Sim extends React.Component {
             offset: { x: 300, y: 0 },
              //each of these is a function
             runtime: null,
-            debugView: 'flow' //tree or other
+            debugView: 'tree' //tree or other
         }
 	}
 
@@ -76,7 +76,8 @@ class Sim extends React.Component {
                   runtime = {this.state.runtime}
                   debugType={this.state.debugView}
                 ></Debug> : null
-
+        //const debugTypes = [text, tree, ast, code, ]
+        //const debugSelector = debugTypes.map()
 		return (
             <div>
                 <canvas
@@ -87,10 +88,12 @@ class Sim extends React.Component {
                 >
                 </canvas>
                 <div style = {{ ...cardStyle, backgroundColor: 'white', padding: 10, top: 505 }}>
+                    <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "lynxText" }) }}> text</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "tree" }) }}>tree</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "ast" }) }}> ast</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "code" }) }}> code</span> |
                     <span style={{ cursor: 'pointer' }} onClick={() => { this.setState({ debugView: "flow" }) }}> flow</span>
+
                 </div>
                 {debug}
             </div>

@@ -2,7 +2,7 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
-import { addContextToArgs, createParentContext } from './contextUtils'
+import { addContextToArgs, createParentContext, getParent } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
 const filterNames = (state, name) => {
@@ -116,7 +116,7 @@ export const getHash = (objectData) => { //this should check that all children a
     if (typeof objectData === "string"){
         return "$hash_string_"+ murmurhash.v3(objectData)
     }
-    const exemptProps = ["hash", "parentValue"]
+    const exemptProps = ["hash", "parentValue", "definition"] //definition should not be an exempt prop---this is just to get around the hashes not equal error temporarily
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     //console.log(expandedHashData)
@@ -146,7 +146,35 @@ const compile = (state, valueData, objectData, context) => { //move to primitive
     }
 }
 
+const evaluateSearch = (state, def, context) => { //evaluate search component of reference
+    const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
+    if (context === undefined){
+        throw new Error('context undefined')
+    } else if (context.length === 0){
+        throw new Error(`unable to find object named ${query}`)
+    }
+    const value = getParent(state, context)
+    const name = getNameFromAttr(value)
+    if (name === query){
+        return value
+    } else {
+        return evaluateSearch(state, def, context.slice(1))
+    }
+}
+const evaluateReference = (state, def, context) => { //evaluate whole reference object
+    const rootObject = getAttr(def, 'rootObject')
+    const rootIsSearch = rootObject[INTERMEDIATE_REP].type === 'search'
+    const rootValue = rootIsSearch ? evaluateSearch(state, def, context) : evaluateReference(state, rootObject, context)
+    const attribute = getAttr(def, 'attribute')
+    const newContext = createParentContext(context, rootValue, attribute)
+    //for caller pop this off stack
+    const result = getValue(state, attribute, rootValue, newContext)
+    //console.log({...result, definition: getHash(def) })
+    return {...result, definition: def }
+}
+
 export const getValue = (state, prop, objectData, context) => {
+    //const context = createParentContext(oldContext, objectData, prop)
     checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
     if (typeof def === "string" && isHash(def)){
@@ -183,6 +211,10 @@ export const getValue = (state, prop, objectData, context) => {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
+    } else if (def.instanceOf === 'get' && true){ //directly evaluate get instead of leaving it as a free variable
+        console.log('getting', def)
+        const referenceNode = evaluateReference(state, def, context)
+        return referenceNode
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
         return compile(state, valueData, objectData, context)
 	} else {
@@ -212,13 +244,14 @@ export const getJSValue = (state, prop, objectData, context) => {
     if (memoTable.hasOwnProperty(key) && hash !== undefined){
         return memoTable[key]
     }
-
-	const valueData = getValue(state, prop, objectData)
+    context = context || []
+    const newContext = createParentContext(context, objectData, prop)
+	const valueData = getValue(state, prop, objectData, newContext)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-        context = context || []
-        const newContext = [createParentContext(objectData, prop), ...context]//should this context be attached to the args instead?
+
+        const newContext = createParentContext(context, objectData, INTERMEDIATE_REP)
 		const primitive = getValue(state , INTERMEDIATE_REP, valueData, newContext)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined

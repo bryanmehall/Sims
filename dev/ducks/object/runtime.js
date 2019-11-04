@@ -238,9 +238,9 @@ export class Runtime {
         //console.log('recompile', recompile)
         //stateAvailable = Object.values(this.stateBuffer).some((input) => (input.avaliable))
         if (recompile){
-            resetMemo()
-            runtime.initApp()
-            runtime.updateDebug(runtime)
+            //resetMemo()
+            //runtime.initApp()
+            //runtime.updateDebug(runtime)
         }
         Object.assign(this.inputs, this.stateBuffer)
         Object.values(this.inputs).forEach((input) => {
@@ -303,7 +303,7 @@ export class Runtime {
     }
     compile(lynxObject){ //make compile accept a target. ie. canvas, js, GLSL, wasm
         resetLimiter()
-        try {
+        //try {
             //console.time('compile')
             const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
             //console.timeEnd('compile')
@@ -311,10 +311,10 @@ export class Runtime {
                 return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}
             }
             return lynxIR
-        } catch (e){
-            console.warn(e)
-            return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}
-        }
+        //} //catch (e){ //need to catch this for syntax erroers
+            //console.warn(e)
+            //return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}
+        //}
     }
     assemble(lynxIR) {
         if (lynxIR.hasOwnProperty('args')){ //success condition-- make this more robust

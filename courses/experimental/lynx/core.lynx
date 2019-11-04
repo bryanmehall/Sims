@@ -14,6 +14,8 @@ compile = new object
     lynxIR:{compile}
 definition = new attribute
     name: "definition"
+jsModule = new attribute
+    name:"jsModule"
 assemble = new object
     name:"assemble"
     lynxIR:{assemble}
@@ -24,7 +26,7 @@ appRoot = new get
     name:"appRoot"
     lynxIR:{get}
     rootObject:app
-    attribute:op2
+    attribute:jsModule
 
 appParse = new object
     name:"appParse"
@@ -42,8 +44,7 @@ app = new object
         name:"lynxTextInput"
         lynxIR:{input}
     definition:parse(app.lynxText, "app")
-    op1:compile(app.definition)
-    op2:assemble(app.op1) //for canvas: assemble(compile(app.definition, canvasPrimitive))
+    jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
     canvasRep:call(app.op2)
     mouse: new object
         down: new input
