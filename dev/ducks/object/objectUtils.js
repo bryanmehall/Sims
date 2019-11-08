@@ -155,6 +155,7 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     }
     const value = getParent(state, context)
     const name = getNameFromAttr(value)
+    //console.log(name, value, context)
     if (name === query){
         return value
     } else {
@@ -162,29 +163,32 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     }
 }
 const evaluateReference = (state, def, context) => { //evaluate whole reference object
+    console.log(def, context)
     const rootObject = getAttr(def, 'rootObject')
     const rootIsSearch = rootObject[INTERMEDIATE_REP].type === 'search'
     const rootValue = rootIsSearch ? evaluateSearch(state, def, context) : evaluateReference(state, rootObject, context)
     const attribute = getAttr(def, 'attribute')
     const newContext = createParentContext(context, rootValue, attribute)
     //for caller pop this off stack
-    const result = getValue(state, attribute, rootValue, newContext)
+    const result = getValue(state, attribute, rootValue, context)
     //console.log({...result, definition: getHash(def) })
     return {...result, definition: def }
 }
 
-export const getValue = (state, prop, objectData, context) => {
-    //const context = createParentContext(oldContext, objectData, prop)
+export const getValue = (state, prop, objectData, oldContext) => {
+    const context = createParentContext(oldContext, objectData, prop)
     checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
+    //console.log('getting', prop, def, context)
     if (typeof def === "string" && isHash(def)){
+
         def = objectFromHash(state, def)
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		const isInstance = hasAttribute(objectData, 'instanceOf')
         const inheritedData = isInstance
-            ? getValue(state, 'instanceOf', objectData)
+            ? getValue(state, 'instanceOf', objectData, oldContext) //old context here because createParentContext pops off stack ---is this in need of deeper refactoring?
             : objectFromName(state, 'object')
         def = getAttr(inheritedData, prop)
 	}
@@ -212,7 +216,6 @@ export const getValue = (state, prop, objectData, context) => {
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
     } else if (def.instanceOf === 'get' && true){ //directly evaluate get instead of leaving it as a free variable
-        console.log('getting', def)
         const referenceNode = evaluateReference(state, def, context)
         return referenceNode
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
@@ -246,12 +249,13 @@ export const getJSValue = (state, prop, objectData, context) => {
     }
     context = context || []
     const newContext = createParentContext(context, objectData, prop)
-	const valueData = getValue(state, prop, objectData, newContext)
+	const valueData = getValue(state, prop, objectData, context)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
 
-        const newContext = createParentContext(context, objectData, INTERMEDIATE_REP)
+        //const newContext = createParentContext(context, objectData, INTERMEDIATE_REP)
+        //console.log(newContext, context, objectData, prop)
 		const primitive = getValue(state , INTERMEDIATE_REP, valueData, newContext)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined

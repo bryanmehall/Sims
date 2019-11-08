@@ -1,7 +1,14 @@
 import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute } from './objectUtils'
 
 export const createParentContext = (context, objectData, forwardAttr) => { //make this accept and return context
-    if (hasAttribute(objectData, forwardAttr)){
+    if (typeof context === 'undefined'){
+        throw new Error("context undefined")
+    }
+    /*if (context.length> 0){
+        console.log(!hasAttribute(objectData, forwardAttr), context[0].attr, forwardAttr)
+    }*/
+    const isInverse = !hasAttribute(objectData, forwardAttr) && context.length > 0 && context[0].attr === forwardAttr
+    if (!isInverse){
         //append to context
         const contextElement = {
             debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
@@ -11,9 +18,9 @@ export const createParentContext = (context, objectData, forwardAttr) => { //mak
         }
         return [contextElement, ...context]
     } else {
-        //pop from context
-    }
+        console.warn(context, objectData, forwardAttr)
 
+    }
 }
 export const getParent = (state, context) => (state[context[0].value])
 

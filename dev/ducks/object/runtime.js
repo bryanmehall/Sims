@@ -1,5 +1,5 @@
 import { assemble, flattenState, getHashesFromTree } from './assembler'
-import { getValue, objectFromName, getHash, tableContainsName, resetMemo } from './objectUtils'
+import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue } from './objectUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
 import { limiter, resetLimiter, isUndefined } from './utils'
@@ -107,6 +107,9 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
+        //const appObject = this.parse(this.lynxText, 'app')
+        //console.log(getJSValue(this.hashTable, "canvasRep", appObject, []))
+
         const appData = this.parse(this.lynxText, 'appRoot')
         const appGenIR = this.compile(appData)
         this.appIRGen = this.assemble(appGenIR)
@@ -305,7 +308,7 @@ export class Runtime {
         resetLimiter()
         //try {
             //console.time('compile')
-            const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
+            const lynxIR = getValue(this.hashTable, INTERMEDIATE_REP, lynxObject, []) //this uses the global hash table --is this ok because there is still referential transparency? just not a guarantee that it is loaded
             //console.timeEnd('compile')
             if (isUndefined(lynxIR)){
                 return {args:{}, varDefs:[], type:"string", value: 'compileError', children:{}, inline:true}

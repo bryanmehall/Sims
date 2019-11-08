@@ -128,7 +128,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             const context = first.context || []
             const attr = entry[0]
             const newContext = createParentContext(context, first.object, attr)
-            const object = getValue(objectTable, attr, first.object, newContext)
+            const object = getValue(objectTable, attr, first.object, context)
             //const sourceHash = getHash(object)
             //newContext[0].sourceHash = sourceHash
             return { object: object, context: context, attr, parId: first.object.hash, level: level+1 }

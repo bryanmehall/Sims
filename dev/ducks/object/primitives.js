@@ -297,6 +297,7 @@ const evaluate = (state, lynxIR, context) => {
     //just keep track of parent hashes in a linked list so that this can be done lazily instead of eagerly
     //this would mean less data passed around and more flexibility for matching on things other than names
     //also keps track of scope ordering ie child nodes are matched before parent nodes
+    console.log('evaluating', context)
     const args = lynxIR.args
     const newIR = context.reduce((IR, parentContext) => {
         const parentObjectData = objectFromHash(state, parentContext.value)
@@ -376,7 +377,7 @@ const ternary = (state, objectData, valueData, context) => {
 }
 
 const text = (state, objectData, valueData, context) => {
-    const paramNames = ["x", "y", "innerText", "r", "g", "b"]
+    const paramNames = ["x", "y", "innerText"]
     const parameters = paramNames.map((paramName) => (
         getJSValue(state, paramName, objectData, context) //todo: change txt here
     ))
@@ -440,7 +441,7 @@ const group = (state, objectData, valueData, context) => {
 const app = (state, objectData) => {
     const paramNames = ["graphicalRepresentation"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, paramName, objectData)
+        getJSValue(state, paramName, objectData, [])
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {

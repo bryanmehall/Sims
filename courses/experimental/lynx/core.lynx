@@ -25,6 +25,7 @@ call = new object
 appRoot = new get
     name:"appRoot"
     lynxIR:{get}
+    instanceOf:get
     rootObject:app
     attribute:jsModule
 
@@ -45,7 +46,7 @@ app = new object
         lynxIR:{input}
     definition:parse(app.lynxText, "app")
     jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
-    canvasRep:call(app.op2)
+    canvasRep:call(app.jsModule)
     mouse: new object
         down: new input
             name:"mouseDown"

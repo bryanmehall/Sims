@@ -5,7 +5,7 @@ window = new group
         x:txt.function.x
         function:new object
             name:"obj"
-            x:obj.caller.r
+            x:obj.parentValue.r
         r:20
         y:30
         innerText:"test"
