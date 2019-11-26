@@ -9,10 +9,10 @@ import { getName } from './Debug'
 class TreeVis extends React.Component {
     constructor(props){
         super(props)
-        const appObject = objectFromName(this.props.objectTable, 'appRoot')
+        const appObject = objectFromName(this.props.objectTable, 'app')
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
         addAST(this.props.ast, { nodes, links })
-        this.state = { nodes, links }
+        this.state = { nodes, links, allNodes:nodes, allLinks:links }
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
                 .id((d, i, n) => {return d.object.hash})
@@ -26,17 +26,18 @@ class TreeVis extends React.Component {
     }
     componentDidMount(){
         const vis = this
+        const nodes = this.state.allNodes
         const orderingForce = () => {
-            for (var i = 0; i < vis.state.nodes.length; i++) {
-                const currNode = vis.state.nodes[i]
+            for (var i = 0; i < vis.state.allNodes.length; i++) {
+                const currNode = vis.state.allNodes[i]
                 let prevIndex = i-1
                 for (var p = prevIndex; p>0; p--){
-                    if (vis.state.nodes[p].level === currNode.level){
+                    if (vis.state.allNodes[p].level === currNode.level){
                         prevIndex = p
                         break;
                     }
                 }
-                const prevNode = i === 0 ? { level: -1, x: 0 } : vis.state.nodes[prevIndex]
+                const prevNode = i === 0 ? { level: -1, x: 0 } : vis.state.allNodes[prevIndex]
                 if (currNode.level === prevNode.level){
                     if (currNode.x < prevNode.x+150){
                         const acc = (150-(currNode.x-prevNode.x))
@@ -44,7 +45,7 @@ class TreeVis extends React.Component {
                         prevNode.vx -= acc
                     }
                 }
-                const parNode = vis.state.nodes[currNode.parId] || { level: -1, x: 0 }
+                const parNode = vis.state.allNodes[currNode.parId] || { level: -1, x: 0 }
                 const x = parNode === undefined ? 0 : parNode.x
                 const diff = (x-currNode.x)
                 const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
@@ -54,7 +55,7 @@ class TreeVis extends React.Component {
         }
 
         this.simulation.on("tick", () => {
-            const appNode = this.state.nodes[0]
+            const appNode = this.state.allNodes[0]
             orderingForce()
             appNode.x = 0
             appNode.y = 0
@@ -70,25 +71,35 @@ class TreeVis extends React.Component {
         const { nodes, links } = this.state
         getPath(nodes, this.props.activeNode.object.hash)
         const setActive = (node, index) => {
-            const defNode = getValue(this.props.objectTable, "definition", node.object, [])
-            const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }] )
+            const definitionIsGet = node.object.definition.hasOwnProperty("lynxIR") && node.object.definition.lynxIR.type === 'get'
+            const defNode = getValue(this.props.objectTable, "definition", node.object, node.context, definitionIsGet)
+            console.log(defNode, node.object)
+            const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }])
+
             const defNodes = defTree.nodes
             const defLinks = defTree.links
             const left = nodes.slice(0,index)
             const right = nodes.slice(index)
-            this.state.nodes = left.concat(defNodes, right)
+            this.state.allNodes = left.concat(defNodes, right)
             const defLink = {source:node.object.hash, target: defNode.hash, attr:"definition"}
-            this.state.links.push(defLink)
-            console.log(this.state.links, this.state.links.concat([defLink]))
-            this.simulation
-                .nodes(this.state.nodes)
-            //this.simulation.links(this.graph.links);
-            this.simulation.alpha(0.3).restart()
-            //const contextLinks = node.context.map()
+            const contextLinks = contextToLinks(node.context)
+            console.log(contextLinks)
+            this.state.allLinks = links.concat(defLinks, [defLink], contextLinks)
             this.props.setActive(node)
+            //console.log(this.state.links, this.state.links.concat([defLink]))
+            this.simulation
+                .nodes(this.state.allNodes)
+                .force("link", d3.forceLink(this.state.allLinks)
+                    .id((d, i, n) => {return d.object.hash})
+                    .strength(0)
+                    )
+                .alpha(0.2).restart()
+            //this.simulation.links(this.graph.links);
+            //const contextLinks = node.context.map()
+
 
         }
-        const nodesVis = nodes.map((node, i) => (
+        const nodesVis = this.state.allNodes.map((node, i) => (
             <Node
                 x={node.x}
                 y={node.y}
@@ -102,13 +113,20 @@ class TreeVis extends React.Component {
                 activeNode={this.props.activeNode}
                 setActive={setActive}/>
         ), this) //set this for context
-        const linksVis = links.map((link, i) => (<Link source={link.source} target={link.target} attr={link.attr} key={i}></Link>))
+        const linksVis = this.state.allLinks.map((link, i) => (<Link source={link.source} target={link.target} attr={link.attr} type={link.type} key={i}></Link>))
         return <g>{nodesVis}{linksVis}</g>
 	}
 }
 //sort nodes in bfs order to apply forces to them
 
-
+const contextToLinks = (context) => (
+    context.map((contextElem) => ({
+        source: contextElem.sourceHash,
+        target: contextElem.value,
+        attr: contextElem.attr,
+        type: "context"
+    }))
+)
 const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     objQueue = objQueue || [{ object: currentObj, level: 0 }]
     if (objQueue.length === 0) { return d3Data }
@@ -128,10 +146,9 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             const context = first.context || []
             const attr = entry[0]
             const newContext = createParentContext(context, first.object, attr)
-            const object = getValue(objectTable, attr, first.object, context)
-            //const sourceHash = getHash(object)
-            //newContext[0].sourceHash = sourceHash
-            return { object: object, context: context, attr, parId: first.object.hash, level: level+1 }
+            const object = getValue(objectTable, attr, first.object, newContext, true)
+            newContext[0].sourceHash = getHash(object) //add sourceHash for debug
+            return { object: object, context: newContext, attr, parId: first.object.hash, level: level+1 }
         })
 
     let structureChildren = []
@@ -196,7 +213,12 @@ const displayArg = (arg, argKey) => {
         "black"
     return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
 }
-
+const formatText = (str, x, y) => {
+    const string = typeof str === 'string'? str : JSON.stringify(str)
+    return string.replace(/\t/g, '____')
+        .split('\n')
+        .map((line, i) => (<tspan key={i} textAnchor="start" x={x-10} y={y+20*i}>{line}</tspan>))
+}
 const Node = (node) => {
     const { x, y, object, setActive, ast, activeNode, context, nodeIndex } = node
     const activeHash = activeNode.object.hash
@@ -211,7 +233,7 @@ const Node = (node) => {
             if (Array.isArray(ast.value)){
                 label = <tspan>[array]{active ? displayArgs(ast) : null}</tspan>
             } else {
-                label = JSON.stringify(ast.value)
+                label = formatText(JSON.stringify(ast.value), x, y)
             }
         } else {
             label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
@@ -219,7 +241,7 @@ const Node = (node) => {
 
     } else if (object.hasOwnProperty(INTERMEDIATE_REP)) {
         if (object.lynxIR.hasOwnProperty('value')){
-            label = JSON.stringify(object.lynxIR.value)
+            label = formatText(object.lynxIR.value, x, y)
         } else {
             label = name
         }
@@ -242,36 +264,42 @@ const Node = (node) => {
             x={x}
             y={y}
             >
-            {label}{nodeIndex}
+            {label}
         </text>
     )
 }
 
 
-const Link = ({ source, target, attr }) => (
+const Link = ({ source, target, attr, type }) => {
+    const color = attr === "definition" ? 'purple' : type === "context" ? "red" :  'black'
+    const inverse = Math.sign(source.y-target.y)
+
+    return (
     <g>
         <line
             x1={attr === "definition" ? source.x-40 : source.x}
-            y1={attr === "definition" ? source.y-5 : source.y+5}
+            y1={attr === "definition" ? source.y-5 : source.y-5*inverse}
             x2={attr === "definition" ? target.x+40 : target.x}
-            y2={attr === "definition" ? target.y-5 : target.y-15}
+            y2={attr === "definition" ? target.y-5 : target.y+15*inverse}
             style={{
-                stroke: attr === "definition" ? 'red' : 'black',
+                stroke: color,
                 strokeOpacity: ".7",
                 strokeWidth: 1.6
 
             }}
         />
+
         <text
             x={source.x+(target.x-source.x)/2}
-            y={source.y+(target.y-source.y)/2}
+            y={source.y+(target.y-source.y)/2+10*inverse}
+            stroke={color}
             textAnchor="middle"
             opacity = {0.3}
             >
             {attr}
         </text>
-    </g>
-)
+    </g>)
+}
 
 
 export default TreeVis

@@ -66,7 +66,7 @@ export const getNameFromAttr = (objectData) => {
 export const objectFromHash = (state, hash) => {
     const value = state[hash]
     if (typeof value === 'undefined'){
-        throw new Error("could not find object named "+JSON.stringify(hash))
+        throw new Error(`could not find object named ${JSON.stringify(hash)} in state`)
     } else {
         return value
     }
@@ -116,7 +116,7 @@ export const getHash = (objectData) => { //this should check that all children a
     if (typeof objectData === "string"){
         return "$hash_string_"+ murmurhash.v3(objectData)
     }
-    const exemptProps = ["hash", "parentValue", "definition"] //definition should not be an exempt prop---this is just to get around the hashes not equal error temporarily
+    const exemptProps = ["hash", "parentValue"] //definition should not be an exempt prop---this is just to get around the hashes not equal error temporarily
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     //console.log(expandedHashData)
@@ -147,6 +147,7 @@ const compile = (state, valueData, objectData, context) => { //move to primitive
 }
 
 const evaluateSearch = (state, def, context) => { //evaluate search component of reference
+
     const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
     if (context === undefined){
         throw new Error('context undefined')
@@ -155,40 +156,53 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     }
     const value = getParent(state, context)
     const name = getNameFromAttr(value)
-    //console.log(name, value, context)
     if (name === query){
-        return value
+        return {context: context.slice(1), value}
     } else {
         return evaluateSearch(state, def, context.slice(1))
     }
 }
-const evaluateReference = (state, def, context) => { //evaluate whole reference object
-    console.log(def, context)
-    const rootObject = getAttr(def, 'rootObject')
-    const rootIsSearch = rootObject[INTERMEDIATE_REP].type === 'search'
-    const rootValue = rootIsSearch ? evaluateSearch(state, def, context) : evaluateReference(state, rootObject, context)
-    const attribute = getAttr(def, 'attribute')
-    const newContext = createParentContext(context, rootValue, attribute)
-    //for caller pop this off stack
-    const result = getValue(state, attribute, rootValue, context)
-    //console.log({...result, definition: getHash(def) })
-    return {...result, definition: def }
+export const addObjectToTable = (table, objectData) => {
+    table[getHash(objectData)] = objectData
+}
+const evaluateReference = (state, getObject, context) => { //evaluate whole reference object
+    if (typeof context === 'undefined'){
+        throw new Error("context undefined")
+    }
+    const rootObject = getAttr(getObject, 'rootObject')
+	const rootType = getPrimitiveType(rootObject)
+	const attribute = getAttr(getObject, 'attribute')
+	//root is a structure containing the value and the context
+	const root = rootType === 'search' ? evaluateSearch(state, getObject, context):
+	             rootType  === 'get' ? evaluateReference(state, rootObject, context):
+				 { context, value: rootObject }
+    const rootValue = root.value
+    const isInverse = !hasAttribute(rootValue, attribute) && context.length > 0 && context[0].attr === attribute
+    if (isInverse){
+        return { context: context.slice(1), value: getParent(state, context.slice(1)) }
+    } else {
+		context = createParentContext(root.context, rootValue, attribute)
+        const result = getValue(state, attribute, rootValue, context)
+        delete result.hash //remove hash because we are going to add definition to it
+        const resultWithDefinition = { ...result, definition: getObject }
+        addObjectToTable(state, resultWithDefinition)
+        return { context, value: resultWithDefinition }
+    }
 }
 
-export const getValue = (state, prop, objectData, oldContext) => {
-    const context = createParentContext(oldContext, objectData, prop)
+export const getValue = (state, prop, objectData, context, getFirst) => { //getFirst is a bool for directly evaluating get nodes
+    getFirst = getFirst === undefined ? true : getFirst
     checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
     //console.log('getting', prop, def, context)
     if (typeof def === "string" && isHash(def)){
-
         def = objectFromHash(state, def)
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
 	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		const isInstance = hasAttribute(objectData, 'instanceOf')
         const inheritedData = isInstance
-            ? getValue(state, 'instanceOf', objectData, oldContext) //old context here because createParentContext pops off stack ---is this in need of deeper refactoring?
+            ? getValue(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack ---is this in need of deeper refactoring?
             : objectFromName(state, 'object')
         def = getAttr(inheritedData, prop)
 	}
@@ -215,8 +229,8 @@ export const getValue = (state, prop, objectData, oldContext) => {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return objectLib.undef
-    } else if (def.instanceOf === 'get' && true){ //directly evaluate get instead of leaving it as a free variable
-        const referenceNode = evaluateReference(state, def, context)
+    } else if (def.instanceOf === 'get' && getFirst){ //directly evaluate get instead of leaving it as a free variable
+        const referenceNode = evaluateReference(state, def, context).value
         return referenceNode
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
         return compile(state, valueData, objectData, context)
@@ -229,7 +243,7 @@ const checkObjectData = (objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
     } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
-        console.log(objectData)
+        console.log(JSON.stringify(objectData, null, 2), getAttr(objectData, 'hash'))
         throw new Error("hashes not equal")
 	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
         throw 'string hash'
@@ -249,11 +263,10 @@ export const getJSValue = (state, prop, objectData, context) => {
     }
     context = context || []
     const newContext = createParentContext(context, objectData, prop)
-	const valueData = getValue(state, prop, objectData, context)
+	const valueData = getValue(state, prop, objectData, newContext)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
-
         //const newContext = createParentContext(context, objectData, INTERMEDIATE_REP)
         //console.log(newContext, context, objectData, prop)
 		const primitive = getValue(state , INTERMEDIATE_REP, valueData, newContext)

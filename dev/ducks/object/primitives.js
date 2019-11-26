@@ -207,6 +207,7 @@ const contains = (state, objectData) => { //eventually switch to set
 }
 
 const get = (state, objectData, valueData, context) => {
+
     const root = getValue(state, "rootObject", objectData, context)
     const rootObject = getJSValue(state, "rootObject", objectData)
     if (rootObject.type !== 'get' && rootObject.type !== 'search'){ //for new root objects --as opposed to searches

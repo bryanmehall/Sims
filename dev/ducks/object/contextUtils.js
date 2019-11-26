@@ -1,6 +1,6 @@
-import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute } from './objectUtils'
+import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash } from './objectUtils'
 
-export const createParentContext = (context, objectData, forwardAttr) => { //make this accept and return context
+export const createParentContext = (context, objectData, forwardAttr) => {
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
@@ -10,19 +10,22 @@ export const createParentContext = (context, objectData, forwardAttr) => { //mak
     const isInverse = !hasAttribute(objectData, forwardAttr) && context.length > 0 && context[0].attr === forwardAttr
     if (!isInverse){
         //append to context
+		const hash =  getHash(objectData)
         const contextElement = {
-            debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${getAttr(objectData, 'hash')}`,
+            debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${hash}`,
             attr: "parentValue",
-            value: getAttr(objectData, 'hash'),
+            value: hash,
             source: "sourceHash" //remove for debug
         }
         return [contextElement, ...context]
     } else {
-        console.warn(context, objectData, forwardAttr)
+        return context.slice(1)
 
     }
 }
-export const getParent = (state, context) => (state[context[0].value])
+export const getParent = (state, context) => {
+	return objectFromHash(state, context[0].value)
+}
 
 export const addContextToGetStack = (state, context, attr, currentObject, sourceHash) => {
     const hash = getAttr(currentObject, 'hash')

@@ -7,13 +7,14 @@ window = new group
         innerText:new get
             lynxIR:{get}
             attribute:equalTo
+            instanceOf:get
             rootObject: new object
                 name:"apply"
                 equalTo:apply.function.result
                 function: new funct
                     name:"factorial"
                     op1:"failedtst"
-                    result:factorial.caller.op1
+                    result:factorial.parentValue.op1
                 op1:"test"
 
 equalTo = new attribute
