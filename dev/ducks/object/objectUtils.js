@@ -2,7 +2,7 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
-import { addContextToArgs, createParentContext, getParent } from './contextUtils'
+import { addContextToArgs, createParentContext, getParent, isInverseAttr } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
 const filterNames = (state, name) => {
@@ -173,15 +173,20 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
 	const rootType = getPrimitiveType(rootObject)
 	const attribute = getAttr(getObject, 'attribute')
 	//root is a structure containing the value and the context
-	const root = rootType === 'search' ? evaluateSearch(state, getObject, context):
-	             rootType  === 'get' ? evaluateReference(state, rootObject, context):
-				 { context, value: rootObject }
+    let root
+    if (rootType === 'search'){
+        root = evaluateSearch(state, getObject, context)
+    } else if (rootType  === 'get'){
+        root = evaluateReference(state, rootObject, context)
+    } else {
+        root = { context, value: rootObject }
+    }
     const rootValue = root.value
-    const isInverse = !hasAttribute(rootValue, attribute) && context.length > 0 && context[0].attr === attribute
+    const isInverse = isInverseAttr(rootValue, attribute, context)//!hasAttribute(rootValue, attribute) && context.length > 0 && context[0].attr === attribute
     if (isInverse){
         return { context: context.slice(1), value: getParent(state, context.slice(1)) }
     } else {
-		context = createParentContext(root.context, rootValue, attribute)
+		context = createParentContext(state, root.context, rootValue, attribute)
         const result = getValue(state, attribute, rootValue, context)
         delete result.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = { ...result, definition: getObject }
@@ -255,6 +260,7 @@ export const resetMemo = () => {
     memoTable = {}
 }
 export const getJSValue = (state, prop, objectData, context) => {
+    
     const hash = getAttr(objectData, 'hash') || getHash(objectData)
     objectData.hash = hash
     const key = prop + hash
@@ -262,14 +268,14 @@ export const getJSValue = (state, prop, objectData, context) => {
         return memoTable[key]
     }
     context = context || []
-    const newContext = createParentContext(context, objectData, prop)
+    const newContext = createParentContext(state, context, objectData, prop)
 	const valueData = getValue(state, prop, objectData, newContext)
 	if (isUndefined(valueData)){
 		return undefined
 	} else {
         //const newContext = createParentContext(context, objectData, INTERMEDIATE_REP)
         //console.log(newContext, context, objectData, prop)
-		const primitive = getValue(state , INTERMEDIATE_REP, valueData, newContext)
+		const primitive = getValue(state, INTERMEDIATE_REP, valueData, newContext)
         if (isUndefined(primitive)){
             return primitive //switch to array for child elements so none are undefined
         } else {
