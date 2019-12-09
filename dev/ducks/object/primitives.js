@@ -442,7 +442,7 @@ const group = (state, objectData, valueData, context) => {
 const app = (state, objectData) => {
     const paramNames = ["graphicalRepresentation"]
     const parameters = paramNames.map((paramName) => (
-        getJSValue(state, paramName, objectData, [])
+        getJSValue(state, paramName, objectData, [[]])
     ))
     const { varDefs, args } = getArgsAndVarDefs(state, parameters, objectData, paramNames)
     return {

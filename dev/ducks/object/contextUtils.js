@@ -4,10 +4,7 @@ export const createParentContext = (state, context, objectData, forwardAttr) => 
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
-    /*if (context.length> 0){
-        console.log(!hasAttribute(objectData, forwardAttr), context[0].attr, forwardAttr)
-    }*/
-    const isInverse = isInverseAttr(objectData, forwardAttr, context)//!hasAttribute(objectData, forwardAttr) && context.length > 0 && context[1].attr === forwardAttr
+    const isInverse = isInverseAttr(objectData, forwardAttr, context)
     if (!isInverse){
         //append to context
 		const hash =  getHash(objectData)
@@ -20,25 +17,28 @@ export const createParentContext = (state, context, objectData, forwardAttr) => 
             value: hash,
             source: "sourceHash" //remove for debug
         }
-        return [contextElement, ...context]
+        console.log( context)
+        
+        return [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     } else {
         return popInverseFromContext(context)
     }
 }
 export const getParent = (state, context) => {
-	return objectFromHash(state, context[0].value)
+    console.log(context)
+	return objectFromHash(state, context[0][0].value)
 }
 
 export const isInverseAttr = (objectData, attr, context) => {
-    return !hasAttribute(objectData, attr) && context.length > 1 && context[1].attr === attr //check why this is [1] not [0] ...not yet popped?
+    return !hasAttribute(objectData, attr) && context[0].length > 1 && context[0][1].attr === attr //check why this is [1] not [0] ...not yet popped?
 }
 
 export const popSearchFromContext = (context) => (
-    context.slice(1)
+    [context[0].slice(1)]
 )
 
 export const popInverseFromContext = (context) => (
-    context.slice(1)
+    [context[0].slice(1)]
 )
 
 

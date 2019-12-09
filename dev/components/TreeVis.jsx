@@ -143,7 +143,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
             !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep'].includes(entry[0])
         ))
         .map((entry) => {
-            const context = first.context || []
+            const context = first.context || [[]]
             const attr = entry[0]
             const newContext = createParentContext(objectTable, context, first.object, attr)
             const object = getValue(objectTable, attr, first.object, newContext)

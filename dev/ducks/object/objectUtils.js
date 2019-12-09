@@ -2,7 +2,7 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
-import { addContextToArgs, createParentContext, getParent, isInverseAttr } from './contextUtils'
+import { addContextToArgs, createParentContext, getParent, isInverseAttr, popSearchFromContext, popInverseFromContext } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
 const filterNames = (state, name) => {
@@ -151,15 +151,16 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
     if (context === undefined){
         throw new Error('context undefined')
-    } else if (context.length === 0){
+    } else if (context[0].length === 0){
         throw new Error(`unable to find object named ${query}`)
     }
     const value = getParent(state, context)
     const name = getNameFromAttr(value)
+    const newContext = popSearchFromContext(context)
     if (name === query){
-        return {context: context.slice(1), value}
+        return {context: newContext, value}
     } else {
-        return evaluateSearch(state, def, context.slice(1))
+        return evaluateSearch(state, def, newContext)
     }
 }
 export const addObjectToTable = (table, objectData) => {
@@ -176,15 +177,17 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     let root
     if (rootType === 'search'){
         root = evaluateSearch(state, getObject, context)
+        //add new context path here
     } else if (rootType  === 'get'){
         root = evaluateReference(state, rootObject, context)
     } else {
         root = { context, value: rootObject }
     }
     const rootValue = root.value
-    const isInverse = isInverseAttr(rootValue, attribute, context)//!hasAttribute(rootValue, attribute) && context.length > 0 && context[0].attr === attribute
+    const isInverse = isInverseAttr(rootValue, attribute, context)
     if (isInverse){
-        return { context: context.slice(1), value: getParent(state, context.slice(1)) }
+        const newContext = popInverseFromContext(context)
+        return { context: newContext , value: getParent(state, newContext) }
     } else {
 		context = createParentContext(state, root.context, rootValue, attribute)
         const result = getValue(state, attribute, rootValue, context)
@@ -267,7 +270,7 @@ export const getJSValue = (state, prop, objectData, context) => {
     if (memoTable.hasOwnProperty(key) && hash !== undefined){
         return memoTable[key]
     }
-    context = context || []
+    context = context || [[]]
     const newContext = createParentContext(state, context, objectData, prop)
 	const valueData = getValue(state, prop, objectData, newContext)
 	if (isUndefined(valueData)){
