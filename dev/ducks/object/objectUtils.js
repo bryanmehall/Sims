@@ -2,7 +2,15 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { objectLib } from './objectLib'
 import { primitives } from './primitives'
 import { deleteKeys, isUndefined } from './utils'
-import { addContextToArgs, createParentContext, getParent, isInverseAttr, popSearchFromContext, popInverseFromContext } from './contextUtils'
+import { 
+    addContextToArgs, 
+    createParentContext, 
+    getParent, 
+    isInverseAttr, 
+    popSearchFromContext, 
+    popInverseFromContext, 
+    addContextPath 
+} from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
 const filterNames = (state, name) => {
@@ -116,7 +124,7 @@ export const getHash = (objectData) => { //this should check that all children a
     if (typeof objectData === "string"){
         return "$hash_string_"+ murmurhash.v3(objectData)
     }
-    const exemptProps = ["hash", "parentValue"] //definition should not be an exempt prop---this is just to get around the hashes not equal error temporarily
+    const exemptProps = ["hash", "parentValue"]
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
     //console.log(expandedHashData)
@@ -147,7 +155,6 @@ const compile = (state, valueData, objectData, context) => { //move to primitive
 }
 
 const evaluateSearch = (state, def, context) => { //evaluate search component of reference
-
     const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
     if (context === undefined){
         throw new Error('context undefined')
@@ -156,16 +163,18 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     }
     const value = getParent(state, context)
     const name = getNameFromAttr(value)
-    const newContext = popSearchFromContext(context)
+    const newContext = popSearchFromContext(context, query)
     if (name === query){
-        return {context: newContext, value}
+        return {context: context, value}
     } else {
         return evaluateSearch(state, def, newContext)
     }
 }
+
 export const addObjectToTable = (table, objectData) => {
     table[getHash(objectData)] = objectData
 }
+
 const evaluateReference = (state, getObject, context) => { //evaluate whole reference object
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
@@ -173,11 +182,10 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     const rootObject = getAttr(getObject, 'rootObject')
 	const rootType = getPrimitiveType(rootObject)
 	const attribute = getAttr(getObject, 'attribute')
-	//root is a structure containing the value and the context
-    let root
+    let root  //root is a structure containing the value and the context
     if (rootType === 'search'){
-        root = evaluateSearch(state, getObject, context)
-        //add new context path here
+        const newContext = addContextPath(context)
+        root = evaluateSearch(state, getObject, newContext)
     } else if (rootType  === 'get'){
         root = evaluateReference(state, rootObject, context)
     } else {
@@ -186,7 +194,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, context)
     if (isInverse){
-        const newContext = popInverseFromContext(context)
+        const newContext = popInverseFromContext(root.context, attribute) //should this be root.context? 
         return { context: newContext , value: getParent(state, newContext) }
     } else {
 		context = createParentContext(state, root.context, rootValue, attribute)

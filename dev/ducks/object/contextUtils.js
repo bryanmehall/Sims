@@ -1,45 +1,55 @@
 import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash, getValue, objectFromName } from './objectUtils'
+const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttr) => {
+export const createParentContext = (state, context, objectData, forwardAttr) => { //rename to addContextElement
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
     const isInverse = isInverseAttr(objectData, forwardAttr, context)
-    if (!isInverse){
-        //append to context
-		const hash =  getHash(objectData)
-        const attrData = objectFromName(state, forwardAttr)
-        const inverseAttrObject = getValue(state, 'inverseAttribute', attrData, context)
-        const inverseAttr = getNameFromAttr(inverseAttrObject)
+    const attrData = objectFromName(state, forwardAttr)
+    const inverseAttrObject = getValue(state, 'inverseAttribute', attrData, context)
+    const inverseAttr = getNameFromAttr(inverseAttrObject)
+    if (isInverse){
+        return popInverseFromContext(context, inverseAttr)
+    } else {
+        const hash =  getHash(objectData)
         const contextElement = {
             debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
             attr: inverseAttr,
             value: hash,
             source: "sourceHash" //remove for debug
         }
-        console.log( context)
-        
-        return [[contextElement, ...context[0]], ...(context.slice(1) || [])]
-    } else {
-        return popInverseFromContext(context)
+        const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
+        if(traceContext){console.log("adding context element", forwardAttr, newContext)}
+        return newContext
     }
 }
 export const getParent = (state, context) => {
-    console.log(context)
 	return objectFromHash(state, context[0][0].value)
 }
 
 export const isInverseAttr = (objectData, attr, context) => {
+    //check the end of all other context paths
     return !hasAttribute(objectData, attr) && context[0].length > 1 && context[0][1].attr === attr //check why this is [1] not [0] ...not yet popped?
 }
 
-export const popSearchFromContext = (context) => (
-    [context[0].slice(1)]
-)
+export const popSearchFromContext = (context, query) => {
+    const newContext = [context[0].slice(1), ...context.slice(1)]
+    if (traceContext){ console.log('popping search', query, newContext) }
+    return newContext
+}
 
-export const popInverseFromContext = (context) => (
-    [context[0].slice(1)]
-)
+export const popInverseFromContext = (context, attribute) => {
+    const newContext = [context[0].slice(1), ...context.slice(1)]
+    if (traceContext){ console.log('popping inverse', attribute, newContext) }
+    return newContext
+}
+
+export const addContextPath = (context) => {
+    const newContext = [context[0], context[0], ...context.slice(1)]
+    if (traceContext){ console.log('adding contextPath', newContext) }
+    return newContext
+}
 
 
 
