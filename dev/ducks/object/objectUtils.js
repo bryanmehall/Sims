@@ -9,7 +9,8 @@ import {
     isInverseAttr, 
     popSearchFromContext, 
     popInverseFromContext, 
-    addContextPath 
+    addContextPath,
+	getInverseParent
 } from './contextUtils'
 import { INTERMEDIATE_REP } from './constants'
 
@@ -139,10 +140,10 @@ export const getHash = (objectData) => { //this should check that all children a
 	return digest
 }
 
-const returnWithHash = (attr, attrData, valueData) => {
+const addHashToObject = (attr, attrData, valueData) => {
     //adds hash
     const hash = getHash(valueData)
-    const newProps = Object.assign({}, valueData, { hash }) //only calculate hash in first state transform
+    const newProps = Object.assign({}, valueData, { hash })
     return newProps
 }
 
@@ -165,7 +166,7 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     const name = getNameFromAttr(value)
     const newContext = popSearchFromContext(context, query)
     if (name === query){
-        return {context: context, value}
+        return {context: newContext, value}
     } else {
         return evaluateSearch(state, def, newContext)
     }
@@ -192,10 +193,13 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         root = { context, value: rootObject }
     }
     const rootValue = root.value
-    const isInverse = isInverseAttr(rootValue, attribute, context)
+    const isInverse = isInverseAttr(rootValue, attribute, root.context)
     if (isInverse){
+		
         const newContext = popInverseFromContext(root.context, attribute) //should this be root.context? 
-        return { context: newContext , value: getParent(state, newContext) }
+		const value = getInverseParent(state, root.context, attribute)
+		//console.warn(value)
+        return { context: newContext , value: value }
     } else {
 		context = createParentContext(state, root.context, rootValue, attribute)
         const result = getValue(state, attribute, rootValue, context)
@@ -205,8 +209,10 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         return { context, value: resultWithDefinition }
     }
 }
-
-export const getValue = (state, prop, objectData, context, getFirst) => { //getFirst is a bool for directly evaluating get nodes
+export const getValue = (state, prop, objectData, context, getFirst) => {
+	return getValueAndContext(state, prop, objectData, context, getFirst).value
+}
+export const getValueAndContext = (state, prop, objectData, context, getFirst) => { //getFirst is a bool for directly evaluating get nodes
     getFirst = getFirst === undefined ? true : getFirst
     checkObjectData(objectData)
 	let def = getAttr(objectData, prop)
@@ -220,6 +226,8 @@ export const getValue = (state, prop, objectData, context, getFirst) => { //getF
         const inheritedData = isInstance
             ? getValue(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack ---is this in need of deeper refactoring?
             : objectFromName(state, 'object')
+		
+		//add group to context here
         def = getAttr(inheritedData, prop)
 	}
 	const valueData = typeof def === 'string' ? objectFromName(state, def) : def
@@ -228,7 +236,7 @@ export const getValue = (state, prop, objectData, context, getFirst) => { //getF
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
-			return returnWithHash(prop, attrData, valueData)
+			return { context: [], value: addHashToObject(prop, attrData, valueData) }
 		} else {
 			let attrs = Object.keys(objectData)
 			attrs.unshift('prevVal')
@@ -239,19 +247,19 @@ export const getValue = (state, prop, objectData, context, getFirst) => { //getF
                  }))
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
             console.log(attrSet)
-			return returnWithHash(prop,attrData, attrSet)
+			return { context, value: addHashToObject(prop,attrData, attrSet) }
 		}
 	} else if (def === undefined) {
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
-		return objectLib.undef
-    } else if (def.instanceOf === 'get' && getFirst){ //directly evaluate get instead of leaving it as a free variable
-        const referenceNode = evaluateReference(state, def, context).value
+		return { context, value: objectLib.undef }
+    } else if (def.instanceOf === 'get' && getFirst){ //directly evaluate get instead of leaving reference as argument
+        const referenceNode = evaluateReference(state, def, context)
         return referenceNode
 	} else if (prop === INTERMEDIATE_REP) { // primitive objects
-        return compile(state, valueData, objectData, context)
+        return { context, value: compile(state, valueData, objectData, context) }
 	} else {
-        return returnWithHash(prop, attrData, valueData)
+        return { context, value:addHashToObject(prop, attrData, valueData) }
 	}
 }
 
@@ -279,8 +287,11 @@ export const getJSValue = (state, prop, objectData, context) => {
         return memoTable[key]
     }
     context = context || [[]]
-    const newContext = createParentContext(state, context, objectData, prop)
-	const valueData = getValue(state, prop, objectData, newContext)
+    let newContext = createParentContext(state, context, objectData, prop)
+	
+	const valueAndContext = getValueAndContext(state, prop, objectData, newContext)
+	const valueData = valueAndContext.value
+	newContext = valueAndContext.context
 	if (isUndefined(valueData)){
 		return undefined
 	} else {

@@ -46,7 +46,7 @@ app = new object
         lynxIR:{input}
     definition:parse(app.lynxText, "app")
     jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
-    canvasRep:call(app.jsModule)
+    canvasRep:"a"+"b"
     mouse: new object
         down: new input
             name:"mouseDown"
@@ -101,6 +101,7 @@ string = new object
 group = new object
     name:"group"
     lynxIR:{group}
+    canvasRep:group.childElements
 
 childElement1 = new attribute
     name:"childElement1"

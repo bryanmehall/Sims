@@ -72,7 +72,7 @@ class TreeVis extends React.Component {
         getPath(nodes, this.props.activeNode.object.hash)
         const setActive = (node, index) => {
             const definitionIsGet = node.object.definition.hasOwnProperty("lynxIR") && node.object.definition.lynxIR.type === 'get'
-            const defNode = getValue(this.props.objectTable, "definition", node.object, node.context, definitionIsGet)
+            const defNode = getValue(this.props.objectTable, "definition", node.object, node.context, false)
             console.log(defNode, node.object)
             const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }])
 

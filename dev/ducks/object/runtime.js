@@ -107,11 +107,12 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        //const appObject = this.parse(this.lynxText, 'app')
+        const appObject = this.parse(this.lynxText, 'window')
+        //console.log(getValue(this.hashTable, "canvasRep", appObject ))
         //console.log(getJSValue(this.hashTable, "canvasRep", appObject, []))
 
-        const appData = this.parse(this.lynxText, 'appRoot')
-        const appGenIR = this.compile(appData)
+        const getAppJSObject = this.parse(this.lynxText, 'appRoot')
+        const appGenIR = this.compile(getAppJSObject)
         this.appIRGen = this.assemble(appGenIR)
 
         this.initApp(lynxText)
