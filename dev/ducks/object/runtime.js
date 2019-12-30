@@ -1,5 +1,7 @@
 import { assemble, flattenState, getHashesFromTree } from './assembler'
-import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue } from './objectUtils'
+import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue, getValueAndContext } from './objectUtils'
+import { createParentContext } from './contextUtils'
+
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
 import { limiter, resetLimiter, isUndefined } from './utils'
@@ -107,21 +109,23 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        const appObject = this.parse(this.lynxText, 'window')
-        //console.log(getValue(this.hashTable, "canvasRep", appObject ))
-        //console.log(getJSValue(this.hashTable, "canvasRep", appObject, []))
+        const windowObject = this.parse(this.lynxText, 'window')
+        const windowContext = createParentContext(this.hashTable, [[]], windowObject, "canvasRep")
+        const {value, context} = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
+        const canvasString = getValueAndContext(this.hashTable, "jsRep", value, context).value.value
+        const renderFunction = new Function('ctx', canvasString)
+        
+        //const getAppJSObject = this.parse(this.lynxText, 'appRoot')
+        //const appGenIR = this.compile(getAppJSObject)
+        //this.appIRGen = this.assemble(appGenIR)
 
-        const getAppJSObject = this.parse(this.lynxText, 'appRoot')
-        const appGenIR = this.compile(getAppJSObject)
-        this.appIRGen = this.assemble(appGenIR)
-
-        this.initApp(lynxText)
+        //this.initApp(lynxText)
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
         canvas.width = width
         canvas.height = height
         const ctx = canvas.getContext('2d')
-
+        renderFunction(ctx)
         this.hooks = {
             render: (renderer) => {
                 renderFunctions.clear()
@@ -206,6 +210,7 @@ export class Runtime {
     initApp(){
         const runtime = this
         const appModule = this.run(this.appIRGen)
+        console.log(this.appIRGen, appModule)
         Object.assign(this.functionTable, appModule.functionTable)
 
         this.outputs = appModule.outputs

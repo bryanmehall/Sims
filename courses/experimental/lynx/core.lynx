@@ -101,7 +101,7 @@ string = new object
 group = new object
     name:"group"
     lynxIR:{group}
-    canvasRep:group.childElements
+    canvasRep:group.childElement1.canvasRep
 
 childElement1 = new attribute
     name:"childElement1"
@@ -176,6 +176,8 @@ attributes = new attribute
 
 lynxIR = new attribute
     name:"lynxIR"
+jsRep = new attribute
+    name:"jsRep"
 parse = new func
     name:"parse"
     lynxIR:{parse}
@@ -253,6 +255,7 @@ text = new object
     b:0
     x:text.pos.x
     y:text.pos.y
+    canvasRep:"ctx.fillText('"+text.innerText+"', "+text.x+", "+text.y+")"
     pos: new coordinatePosition
         x:app.mouse.pos.x
         y:app.mouse.pos.y
@@ -377,6 +380,11 @@ index = new func
 
 apply = new object
     name:"apply"
+    result:new object
+        name: "result1"
+        jsRep:{addition}
+        op1:apply.op1.jsRep //have this ref hard coded? 
+        op2:apply.op2.jsRep
     lynxIR:{apply}
 
 op1 = new attribute

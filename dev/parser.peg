@@ -15,6 +15,7 @@ var symbolTable = {
 
 function createString(str){
 	return {
+        jsRep:str,
         lynxIR:{type:"string", value:str}
 	}
 }
@@ -30,17 +31,19 @@ function createDef(str){
 }
 
 function createNOp(args, op, defaultState){
-    const prim = {
+    const applyObject = {
         lynxIR:{type:"apply"},
-        function:op
+        function:op,
+        instanceOf:"apply"
+        //result:"$applyPrimitive$"
     }
     if (typeof defaultState !== 'undefined' && defaultState !== ""){
-        prim.defaultState = defaultState
+        applyObject.defaultState = defaultState
     }
     args.forEach((arg, i) => {
-        prim["op"+(i+1)] = arg
+        applyObject["op"+(i+1)] = arg
     })
-    return prim
+    return createReferenceNode(applyObject, "result")
 }
 
 function createFunction(name){
@@ -72,6 +75,17 @@ function buildPath(rootObject, attr, str){
     }
     return getData
 }
+
+function createReferenceNode(rootObject, attribute) {
+    var getData = {
+        lynxIR:{type:"get"},
+        instanceOf:"get",
+        rootObject: rootObject,
+        attribute:attribute
+    }
+    return getData
+}
+
 }
 start
   = Module
@@ -198,6 +212,7 @@ Number
 	= value:(Float / Int) {
         return {
             lynxIR:{type:"number", value: value},
+            jsRep:value,
             definition: createDef(value.toString())
         }
     }
@@ -213,7 +228,7 @@ Float "number"
     }
 
 String "string"
-     = '"'characters:[.a-zA-Z0-9\\]*'"' {
+     = '"'characters:[^\0-\x1F\x22\x5C]*'"' {
          var value = characters.join("")
          return Object.assign(createString(value), {definition: createDef(value)})
      }

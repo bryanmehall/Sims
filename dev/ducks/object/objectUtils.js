@@ -154,7 +154,15 @@ const compile = (state, valueData, objectData, context) => { //move to primitive
         throw new Error(`LynxError:unknown type. definition: ${JSON.stringify(valueData)}`)
     }
 }
-
+const getInheritedName = (state, value, context) => {
+    const isNotInherited = hasAttribute(value, context[0][0].forwardAttr)//break into function
+    if (isNotInherited){
+        return getName(state, value)
+    } else {
+         const parentTypeObject = getValue(state, 'instanceOf', value, context)
+         return getInheritedName(state, parentTypeObject, context)
+    }  
+}
 const evaluateSearch = (state, def, context) => { //evaluate search component of reference
     const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
     if (context === undefined){
@@ -163,7 +171,7 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
         throw new Error(`unable to find object named ${query}`)
     }
     const value = getParent(state, context)
-    const name = getNameFromAttr(value)
+    const name = getInheritedName(state, value, context)
     const newContext = popSearchFromContext(context, query)
     if (name === query){
         return {context: newContext, value}
@@ -194,19 +202,19 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     }
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
-    if (isInverse){
-		
-        const newContext = popInverseFromContext(root.context, attribute) //should this be root.context? 
+    if (isInverse){ //is this check duplicated with the check in contextutils?
+        const newContext = popInverseFromContext(root.context, attribute)
 		const value = getInverseParent(state, root.context, attribute)
 		//console.warn(value)
         return { context: newContext , value: value }
     } else {
-		context = createParentContext(state, root.context, rootValue, attribute)
-        const result = getValue(state, attribute, rootValue, context)
+		context = createParentContext(state, root.context, rootValue, attribute) //refactor/rename this block
+        const result1 = getValueAndContext(state, attribute, rootValue, context)
+        const result = result1.value
         delete result.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = { ...result, definition: getObject }
         addObjectToTable(state, resultWithDefinition)
-        return { context, value: resultWithDefinition }
+        return { context:result1.context, value: resultWithDefinition }
     }
 }
 export const getValue = (state, prop, objectData, context, getFirst) => {
@@ -221,17 +229,23 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
         def = objectFromHash(state, def)
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
-	if (def === undefined && prop !== 'attributes'){ //refactor //shim for inherited values //remove with new inheritance pattern?
+    
+	if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		const isInstance = hasAttribute(objectData, 'instanceOf')
-        const inheritedData = isInstance
-            ? getValue(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack ---is this in need of deeper refactoring?
-            : objectFromName(state, 'object')
-		
+        let inheritedData
+        if (isInstance) {
+            const inherited = getValueAndContext(state, 'instanceOf', objectData, context)//old context here because createParentContext pops off stack
+            inheritedData = inherited.value
+            context = inherited.context
+        } else {
+            inheritedData = objectFromName(state, 'object')
+        }
 		//add group to context here
         def = getAttr(inheritedData, prop)
+        
 	}
-	const valueData = typeof def === 'string' ? objectFromName(state, def) : def
-	if (objectData === undefined) {
+	const valueData = typeof def === 'string' && prop !== "jsRep" ? objectFromName(state, def) : def //condition for jsRep that are strings
+	if (objectData === undefined) { 
 		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
 	} else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
@@ -256,13 +270,24 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
     } else if (def.instanceOf === 'get' && getFirst){ //directly evaluate get instead of leaving reference as argument
         const referenceNode = evaluateReference(state, def, context)
         return referenceNode
-	} else if (prop === INTERMEDIATE_REP) { // primitive objects
+	} else if (prop === "jsRep"){
+        const argsList = valueData.type === 'addition' ? ['op1', 'op2'] : []//generalize
+        const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
+        if (args.length === 0){ //if primitive needs to be cleaner
+            return {context, value:{ value: valueData}}
+        } else {
+            return {context, value:{value: primitiveOps[valueData.type].apply(null, args)}}
+        }
+         //get rid of definition for this so it can just be the value not an object? 
+    } else if (prop === INTERMEDIATE_REP) { // primitive objects
         return { context, value: compile(state, valueData, objectData, context) }
 	} else {
         return { context, value:addHashToObject(prop, attrData, valueData) }
 	}
 }
-
+const primitiveOps = {
+    addition:(op1, op2) => (op1+op2)
+}
 const checkObjectData = (objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
@@ -279,7 +304,6 @@ export const resetMemo = () => {
     memoTable = {}
 }
 export const getJSValue = (state, prop, objectData, context) => {
-    
     const hash = getAttr(objectData, 'hash') || getHash(objectData)
     objectData.hash = hash
     const key = prop + hash

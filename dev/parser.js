@@ -4,7 +4,7 @@ module.exports = (function(){
    *
    * http://pegjs.majda.cz/
    */
-
+  
   function quote(s) {
     /*
      * ECMA-262, 5th ed., 7.8.4: All characters may appear literally in a
@@ -27,7 +27,7 @@ module.exports = (function(){
       .replace(/[\x00-\x07\x0B\x0E-\x1F\x80-\uFFFF]/g, escape)
       + '"';
   }
-
+  
   var result = {
     /*
      * Parses the input with a generated parser. If the parsing is successfull,
@@ -75,7 +75,7 @@ module.exports = (function(){
         "Comment": parse_Comment,
         "BlockComment": parse_BlockComment
       };
-
+      
       if (startRule !== undefined) {
         if (parseFunctions[startRule] === undefined) {
           throw new Error("Invalid rule name: " + quote(startRule) + ".");
@@ -83,29 +83,29 @@ module.exports = (function(){
       } else {
         startRule = "Module";
       }
-
+      
       var pos = 0;
       var reportFailures = 0;
       var rightmostFailuresPos = 0;
       var rightmostFailuresExpected = [];
       var cache = {};
-
+      
       function padLeft(input, padding, length) {
         var result = input;
-
+        
         var padLength = length - input.length;
         for (var i = 0; i < padLength; i++) {
           result = padding + result;
         }
-
+        
         return result;
       }
-
+      
       function escape(ch) {
         var charCode = ch.charCodeAt(0);
         var escapeChar;
         var length;
-
+        
         if (charCode <= 0xFF) {
           escapeChar = 'x';
           length = 2;
@@ -113,23 +113,23 @@ module.exports = (function(){
           escapeChar = 'u';
           length = 4;
         }
-
+        
         return '\\' + escapeChar + padLeft(charCode.toString(16).toUpperCase(), '0', length);
       }
-
+      
       function matchFailed(failure) {
         if (pos < rightmostFailuresPos) {
           return;
         }
-
+        
         if (pos > rightmostFailuresPos) {
           rightmostFailuresPos = pos;
           rightmostFailuresExpected = [];
         }
-
+        
         rightmostFailuresExpected.push(failure);
       }
-
+      
       function parse_Module() {
         var cacheKey = "Module@" + pos;
         var cachedResult = cache[cacheKey];
@@ -137,10 +137,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1;
-
+        
         pos0 = pos;
         pos1 = pos;
         result1 = parse_Declaration();
@@ -228,7 +228,7 @@ module.exports = (function(){
                     var id = declaration[0].id
                 	objects[id] = object
                 })
-
+                
                 return objects
             })(pos0, result0);
         }
@@ -241,14 +241,14 @@ module.exports = (function(){
             result0 = parse_Expression();
           }
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Declaration() {
         var cacheKey = "Declaration@" + pos;
         var cachedResult = cache[cacheKey];
@@ -256,10 +256,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5;
         var pos0, pos1;
-
+        
         pos0 = pos;
         pos1 = pos;
         result0 = [];
@@ -337,14 +337,14 @@ module.exports = (function(){
         if (result0 === null) {
           result0 = parse_BlockComment();
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Object() {
         var cacheKey = "Object@" + pos;
         var cachedResult = cache[cacheKey];
@@ -352,10 +352,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -519,14 +519,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("object");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Attribute() {
         var cacheKey = "Attribute@" + pos;
         var cachedResult = cache[cacheKey];
@@ -534,10 +534,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5;
         var pos0, pos1;
-
+        
         pos0 = pos;
         pos1 = pos;
         result0 = parse_Name();
@@ -606,14 +606,14 @@ module.exports = (function(){
         if (result0 === null) {
           pos = pos0;
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Expression() {
         var cacheKey = "Expression@" + pos;
         var cachedResult = cache[cacheKey];
@@ -621,9 +621,9 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
-
+        
         reportFailures++;
         result0 = parse_Conditional();
         if (result0 === null) {
@@ -633,14 +633,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("expression");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_DefaultState() {
         var cacheKey = "DefaultState@" + pos;
         var cachedResult = cache[cacheKey];
@@ -648,10 +648,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -700,14 +700,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("defaultState");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Conditional() {
         var cacheKey = "Conditional@" + pos;
         var cachedResult = cache[cacheKey];
@@ -715,10 +715,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6, result7, result8;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -811,14 +811,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("conditional");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_MultilineConditional() {
         var cacheKey = "MultilineConditional@" + pos;
         var cachedResult = cache[cacheKey];
@@ -826,10 +826,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6, result7, result8;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -978,14 +978,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("multiline conditional");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_ConditionalCase() {
         var cacheKey = "ConditionalCase@" + pos;
         var cachedResult = cache[cacheKey];
@@ -993,10 +993,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6, result7, result8, result9, result10;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1125,14 +1125,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("conditional case");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Or() {
         var cacheKey = "Or@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1140,10 +1140,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1199,14 +1199,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("or");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_And() {
         var cacheKey = "And@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1214,10 +1214,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1273,14 +1273,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("and");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Equal() {
         var cacheKey = "Equal@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1288,10 +1288,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1369,14 +1369,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("equality");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Sum() {
         var cacheKey = "Sum@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1384,10 +1384,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1454,14 +1454,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("sum");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Product() {
         var cacheKey = "Product@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1469,10 +1469,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1539,14 +1539,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("product");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Not() {
         var cacheKey = "Not@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1554,10 +1554,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1595,14 +1595,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("not");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_ComputedMemberAccess() {
         var cacheKey = "ComputedMemberAccess@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1610,10 +1610,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1676,14 +1676,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("computed member access");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_GroupedExpression() {
         var cacheKey = "GroupedExpression@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1691,10 +1691,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1748,14 +1748,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("grouped expression");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Value() {
         var cacheKey = "Value@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1763,9 +1763,9 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
-
+        
         reportFailures++;
         result0 = parse_Primitive();
         if (result0 === null) {
@@ -1790,14 +1790,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("value");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Apply() {
         var cacheKey = "Apply@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1805,10 +1805,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -1931,14 +1931,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("function application");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Name() {
         var cacheKey = "Name@" + pos;
         var cachedResult = cache[cacheKey];
@@ -1946,10 +1946,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1;
         var pos0;
-
+        
         reportFailures++;
         pos0 = pos;
         if (/^[a-zA-Z0-9]/.test(input.charAt(pos))) {
@@ -1988,14 +1988,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("name");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_New() {
         var cacheKey = "New@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2003,10 +2003,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1;
-
+        
         pos0 = pos;
         pos1 = pos;
         if (input.substr(pos, 4) === "new ") {
@@ -2049,14 +2049,14 @@ module.exports = (function(){
         if (result0 === null) {
           pos = pos0;
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Search() {
         var cacheKey = "Search@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2064,10 +2064,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
         var pos0;
-
+        
         pos0 = pos;
         result0 = parse_Name();
         if (result0 !== null) {
@@ -2080,14 +2080,14 @@ module.exports = (function(){
         if (result0 === null) {
           pos = pos0;
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Get() {
         var cacheKey = "Get@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2095,10 +2095,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2179,14 +2179,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("get");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Number() {
         var cacheKey = "Number@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2194,10 +2194,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
         var pos0;
-
+        
         pos0 = pos;
         result0 = parse_Float();
         if (result0 === null) {
@@ -2207,6 +2207,7 @@ module.exports = (function(){
           result0 = (function(offset, value) {
                 return {
                     lynxIR:{type:"number", value: value},
+                    jsRep:value,
                     definition: createDef(value.toString())
                 }
             })(pos0, result0);
@@ -2214,14 +2215,14 @@ module.exports = (function(){
         if (result0 === null) {
           pos = pos0;
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Int() {
         var cacheKey = "Int@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2229,10 +2230,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2295,14 +2296,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("int");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Float() {
         var cacheKey = "Float@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2310,10 +2311,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2406,14 +2407,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("number");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_String() {
         var cacheKey = "String@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2421,10 +2422,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2439,24 +2440,24 @@ module.exports = (function(){
         }
         if (result0 !== null) {
           result1 = [];
-          if (/^[.a-zA-Z0-9\\]/.test(input.charAt(pos))) {
+          if (/^[^\0-\x1F"\\]/.test(input.charAt(pos))) {
             result2 = input.charAt(pos);
             pos++;
           } else {
             result2 = null;
             if (reportFailures === 0) {
-              matchFailed("[.a-zA-Z0-9\\\\]");
+              matchFailed("[^\\0-\\x1F\"\\\\]");
             }
           }
           while (result2 !== null) {
             result1.push(result2);
-            if (/^[.a-zA-Z0-9\\]/.test(input.charAt(pos))) {
+            if (/^[^\0-\x1F"\\]/.test(input.charAt(pos))) {
               result2 = input.charAt(pos);
               pos++;
             } else {
               result2 = null;
               if (reportFailures === 0) {
-                matchFailed("[.a-zA-Z0-9\\\\]");
+                matchFailed("[^\\0-\\x1F\"\\\\]");
               }
             }
           }
@@ -2497,14 +2498,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("string");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_ArrayElement() {
         var cacheKey = "ArrayElement@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2512,9 +2513,9 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
-
+        
         reportFailures++;
         result0 = parse_Object();
         if (result0 === null) {
@@ -2524,14 +2525,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("array element");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Array() {
         var cacheKey = "Array@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2539,9 +2540,9 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
-
+        
         reportFailures++;
         result0 = parse_SingleLineArray();
         if (result0 === null) {
@@ -2551,14 +2552,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("array");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_SingleLineArray() {
         var cacheKey = "SingleLineArray@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2566,10 +2567,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2697,14 +2698,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("single line array");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_MultilineArray() {
         var cacheKey = "MultilineArray@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2712,10 +2713,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6, result7;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -2956,14 +2957,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("multi line array");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Map() {
         var cacheKey = "Map@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2971,10 +2972,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3, result4, result5, result6, result7;
         var pos0;
-
+        
         reportFailures++;
         pos0 = pos;
         if (input.charCodeAt(pos) === 123) {
@@ -3054,14 +3055,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("map");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Bool() {
         var cacheKey = "Bool@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3069,10 +3070,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0;
         var pos0;
-
+        
         reportFailures++;
         pos0 = pos;
         if (input.substr(pos, 4) === "true") {
@@ -3110,14 +3111,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("bool");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Primitive() {
         var cacheKey = "Primitive@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3125,10 +3126,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0, pos1;
-
+        
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
@@ -3177,14 +3178,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("static primitive");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse__() {
         var cacheKey = "_@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3192,9 +3193,9 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1;
-
+        
         result0 = [];
         if (input.charCodeAt(pos) === 32) {
           result1 = " ";
@@ -3217,14 +3218,14 @@ module.exports = (function(){
             }
           }
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_Comment() {
         var cacheKey = "Comment@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3232,10 +3233,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2;
         var pos0;
-
+        
         reportFailures++;
         pos0 = pos;
         if (input.substr(pos, 2) === "//") {
@@ -3284,14 +3285,14 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("comment");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
+      
       function parse_BlockComment() {
         var cacheKey = "BlockComment@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3299,10 +3300,10 @@ module.exports = (function(){
           pos = cachedResult.nextPos;
           return cachedResult.result;
         }
-
+        
         var result0, result1, result2, result3;
         var pos0, pos1, pos2;
-
+        
         reportFailures++;
         pos0 = pos;
         if (input.substr(pos, 2) === "/*") {
@@ -3425,18 +3426,18 @@ module.exports = (function(){
         if (reportFailures === 0 && result0 === null) {
           matchFailed("block comment");
         }
-
+        
         cache[cacheKey] = {
           nextPos: pos,
           result:  result0
         };
         return result0;
       }
-
-
+      
+      
       function cleanupExpected(expected) {
         expected.sort();
-
+        
         var lastExpected = null;
         var cleanExpected = [];
         for (var i = 0; i < expected.length; i++) {
@@ -3447,7 +3448,7 @@ module.exports = (function(){
         }
         return cleanExpected;
       }
-
+      
       function computeErrorPosition() {
         /*
          * The first idea was to use |String.split| to break the input up to the
@@ -3455,11 +3456,11 @@ module.exports = (function(){
          * there. However IE's |split| implementation is so broken that it was
          * enough to prevent it.
          */
-
+        
         var line = 1;
         var column = 1;
         var seenCR = false;
-
+        
         for (var i = 0; i < Math.max(pos, rightmostFailuresPos); i++) {
           var ch = input.charAt(i);
           if (ch === "\n") {
@@ -3475,11 +3476,11 @@ module.exports = (function(){
             seenCR = false;
           }
         }
-
+        
         return { line: line, column: column };
       }
-
-
+      
+      
       //from dev folder run $pegjs --cache parser.peg
       //var flattenState = options.flattenState
       var symbolTable = {
@@ -3493,13 +3494,14 @@ module.exports = (function(){
           "&&":"and",
           "||":"or"
       }
-
+      
       function createString(str){
       	return {
+              jsRep:str,
               lynxIR:{type:"string", value:str}
       	}
       }
-
+      
       function textRep(obj) {
           return Object.entries(obj).reduce(function(textRep, entry){
               return `${textRep}\n\t${entry[0]}:20`
@@ -3509,21 +3511,23 @@ module.exports = (function(){
           var string = createString(str)
           return createNOp([string], "parse")
       }
-
+      
       function createNOp(args, op, defaultState){
-          const prim = {
+          const applyObject = {
               lynxIR:{type:"apply"},
-              function:op
+              function:op,
+              instanceOf:"apply"
+              //result:"$applyPrimitive$"
           }
           if (typeof defaultState !== 'undefined' && defaultState !== ""){
-              prim.defaultState = defaultState
+              applyObject.defaultState = defaultState
           }
           args.forEach((arg, i) => {
-              prim["op"+(i+1)] = arg
+              applyObject["op"+(i+1)] = arg
           })
-          return prim
+          return createReferenceNode(applyObject, "result")
       }
-
+      
       function createFunction(name){
       	return {
               	name:createString(name),
@@ -3553,10 +3557,21 @@ module.exports = (function(){
           }
           return getData
       }
-
-
+      
+      function createReferenceNode(rootObject, attribute) {
+          var getData = {
+              lynxIR:{type:"get"},
+              instanceOf:"get",
+              rootObject: rootObject,
+              attribute:attribute
+          }
+          return getData
+      }
+      
+      
+      
       var result = parseFunctions[startRule]();
-
+      
       /*
        * The parser is now in one of the following three states:
        *
@@ -3585,7 +3600,7 @@ module.exports = (function(){
         var offset = Math.max(pos, rightmostFailuresPos);
         var found = offset < input.length ? input.charAt(offset) : null;
         var errorPosition = computeErrorPosition();
-
+        
         throw new this.SyntaxError(
           cleanupExpected(rightmostFailuresExpected),
           found,
@@ -3594,20 +3609,20 @@ module.exports = (function(){
           errorPosition.column
         );
       }
-
+      
       return result;
     },
-
+    
     /* Returns the parser source code. */
     toSource: function() { return this._source; }
   };
-
+  
   /* Thrown when a parser encounters a syntax error. */
-
+  
   result.SyntaxError = function(expected, found, offset, line, column) {
     function buildMessage(expected, found) {
       var expectedHumanized, foundHumanized;
-
+      
       switch (expected.length) {
         case 0:
           expectedHumanized = "end of input";
@@ -3620,12 +3635,12 @@ module.exports = (function(){
             + " or "
             + expected[expected.length - 1];
       }
-
+      
       foundHumanized = found ? quote(found) : "end of input";
-
+      
       return "Expected " + expectedHumanized + " but " + foundHumanized + " found.";
     }
-
+    
     this.name = "SyntaxError";
     this.expected = expected;
     this.found = found;
@@ -3634,8 +3649,8 @@ module.exports = (function(){
     this.line = line;
     this.column = column;
   };
-
+  
   result.SyntaxError.prototype = Error.prototype;
-
+  
   return result;
 })();

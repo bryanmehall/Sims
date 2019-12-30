@@ -78,12 +78,12 @@ const primitive = (state, objectData, valueData) => ({
 })
 
 //data structures
-const array = (state, objectData, valueData) => {
+const array = (state, objectData, valueData, context) => {
     const elements = valueData.value
     const parameters = elements.map((elementData) => {
         const hash = getHash(elementData)
         const elementDataWithHash = { ...elementData, hash }
-        const elementPrim = getValue(state, INTERMEDIATE_REP, elementDataWithHash)
+        const elementPrim = getValue(state, INTERMEDIATE_REP, elementDataWithHash, context)
         return addContextToArgs(state, 'element', elementPrim, objectData)
 
     })
@@ -324,7 +324,7 @@ const evaluate = (state, lynxIR, context) => {
         return run
     }*/
 }
-const apply = (state, objectData, valueData, context) => { //todo: context here is just parent value --need to restructire to include all parent values
+const apply = (state, objectData, valueData, context, evaluateResult) => { //todo: context here is just parent value --need to restructire to include all parent values
     const paramNames = ['op1','function', 'op2', 'op3', 'op4']
     const parameters = paramNames.map((paramName) => (
             getJSValue(state, paramName, objectData, context)

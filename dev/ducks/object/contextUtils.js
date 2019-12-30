@@ -17,6 +17,7 @@ export const createParentContext = (state, context, objectData, forwardAttr) => 
         const hash =  getHash(objectData)
         const contextElement = {
             debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
+            forwardAttr: forwardAttr,
             attr: inverseAttr,
             value: hash,
             source: "sourceHash" //remove for debug
