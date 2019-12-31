@@ -14,7 +14,7 @@ window = new group
                 function: new funct
                     name:"factorial"
                     op1:"failedtst"
-                    result:factorial.parentValue.op1
+                    result:factorial.caller.op1
                 op1:"test"
 
 equalTo = new attribute

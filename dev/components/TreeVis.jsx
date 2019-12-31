@@ -16,7 +16,7 @@ class TreeVis extends React.Component {
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
                 .id((d, i, n) => {return d.object.hash})
-                .strength(0)
+                .strength(0.8)
                 )
             .force("forceY", d3.forceY()
                 .strength(3)
@@ -49,8 +49,8 @@ class TreeVis extends React.Component {
                 const x = parNode === undefined ? 0 : parNode.x
                 const diff = (x-currNode.x)
                 const acc = Math.sign(diff)*Math.min(1, Math.abs(diff))
-                parNode.vx -= acc*2
-                currNode.vx += acc
+                parNode.vx -= 0.1*acc
+                currNode.vx += 0.1*acc
             }
         }
 
@@ -120,7 +120,7 @@ class TreeVis extends React.Component {
 //sort nodes in bfs order to apply forces to them
 
 const contextToLinks = (context) => (
-    context.map((contextElem) => ({
+    context[0].map((contextElem) => ({
         source: contextElem.sourceHash,
         target: contextElem.value,
         attr: contextElem.attr,
@@ -145,9 +145,9 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
         .map((entry) => {
             const context = first.context || []
             const attr = entry[0]
-            const newContext = createParentContext(context, first.object, attr)
-            const object = getValue(objectTable, attr, first.object, newContext, true)
-            newContext[0].sourceHash = getHash(object) //add sourceHash for debug
+            const newContext = createParentContext(objectTable, context, first.object, attr)
+            const object = getValue(objectTable, attr, first.object, newContext, false)
+            newContext[0][0].sourceHash = getHash(object) //add sourceHash for debug
             return { object: object, context: newContext, attr, parId: first.object.hash, level: level+1 }
         })
 
@@ -228,7 +228,7 @@ const Node = (node) => {
     let label = ''
     if (isPrimitive) {
         const activeVarDefs = ast.varDefs.filter((varDef) => (varDef.key === activeHash))
-        const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
+        const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context[0].map((context) => (context.debug)).join(',')
         if (ast.hasOwnProperty('value')){
             if (Array.isArray(ast.value)){
                 label = <tspan>[array]{active ? displayArgs(ast) : null}</tspan>

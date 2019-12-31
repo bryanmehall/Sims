@@ -1,30 +1,39 @@
-import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash } from './objectUtils'
+import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash, objectFromName } from './objectUtils'
 
-export const createParentContext = (context, objectData, forwardAttr) => {
+export const createParentContext = (objectTable, context, objectData, forwardAttr) => {
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
-    /*if (context.length> 0){
-        console.log(!hasAttribute(objectData, forwardAttr), context[0].attr, forwardAttr)
-    }*/
-    const isInverse = !hasAttribute(objectData, forwardAttr) && context.length > 0 && context[0].attr === forwardAttr
-    if (!isInverse){
-        //append to context
-		const hash =  getHash(objectData)
-        const contextElement = {
-            debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${"parentValue"} = ${hash}`,
-            attr: "parentValue",
-            value: hash,
-            source: "sourceHash" //remove for debug
-        }
-        return [contextElement, ...context]
-    } else {
-        return context.slice(1)
-
+    const hash =  getHash(objectData)
+    const inverseAttr = getAttr(objectFromName(objectTable, forwardAttr), 'inverseAttribute') || "parentValue"
+    //const valueName = getName(objectTable, hash)
+    const contextElement = {
+        debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
+        attr: inverseAttr,
+        value: hash,
+        source: "sourceHash" //remove for debug
     }
+    
+    return [[contextElement, ...(context[0] || [])], ...context.slice(1)]
 }
+
+export const addContextPath = (context) => {
+    return [context[0], context[0], ...context.slice(1)] //duplicate first context path (this should have a better scheme to save memory instead of dupliating the whole stack)
+}
+export const popFromContext = (context) => {
+    return [context[0].slice(1), ...context.slice(1)] //remove one element from context[0]
+}
+
+export const popInverseFromContext = (context) => {
+    return [context[0].slice(1), ...context.slice(1)]
+}
+
+export const attributeIsInverse = (rootValue, attribute, context) => {
+    return !hasAttribute(rootValue, attribute) && context[0].length > 1 && context[0][1].attr === attribute;
+}
+
 export const getParent = (state, context) => {
-	return objectFromHash(state, context[0].value)
+	return objectFromHash(state, context[0][0].value)
 }
 
 export const addContextToGetStack = (state, context, attr, currentObject, sourceHash) => {
