@@ -1,4 +1,7 @@
 import { Runtime } from './ducks/object/runtime'
+import { createParentContext } from './ducks/object/contextUtils'
+import { getValueAndContext } from './ducks/object/objectUtils'
+
 import fs from 'fs'
 
 //create mock functions and canvas
@@ -21,10 +24,14 @@ const canvas = {
 const runTest = (done, lynxText) => {
     canvasResult = {}
     const runtime = new Runtime(lynxText, canvas, ()=>{})
-    if (canvasResult.text === "test" && canvasResult.x === 20 && canvasResult.y === 30){
+    const windowObject = runtime.parse(lynxText, 'window') //remove state side effect here
+    const windowContext = createParentContext(runtime.hashTable, [[]], windowObject, "canvasRep")
+    const {value, context} = getValueAndContext(runtime.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
+    const canvasString = getValueAndContext(runtime.hashTable, "jsRep", value, context).value.value
+    if (canvasString.includes("ctx.fillText('test', 20, 30)")){
         done()
     } else {
-        done.fail(`conditions not met ${JSON.stringify(canvasResult)}`)
+        done.fail(`conditions not met ${canvasString}`)
     }
 }
 

@@ -174,7 +174,7 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     const name = getInheritedName(state, value, context)
     const newContext = popSearchFromContext(context, query)
     if (name === query){
-        return {context: newContext, value}
+        return { context: newContext, value }
     } else {
         return evaluateSearch(state, def, newContext)
     }
@@ -195,7 +195,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     if (rootType === 'search'){
         const newContext = addContextPath(context)
         root = evaluateSearch(state, getObject, newContext)
-    } else if (rootType  === 'get'){
+    } else if (rootType === 'get'){
         root = evaluateReference(state, rootObject, context)
     } else {
         root = { context, value: rootObject }
@@ -229,12 +229,11 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
         def = objectFromHash(state, def)
     }
     const attrData = typeof prop === 'string' ? objectFromName(state, prop) : prop //pass prop data in
-    
 	if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
 		const isInstance = hasAttribute(objectData, 'instanceOf')
         let inheritedData
         if (isInstance) {
-            const inherited = getValueAndContext(state, 'instanceOf', objectData, context)//old context here because createParentContext pops off stack
+            const inherited = getValueAndContext(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack
             inheritedData = inherited.value
             context = inherited.context
         } else {
@@ -274,20 +273,28 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
         const argsList = valueData.type === 'addition' ? ['op1', 'op2'] : []//generalize
         const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
         if (args.length === 0){ //if primitive needs to be cleaner
-            return {context, value:{ value: valueData}}
+            return { context, value: { value: valueData } }
         } else {
-            return {context, value:{value: primitiveOps[valueData.type].apply(null, args)}}
+            return { context, value: { value: primitiveOps[valueData.type].apply(null, args) } }
         }
          //get rid of definition for this so it can just be the value not an object? 
     } else if (prop === INTERMEDIATE_REP) { // primitive objects
         return { context, value: compile(state, valueData, objectData, context) }
 	} else {
-        return { context, value:addHashToObject(prop, attrData, valueData) }
+        return { context, value: addHashToObject(prop, attrData, valueData) }
 	}
 }
 const primitiveOps = {
-    addition:(op1, op2) => (op1+op2)
+    addition: (op1, op2) => (op1 + op2),
+    subtraction: (op1, op2) => (op1 - op2),
+    multiplication: (op1, op2) => (op1 * op2),
+    division: (op1, op2) => (op1 / op2),
+    and: (op1, op2) => (op1 && op2),
+    or: (op1, op2) => (op1 || op2),
+    not: (op1) => (!op1),
+    conditional: (op1, op2, op3) => (op1 ? op2 : op3)
 }
+
 const checkObjectData = (objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')

@@ -10,5 +10,4 @@ window = new group
                 lynxIR:{get}
                 attribute:equalTo
                 rootObject:new object
-                    name:"apply"
                     equalTo:"test"

@@ -5,34 +5,29 @@ export const createParentContext = (state, context, objectData, forwardAttr) => 
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
-    const isInverse = isInverseAttr(objectData, forwardAttr, context)
     const attrData = objectFromName(state, forwardAttr)
     const inverseAttrObject = getValue(state, 'inverseAttribute', attrData, context)
     const inverseAttr = getNameFromAttr(inverseAttrObject)
-    if (isInverse){
-		console.warn('here', attrData, context, attrData)
-		throw new Error('get trace')
-        return popInverseFromContext(context, inverseAttr)
-    } else {
-        const hash =  getHash(objectData)
-        const contextElement = {
-            debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
-            forwardAttr: forwardAttr,
-            attr: inverseAttr,
-            value: hash,
-            source: "sourceHash" //remove for debug
-        }
-        const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
-        if(traceContext){
-			console.log("adding context element", forwardAttr, newContext)
-		}
-        return newContext
+    const hash =  getHash(objectData)
+    const contextElement = {
+        debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
+        forwardAttr: forwardAttr,
+        attr: inverseAttr,
+        value: hash,
+        source: "sourceHash" //remove for debug
     }
+    const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
+    if (traceContext){
+        console.log("adding context element", forwardAttr, newContext)
+    }
+    return newContext
 }
+
 export const getInverseParent = (state, context, attr) => {
 	const index = getInverseContextPathIndex(context, attr)
 	return objectFromHash(state, context[index][0].value)
 }
+
 export const getParent = (state, context) => {
 	return objectFromHash(state, context[0][0].value)
 }

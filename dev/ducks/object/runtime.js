@@ -1,5 +1,5 @@
 import { assemble, flattenState, getHashesFromTree } from './assembler'
-import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue, getValueAndContext } from './objectUtils'
+import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue, getValueAndContext, getObject } from './objectUtils'
 import { createParentContext } from './contextUtils'
 
 import { INPUT, INTERMEDIATE_REP } from './constants'
@@ -89,7 +89,6 @@ const addInputsToRuntime = (runtime, output) => {
 }
 
 
-
 export class Runtime {
     //all lynx state in handled by this runtime object
     constructor(lynxText, canvas, updateDebug) { //init state is the object table for now
@@ -109,7 +108,7 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        const windowObject = this.parse(this.lynxText, 'window')
+        const windowObject = this.parse(this.lynxText, 'window')//use generic lynx parse function---stte modification is handled in getValue
         const windowContext = createParentContext(this.hashTable, [[]], windowObject, "canvasRep")
         const {value, context} = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value, context).value.value

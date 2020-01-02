@@ -9,18 +9,13 @@ window = new group
             attribute:equalTo
             instanceOf:get
             rootObject: new object
-                name:"apply"
-                equalTo:apply.function.result
+                name:"apply1"
+                equalTo:apply1.function.result
                 function: new funct
                     name:"factorial"
                     op1:"failedtst"
-                    result:factorial.parentValue.op1
+                    result:factorial.caller.op1
                 op1:"test"
 
 equalTo = new attribute
     name:"equalTo"
-
-factorial = new funct
-    name:"factorial"
-    op1:4
-    result:factorial.caller.op1

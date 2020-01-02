@@ -6,9 +6,9 @@ window = new group
             lynxIR:{get}
             attribute: equalTo
             rootObject: new object
-                name:"apply"
+                name:"apply1"
                 x:10
-                equalTo:apply.op1
+                equalTo:apply1.op1
                 op1:txt.op1
         op1:20
         y:30
