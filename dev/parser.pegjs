@@ -1,5 +1,5 @@
 {
-//from dev folder run $pegjs --cache parser.peg
+//from dev folder run $pegjs --cache parser.pegjs
 //var flattenState = options.flattenState
 var symbolTable = {
     "+":"addition",

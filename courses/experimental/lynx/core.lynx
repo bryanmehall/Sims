@@ -385,7 +385,7 @@ apply = new object
     name:"apply"
     result:new object
         name: "result1"
-        jsRep:{addition}//apply.function.jsPrimitive //{addition}
+        jsRep:{addition} //apply.function.jsPrimitive //{addition}
         op1:apply.op1.jsRep //have this ref hard coded? 
         op2:apply.op2.jsRep
     lynxIR:{apply}

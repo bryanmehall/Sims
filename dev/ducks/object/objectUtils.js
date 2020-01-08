@@ -31,6 +31,7 @@ export const objectFromName = (state, name) => {
         throw new Error(`LynxError: object "${name}" not found, ${matches.length}`)
 
     } else if (matches.length > 1){
+        console.warn(matches)
         throw new Error(`LynxError: multiple objects named "${name}" found (${matches.length})`)
     }
     return matches[0]
@@ -128,15 +129,9 @@ export const getHash = (objectData) => { //this should check that all children a
     const exemptProps = ["hash", "parentValue"]
     const expandedHashData = deleteKeys(objectData, exemptProps)
     //convert remaining values to hashes
-    //console.log(expandedHashData)
     const hashData = Object.entries(expandedHashData).reduce(objectValuesToHash, {})
-    //console.log(objectData)
-
-    const name = getNameFromAttr(objectData)//hasAttribute(objectData, INTERMEDIATE_REP) ? getAttr(objectData, INTERMEDIATE_REP).type : ''
+    const name = getNameFromAttr(objectData)
     const digest = "$hash_"+name+'_'+ murmurhash.v3(JSON.stringify(hashData))
-    //if(objectData.id === 'app'){ //use for debugging
-        //console.log(digest, JSON.stringify(objectData, null, 2))
-    //}
 	return digest
 }
 
@@ -242,7 +237,7 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
 		//add group to context here
         def = getAttr(inheritedData, prop)
         
-	}
+    }
 	const valueData = typeof def === 'string' && prop !== "jsRep" ? objectFromName(state, def) : def //condition for jsRep that are strings
 	if (objectData === undefined) { 
 		throw new Error(`object data undefined for ${prop} ObjectData: ${objectData}`)
@@ -266,19 +261,22 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
 		//throw new Error(`def is undefined for ${prop} of ${name}`)
 		//console.warn(`def is undefined for ${prop} of ${name}`)
 		return { context, value: objectLib.undef }
+    } else if (prop === "jsRep"){
+        const jsRepValue = def.instanceOf === 'get' ? evaluateReference(state, def, context).value : valueData //if jsRep is a reference node --refactor? 
+        const argsList = jsRepValue.type === 'addition' ? ['op1', 'op2'] : []//generalize
+        console.log(argsList)
+        const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
+        console.log(jsRepValue)
+        if (args.length === 0){ //test for primitive needs to be cleaner
+            return { context, value: { value: jsRepValue } }
+        } else {
+            return { context, value: { value: primitiveOps[jsRepValue.type].apply(null, args) } }
+        }
+         //get rid of definition for this so it can just be the value not an object? 
     } else if (def.instanceOf === 'get' && getFirst){ //directly evaluate get instead of leaving reference as argument
         const referenceNode = evaluateReference(state, def, context)
         return referenceNode
-	} else if (prop === "jsRep"){
-        const argsList = valueData.type === 'addition' ? ['op1', 'op2'] : []//generalize
-        const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
-        if (args.length === 0){ //if primitive needs to be cleaner
-            return { context, value: { value: valueData } }
-        } else {
-            return { context, value: { value: primitiveOps[valueData.type].apply(null, args) } }
-        }
-         //get rid of definition for this so it can just be the value not an object? 
-    } else if (prop === INTERMEDIATE_REP) { // primitive objects
+	}  else if (prop === INTERMEDIATE_REP) { // primitive objects
         return { context, value: compile(state, valueData, objectData, context) }
 	} else {
         return { context, value: addHashToObject(prop, attrData, valueData) }
@@ -292,7 +290,10 @@ const primitiveOps = {
     and: (op1, op2) => (op1 && op2),
     or: (op1, op2) => (op1 || op2),
     not: (op1) => (!op1),
-    conditional: (op1, op2, op3) => (op1 ? op2 : op3)
+    conditional: (op1, op2, op3) => (op1 ? op2 : op3),
+    equalTo: (op1, op2) => (op1 === op2),
+    lessThan: (op1, op2) => (op1 < op2),
+    greaterThan: (op1, op2) => (op1 > op2)
 }
 
 const checkObjectData = (objectData) => {

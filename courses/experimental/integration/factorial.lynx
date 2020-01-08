@@ -10,9 +10,7 @@ window = new group
             rootObject: new object
                 name:"appl"
                 equalTo:appl.function.result
-                function: new dbSearch
-                    lynxIR:{dbSearch}
-                    query:"factorial"
+                function: factorial
                 op1:5
 
 dbSearch = new object
