@@ -1,11 +1,13 @@
 import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash, getValue, objectFromName } from './objectUtils'
 const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttr) => { //rename to addContextElement
+export const createParentContext = (state, context, objectData, forwardAttrHash) => { //rename to addContextElement
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
-    const attrData = objectFromName(state, forwardAttr)
+    const attrData = objectFromHash(state, forwardAttrHash)
+    const forwardAttr = getNameFromAttr(attrData)
+    
     const inverseAttrObject = getValue(state, 'inverseAttribute', attrData, context)
     const inverseAttr = getNameFromAttr(inverseAttrObject)
     const hash =  getHash(objectData)

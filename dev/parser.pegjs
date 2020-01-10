@@ -105,7 +105,12 @@ Module
     / Expression
 
 Declaration
-	= "\n"*id:Name _ "="_ object:Object { return { object: object, id: id } }
+	= "\n"*id:Name _ "="_ object:Object {
+        if (id === "object" ||id === "get" ){
+            return {object:{initialObjectType:id} , id:id}
+        }
+        return { object: object, id: id } 
+        }
     / BlockComment
 
 Object "object"
@@ -113,7 +118,7 @@ Object "object"
     	var props = {}
     	attributes.forEach(function(attr){props[attr[2].name] = attr[2].value})
         props.instanceOf = props.hasOwnProperty('instanceOf') ? props.instanceOf : value
-        props.definition = props.hasOwnProperty('definition') ? props.definition : createDef("new object"+textRep(props)+"\n")
+        //props.definition = props.hasOwnProperty('definition') ? props.definition : createDef("new object"+textRep(props)+"\n")
     	return props
     }
 
@@ -213,7 +218,7 @@ Number
         return {
             lynxIR:{type:"number", value: value},
             jsRep:value,
-            definition: createDef(value.toString())
+            //definition: createDef(value.toString())
         }
     }
     
@@ -230,7 +235,7 @@ Float "number"
 String "string"
      = '"'characters:[^\0-\x1F\x22\x5C]*'"' {
          var value = characters.join("")
-         return Object.assign(createString(value), {definition: createDef(value)})
+         return createString(value)//Object.assign(createString(value), {definition: createDef(value)})
      }
 
 ArrayElement "array element"
@@ -257,7 +262,7 @@ Bool "bool"
     = value:("true" / "false") {
     return {
         	lynxIR: {type:"bool", value:value==="true"},
-            definition: createDef(value)
+            //definition: createDef(value)
        }
     }
 Primitive "static primitive"

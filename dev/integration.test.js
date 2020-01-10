@@ -1,12 +1,19 @@
 import { Runtime } from './ducks/object/runtime'
 import { createParentContext } from './ducks/object/contextUtils'
-import { getValueAndContext } from './ducks/object/objectUtils'
+import { getValueAndContext, getHash, objectFromName } from './ducks/object/objectUtils'
 
 import fs from 'fs'
+import { object } from 'prop-types'
 
 //create mock functions and canvas
 console.group = function(){}
 console.groupEnd = function(){}
+Object.fromEntries = (iterable) => {
+    return [...iterable].reduce((obj, [key, val]) => {
+      obj[key] = val
+      return obj
+    }, {})
+  }
 let canvasResult = {}
 const canvas = {
     getBoundingClientRect: () => (
@@ -25,7 +32,8 @@ const runTest = (done, lynxText) => {
     canvasResult = {}
     const runtime = new Runtime(lynxText, canvas, ()=>{})
     const windowObject = runtime.parse(lynxText, 'window') //remove state side effect here
-    const windowContext = createParentContext(runtime.hashTable, [[]], windowObject, "canvasRep")
+    const canvasRepHash = getHash(objectFromName(runtime.hashTable, 'canvasRep'))
+    const windowContext = createParentContext(runtime.hashTable, [[]], windowObject, canvasRepHash)
     const {value, context} = getValueAndContext(runtime.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
     const canvasString = getValueAndContext(runtime.hashTable, "jsRep", value, context).value.value
     if (canvasString.includes("ctx.fillText('test', 20, 30)")){

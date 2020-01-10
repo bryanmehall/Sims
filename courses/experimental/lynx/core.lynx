@@ -4,7 +4,8 @@ object = new object
 
 attribute = new object
     name:"attribute"
-
+get = new object
+    definition:{initial} //no name and definition is primitive to avoid infinite loop
 functionalRep = new attribute
     name:"functionalRep"
 functionalRepresentation = new object
@@ -302,8 +303,7 @@ x2 = new attribute
     name:"x2"
 y2 = new attribute
     name:"y2"
-get = new object
-    name:"get"
+
 rootObject = new attribute
     name:"rootObject"
 forEach = new attribute

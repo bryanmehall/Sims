@@ -10,6 +10,10 @@ export const INDEX = 'INDEX'
 //attributes
 export const INTERMEDIATE_REP = 'lynxIR'
 
+//objectHashes
+export const GET_HASH = "$hash_unnamed_2623008861"
+export const NAME = 'name'
+
 
 //undefined
 export const UNDEFINED = 'undef'

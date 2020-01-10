@@ -1,7 +1,7 @@
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
 import { getHash } from './objectUtils'
 import { resolveDBSearches } from './DBsearchUtils'
-import { INTERMEDIATE_REP } from './constants'
+import { INTERMEDIATE_REP, GET_HASH } from './constants'
 
 /*returns:
     list of outputs
@@ -42,13 +42,18 @@ const combineFunctionTables = (outputs) => ( //for an object of outputs, combine
         Object.assign(functionTable, output.functionTable)
     ), {})
 )
-
+const attrConstants = ['get']
 //take state indexed by name and return a hash table
 //for every nested tree, flatten the tree and index by hash
 export const flattenState = (state) => {
-    const hashTable = Object.values(state).reduce((hashTable, obj) => {
-        const objWithHashValues = obj//replaceNamesWithHashes(state, obj)
-        const hash = getHash(objWithHashValues) //include appHash
+    const hashTable = Object.entries(state).reduce((hashTable, entry) => {
+        const name = entry[0]
+        const obj = entry[1]
+        const objWithHashValues = replaceNamesWithHashes(state, obj)
+        const hash = getHash(objWithHashValues) //include hash of each module
+        if (attrConstants.includes(name) && hash !== GET_HASH){
+            throw new Error('get hash does not match '+hash)
+        }
         const hashes = getHashesFromTree(objWithHashValues, state)
         return Object.assign(hashTable, hashes, { [hash]: objWithHashValues })
     }, {})
@@ -59,10 +64,10 @@ const replaceNamesWithHashes = (state, object) => {
         .map((entry) => {
             const attr = entry[0]
             const value = entry[1]
-            if (attr === INTERMEDIATE_REP || attr === 'jsRep'){
+            if (attr === INTERMEDIATE_REP || attr === 'jsRep' || attr === 'jsPrimitive' || attr === "initialObjectType" || attr === "attribute"){
                 return [attr, value]
             } else if ( typeof value === 'string'){
-                const hash = getHash(state[value])
+                const hash = getHash(replaceNamesWithHashes(state, state[value]))
                 return [attr, hash]
             } else {
                 return [attr, replaceNamesWithHashes(state, value)]
