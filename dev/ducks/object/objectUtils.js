@@ -283,7 +283,7 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
         return referenceNode 
 	} else if (prop === "jsRep"){
         const jsRepValue = def.instanceOf === GET_HASH ? evaluateReference(state, def, context).value : valueData //if jsRep is a reference node --refactor?
-        const argsList = jsRepValue.type === 'addition' ? ['op1', 'op2'] : []//generalize
+        const argsList = jsRepValue.args || []
         const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
         if (args.length === 0){ //test for primitive needs to be cleaner
             return { context, value: { value: jsRepValue } }

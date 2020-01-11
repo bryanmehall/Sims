@@ -314,6 +314,7 @@ ternary = new object
     lynxIR:{ternary}
 conditional =new attribute
     name: "conditional"
+    jsRep:{conditional, [op1, op2, op3]}
     lynxIR:{conditional}
 
 condition = new attribute
@@ -338,45 +339,71 @@ func = new object
 
 addition = new func
     name:"addition"
-    jsRep:{addition}
+    jsRep:{addition, [op1, op2]}
     op1: addition.caller.op1.jsRep
     op2: addition.caller.op2.jsRep
     lynxIR:{addition}
 
 subtraction = new func
     name:"subtraction"
+    jsRep:{subtraction, [op1, op2]}
+    op1: subtraction.caller.op1.jsRep
+    op2: subtraction.caller.op2.jsRep
     lynxIR:{subtraction}
 
 multiplication = new func
     name:"multiplication"
+    jsRep:{multiplication, [op1, op2]}
+    op1: multiplication.caller.op1.jsRep
+    op2: multiplication.caller.op2.jsRep
     lynxIR:{multiplication}
 
 division = new func
     name:"division"
+    jsRep:{division, [op1, op2]}
+    op1: division.caller.op1.jsRep
+    op2: division.caller.op2.jsRep
     lynxIR:{division}
 
 equal = new func
     name:"equal"
+    jsRep:{equal, [op1, op2]}
+    op1: equal.caller.op1.jsRep
+    op2: equal.caller.op2.jsRep
     lynxIR:{equal}
 
 lessThan = new func
     name:"lessThan"
+    jsRep:{lessThan, [op1, op2]}
+    op1: lessThan.caller.op1.jsRep
+    op2: lessThan.caller.op2.jsRep
     lynxIR:{lessThan}
 
 greaterThan = new func
     name:"greaterThan"
+    jsRep:{greaterThan, [op1, op2]}
+    op1: greaterThan.caller.op1.jsRep
+    op2: greaterThan.caller.op2.jsRep
     lynxIR:{greaterThan}
 
 and = new func
     name:"and"
+    jsRep:{and, [op1, op2]}
+    op1: and.caller.op1.jsRep
+    op2: and.caller.op2.jsRep
     lynxIR:{and}
 
 or = new func
     name:"or"
+    jsRep:{or, [op1, op2]}
+    op1: or.caller.op1.jsRep
+    op2: or.caller.op2.jsRep
     lynxIR:{or}
 
 not = new func
     name:"not"
+    jsRep:{not, [op1]}
+    op1: not.caller.op1.jsRep
     lynxIR:{not}
 
 index = new func

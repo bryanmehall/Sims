@@ -265,8 +265,15 @@ Bool "bool"
             //definition: createDef(value)
        }
     }
+
 Primitive "static primitive"
-    ="{"type:Name"}" {return {type:type}}
+    ="{"type:Name args:ArgsList?"}" {return {type:type, args:args}}
+
+ArgsList = ", ["firstArg:Name args:(", "Name)*"]" {
+	var argList = args.map(function(arg) {return arg[1]})
+	return [firstArg].concat(argList)
+    }
+
 //whitespace
 _ = " "*
 
