@@ -166,7 +166,7 @@ const getInheritedName = (state, value, context) => {
     }  
 }
 
-const traceGet = true
+const traceGet = false
 const evaluateSearch = (state, def, context) => { //evaluate search component of reference
     const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
     if (context === undefined){
@@ -278,22 +278,20 @@ export const getValueAndContext = (state, prop, objectData, context, getFirst) =
             console.log(attrSet)
 			return { context, value: addHashToObject(prop,attrData, attrSet) }
 		}
+	} else if ((def.instanceOf === GET_HASH || def.instanceOf === 'get') && getFirst){ //directly evaluate get instead of leaving reference as argument
+        const referenceNode = evaluateReference(state, def, context)
+        return referenceNode 
 	} else if (prop === "jsRep"){
-        const jsRepValue = def.instanceOf === GET_HASH ? evaluateReference(state, def, context).value : valueData //if jsRep is a reference node --refactor? 
+        const jsRepValue = def.instanceOf === GET_HASH ? evaluateReference(state, def, context).value : valueData //if jsRep is a reference node --refactor?
         const argsList = jsRepValue.type === 'addition' ? ['op1', 'op2'] : []//generalize
-        console.log(argsList)
         const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
-        console.log(jsRepValue)
         if (args.length === 0){ //test for primitive needs to be cleaner
             return { context, value: { value: jsRepValue } }
         } else {
             return { context, value: { value: primitiveOps[jsRepValue.type].apply(null, args) } }
         }
          //get rid of definition for this so it can just be the value not an object? 
-    } else if (def.instanceOf === GET_HASH && getFirst){ //directly evaluate get instead of leaving reference as argument
-        const referenceNode = evaluateReference(state, def, context)
-        return referenceNode
-	}  else if (prop === INTERMEDIATE_REP) { // primitive objects
+    } else if (prop === INTERMEDIATE_REP) { // primitive objects
         return { context, value: compile(state, valueData, objectData, context) }
 	} else {
         return { context, value: addHashToObject(prop, attrData, valueData) }

@@ -20,7 +20,7 @@ export const createParentContext = (state, context, objectData, forwardAttrHash)
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){
-        console.log("adding context element", forwardAttr, newContext)
+        console.log("adding context element", forwardAttr, inverseAttr, newContext)
     }
     return newContext
 }
@@ -47,6 +47,7 @@ export const getInverseContextPathIndex = (context, attr) => { //returns index o
 	const pathIndices = context.map((contextPath, index) => ((contextPath.length > 0 && contextPath[0].attr === attr) ? index : -1))
 	const inverseIndex = pathIndices.filter((index) => (index !== -1))
 	if (inverseIndex.length > 1) {
+        console.warn(attr, context, pathIndices)
 		throw new Error('too many inverses'+ inverseIndex.length)
 	} else if (inverseIndex.length === 0) {
 		return -1
@@ -63,8 +64,8 @@ export const popSearchFromContext = (context, query) => {
 
 export const popInverseFromContext = (context, attribute) => {
 	const inverseIndex = getInverseContextPathIndex(context, attribute)
-    const newContext = [...context.slice(0,inverseIndex), context[inverseIndex].slice(1), ...context.slice(inverseIndex)]
-    if (traceContext){ console.log('popping inverse', inverseIndex, attribute, newContext) }
+    const newContext = [...context.slice(0,inverseIndex), context[inverseIndex].slice(1), ...context.slice(inverseIndex+1)]
+    if (traceContext){ console.log('popping inverse', inverseIndex, attribute, context, newContext) }
     return newContext
 }
 
