@@ -1,7 +1,7 @@
 import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
-import { getObject, getValue, getJSValue, objectLib } from '../ducks/object/selectors'
+import { getValue, getJSValue, objectLib } from '../ducks/object/selectors'
 import ObjectActions from '../ducks/object/actions'
 import ObjectSearch from './ObjectSearch'
 

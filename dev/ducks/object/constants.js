@@ -9,6 +9,8 @@ export const INDEX = 'INDEX'
 
 //attributes
 export const INTERMEDIATE_REP = 'lynxIR'
+export const INVERSE_ATTRIBUTE = 'inverseAttribute'
+export const JS_REP = 'jsRep'
 
 //objectHashes
 export const GET_HASH = "$hash_unnamed_2623008861"

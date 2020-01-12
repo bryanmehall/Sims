@@ -1,6 +1,7 @@
 import { Runtime } from './ducks/object/runtime'
 import { createParentContext } from './ducks/object/contextUtils'
-import { getValueAndContext, getHash, objectFromName } from './ducks/object/objectUtils'
+import { getValueAndContext, objectFromName } from './ducks/object/objectUtils'
+import { getHash } from './ducks/object/hashUtils'
 
 import fs from 'fs'
 import { object } from 'prop-types'

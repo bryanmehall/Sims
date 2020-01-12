@@ -57,6 +57,7 @@ export default class TreeDiagram extends React.Component {
 		)
 	}
 }
+
 /*
 const mapStateToProps = (state) => {
 	let nodes = [{ id: 'app', label: 'app', type: 'root' }]

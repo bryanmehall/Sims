@@ -2,7 +2,7 @@ import React from 'react'
 import { connect } from 'react-redux'
 //import { Collapse } from 'react-collapse'
 import { getLoadState } from '../ducks/sim/selectors'
-import { getJSValue, getValue, getObject } from '../ducks/object/selectors'
+import { getJSValue, getValue } from '../ducks/object/selectors'
 
 import ObjectActions from '../ducks/object/actions'
 import AttributeTab from './AttributeTab'
@@ -72,7 +72,7 @@ const mapStateToProps = (state) => {
 	if (loadState === 'loading'){
 		return { objectData:{type:'undef', props:{id:'undef'}}, attrs:[], notLoaded:true }
 	}
-	const appData = getObject(state, 'app')
+	const appData = objectFromHash(state, 'app')
 	const activeObjectData = getValue(state, 'placeholder', 'activeObject', appData)
 	//const prevActiveObject = getValue(state, 'someId', 'prevVal', getValue(state, 'app', 'activeObject'))
 	//console.log('##########', prevActiveObject)

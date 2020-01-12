@@ -1,4 +1,5 @@
-import { objectFromName, getHash, getValue, getJSValue, getAttr } from './objectUtils'
+import { objectFromName, getValue, getJSValue, getAttr } from './objectUtils'
+import { getHash } from './hashUtils'
 import { GLOBAL_SEARCH, INTERMEDIATE_REP } from './constants'
 import { getArgsAndVarDefs } from './selectors'
 

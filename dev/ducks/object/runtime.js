@@ -1,10 +1,10 @@
 import { assemble, flattenState } from './assembler'
-import { getValue, objectFromName, getHash, tableContainsName, resetMemo, getJSValue, getValueAndContext, getObject } from './objectUtils'
+import { getValue, objectFromName, getValueAndContext } from './objectUtils'
 import { createParentContext } from './contextUtils'
-
+import { getHash } from './hashUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'
-import { limiter, resetLimiter, isUndefined } from './utils'
+import { resetLimiter, isUndefined } from './utils'
 //import { logFunctionTable } from './utils'
 
 /*
@@ -109,13 +109,10 @@ export class Runtime {
             run: (lynxModule) => (runtime.run(lynxModule))
         }
         const windowObject = this.parse(this.lynxText, 'window')//use generic lynx parse function---stte modification is handled in getValue
-        console.time()
         const canvasRepHash = getHash(objectFromName(this.hashTable, 'canvasRep'))
         const windowContext = createParentContext(this.hashTable, [[]], windowObject, canvasRepHash)
-        const {value, context} = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
+        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value, context).value.value
-        console.timeEnd()
-        console.log(canvasString)
         const renderFunction = new Function('ctx', canvasString)
         
         //const getAppJSObject = this.parse(this.lynxText, 'appRoot')

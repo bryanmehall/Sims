@@ -1,4 +1,15 @@
-import { getName, getInverseAttr, getAttr, getNameFromAttr, hasAttribute, getHash, objectFromHash, getValue, objectFromName } from './objectUtils'
+import { 
+    getNameFromAttr, 
+    hasAttribute, 
+    getValue
+} from './objectUtils'
+
+import { 
+    objectFromHash,
+    getHash
+} from './hashUtils'
+import { INVERSE_ATTRIBUTE } from './constants'
+
 const traceContext = false
 
 export const createParentContext = (state, context, objectData, forwardAttrHash) => { //rename to addContextElement
@@ -7,9 +18,13 @@ export const createParentContext = (state, context, objectData, forwardAttrHash)
     }
     const attrData = objectFromHash(state, forwardAttrHash)
     const forwardAttr = getNameFromAttr(attrData)
+    if (hasAttribute(attrData, INVERSE_ATTRIBUTE)){
+        const inverseAttrObject = getValue(state, INVERSE_ATTRIBUTE, attrData, context)
+        var inverseAttr = getNameFromAttr(inverseAttrObject)
+    } else {
+        inverseAttr = 'undef'
+    }
     
-    const inverseAttrObject = getValue(state, 'inverseAttribute', attrData, context)
-    const inverseAttr = getNameFromAttr(inverseAttrObject)
     const hash =  getHash(objectData)
     const contextElement = {
         debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
@@ -20,6 +35,7 @@ export const createParentContext = (state, context, objectData, forwardAttrHash)
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){
+        // eslint-disable-next-line no-console
         console.log("adding context element", forwardAttr, inverseAttr, newContext)
     }
     return newContext
@@ -30,9 +46,9 @@ export const getInverseParent = (state, context, attr) => {
 	return objectFromHash(state, context[index][0].value)
 }
 
-export const getParent = (state, context) => {
-	return objectFromHash(state, context[0][0].value)
-}
+export const getParent = (state, context) => (
+	objectFromHash(state, context[0][0].value)
+)
 
 export const isInverseAttr = (objectData, attr, context) => {
 	if (hasAttribute(objectData, attr)){
@@ -47,6 +63,7 @@ export const getInverseContextPathIndex = (context, attr) => { //returns index o
 	const pathIndices = context.map((contextPath, index) => ((contextPath.length > 0 && contextPath[0].attr === attr) ? index : -1))
 	const inverseIndex = pathIndices.filter((index) => (index !== -1))
 	if (inverseIndex.length > 1) {
+        // eslint-disable-next-line no-console
         console.warn(attr, context, pathIndices)
 		throw new Error('too many inverses'+ inverseIndex.length)
 	} else if (inverseIndex.length === 0) {
@@ -58,6 +75,7 @@ export const getInverseContextPathIndex = (context, attr) => { //returns index o
 
 export const popSearchFromContext = (context, query) => {
     const newContext = [context[0].slice(1), ...context.slice(1)]
+    // eslint-disable-next-line no-console
     if (traceContext){ console.log('popping search', query, newContext) }
     return newContext
 }
@@ -65,41 +83,14 @@ export const popSearchFromContext = (context, query) => {
 export const popInverseFromContext = (context, attribute) => {
 	const inverseIndex = getInverseContextPathIndex(context, attribute)
     const newContext = [...context.slice(0,inverseIndex), context[inverseIndex].slice(1), ...context.slice(inverseIndex+1)]
+    // eslint-disable-next-line no-console
     if (traceContext){ console.log('popping inverse', inverseIndex, attribute, context, newContext) }
     return newContext
 }
 
 export const addContextPath = (context) => {
     const newContext = [context[0], context[0], ...context.slice(1)]
+    // eslint-disable-next-line no-console
     if (traceContext){ console.log('adding contextPath', newContext) }
     return newContext
-}
-
-
-
-export const addContextToGetStack = (state, context, attr, currentObject, sourceHash) => {
-    const hash = getAttr(currentObject, 'hash')
-    const searchName = getName(state, currentObject) //remove for debug
-    const inverseAttr = getInverseAttr(state, attr)
-    const newContext = {
-        debug: `${searchName}.${attr} has inverse ${inverseAttr} = ${hash}`,
-        attr: inverseAttr,
-        value: hash,
-        source: sourceHash //remove for debug
-    }
-    const noUndefContext = typeof context === 'undefined' ? [] : context //remove and check that all args have context
-    return noUndefContext.concat(newContext)
-}
-
-//add context to each arg of ast
-export const addContextToArgs = (state, attr, ast, objectData) => {
-    const argsWithContext = Object.entries(ast.args)
-        .reduce((args, entry) => {
-            const argKey = entry[0]
-            const arg = entry[1]
-            const context = addContextToGetStack(state, arg.context, attr, objectData, ast.hash)
-            const argWithContext = Object.assign({}, arg, { context })
-            return Object.assign({}, args, { [argKey]: argWithContext })
-        }, {})
-    return Object.assign({}, ast, { args: argsWithContext })
 }

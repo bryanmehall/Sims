@@ -1,7 +1,8 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
-import { objectFromName, getHash, getPrimitiveType, getValue } from '../ducks/object/objectUtils'
+import { objectFromName, getPrimitiveType, getValue } from '../ducks/object/objectUtils'
+import { getHash } from '../ducks/object/hashUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
 import  { createParentContext } from '../ducks/object/contextUtils'
 import { getName } from './Debug'
