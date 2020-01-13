@@ -1,22 +1,21 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
-import { objectFromName, getPrimitiveType, getValue } from '../ducks/object/objectUtils'
+import { objectFromName, getPrimitiveType, getValue, hashFromName } from '../ducks/object/objectUtils'
 import { getHash } from '../ducks/object/hashUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
-import  { createParentContext } from '../ducks/object/contextUtils'
-import { getName } from './Debug'
+import { createParentContext } from '../ducks/object/contextUtils'
+import { Node } from './TreeNode'
 
 class TreeVis extends React.Component {
     constructor(props){
         super(props)
         const appObject = objectFromName(this.props.objectTable, 'app')
         const { nodes, links } = bfsObjectTree(this.props.objectTable, appObject)
-        addAST(this.props.ast, { nodes, links })
-        this.state = { nodes, links, allNodes:nodes, allLinks:links }
+        this.state = { nodes, links, allNodes: nodes, allLinks: links }
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
-                .id((d, i, n) => {return d.object.hash})
+                .id((d) => (d.object.hash))
                 .strength(0)
                 )
             .force("forceY", d3.forceY()
@@ -27,7 +26,6 @@ class TreeVis extends React.Component {
     }
     componentDidMount(){
         const vis = this
-        const nodes = this.state.allNodes
         const orderingForce = () => {
             for (var i = 0; i < vis.state.allNodes.length; i++) {
                 const currNode = vis.state.allNodes[i]
@@ -72,9 +70,7 @@ class TreeVis extends React.Component {
         const { nodes, links } = this.state
         getPath(nodes, this.props.activeNode.object.hash)
         const setActive = (node, index) => {
-            const definitionIsGet = node.object.definition.hasOwnProperty("lynxIR") && node.object.definition.lynxIR.type === 'get'
             const defNode = getValue(this.props.objectTable, "definition", node.object, node.context, false)
-            console.log(defNode, node.object)
             const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }])
 
             const defNodes = defTree.nodes
@@ -82,19 +78,19 @@ class TreeVis extends React.Component {
             const left = nodes.slice(0,index)
             const right = nodes.slice(index)
             this.state.allNodes = left.concat(defNodes, right)
-            const defLink = {source:node.object.hash, target: defNode.hash, attr:"definition"}
+            const defLink = { source: node.object.hash, target: defNode.hash, attr: "definition" }
             const contextLinks = contextToLinks(node.context)
-            console.log(contextLinks)
             this.state.allLinks = links.concat(defLinks, [defLink], contextLinks)
             this.props.setActive(node)
             //console.log(this.state.links, this.state.links.concat([defLink]))
             this.simulation
                 .nodes(this.state.allNodes)
                 .force("link", d3.forceLink(this.state.allLinks)
-                    .id((d, i, n) => {return d.object.hash})
+                    .id((d) => (d.object.hash))
                     .strength(0)
                     )
-                .alpha(0.2).restart()
+                .alpha(0.2)
+                .restart()
             //this.simulation.links(this.graph.links);
             //const contextLinks = node.context.map()
 
@@ -107,7 +103,6 @@ class TreeVis extends React.Component {
                 level={node.level}
                 nodeIndex={i}
                 key={i}
-                ast={node.ast}
                 object={node.object}
                 parId={node.parId}
                 context={node.context}
@@ -141,12 +136,13 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     }
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep'].includes(entry[0])
         ))
         .map((entry) => {
             const context = first.context || [[]]
             const attr = entry[0]
-            const newContext = createParentContext(objectTable, context, first.object, attr)
+            const attrHash = hashFromName(objectTable, attr)
+            const newContext = createParentContext(objectTable, context, first.object, attrHash)
             const object = getValue(objectTable, attr, first.object, newContext)
             newContext[0][0].sourceHash = getHash(object) //add sourceHash for debug
             return { object: object, context: newContext, attr, parId: first.object.hash, level: level+1 }
@@ -165,28 +161,6 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
 }
 
 const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.object) === hash)))
-
-const addAST = (ast, nodesAndLinks) => { //helper function for addAST
-    const { nodes, links } = nodesAndLinks
-    const astIndexes = nodes.reduce(function(a, node, i) { //get all indexes
-        if (getHash(node.object) === ast.hash || ast.hash === 'apphash' && node.object.hasOwnProperty(INTERMEDIATE_REP) && node.object.lynxIR.type === 'app')
-            a.push(i)
-        return a
-    }, [])
-    astIndexes.forEach((astIndex) => {
-        if (astIndex !== -1){
-            const astNode = nodes[astIndex]
-            nodes[astIndex] = { ...astNode, ast }
-        }
-    })
-
-    const children = Object.values(ast.children)
-    const varDefChildren = ast.varDefs.map((varDef) => (varDef.ast))
-
-    return [...children, ...varDefChildren].reduce((nodesAndLinks, child) => (
-        addAST(child, nodesAndLinks)
-        ), { nodes, links })
-}
 
 const getPath = (nodes, hash) => {
     const defNode = nodes[getNodeIndex(nodes, hash)]
@@ -220,55 +194,7 @@ const formatText = (str, x, y) => {
         .split('\n')
         .map((line, i) => (<tspan key={i} textAnchor="start" x={x-10} y={y+20*i}>{line}</tspan>))
 }
-const Node = (node) => {
-    const { x, y, object, setActive, ast, activeNode, context, nodeIndex } = node
-    const activeHash = activeNode.object.hash
-    const active = activeHash === getHash(object)
-    const name = getName(object)
-    const isPrimitive = ast !== undefined
-    let label = ''
-    if (isPrimitive) {
-        const activeVarDefs = ast.varDefs.filter((varDef) => (varDef.key === activeHash))
-        const context = typeof activeVarDefs[0] ==='undefined' ? null : activeVarDefs[0].context.map((context) => (context.debug)).join(',')
-        if (ast.hasOwnProperty('value')){
-            if (Array.isArray(ast.value)){
-                label = <tspan>[array]{active ? displayArgs(ast) : null}</tspan>
-            } else {
-                label = formatText(JSON.stringify(ast.value), x, y)
-            }
-        } else {
-            label = <tspan>{name === 'object'? ast.type : name}{active ? displayArgs(ast) : null}</tspan>
-        }
 
-    } else if (object.hasOwnProperty(INTERMEDIATE_REP)) {
-        if (object.lynxIR.hasOwnProperty('value')){
-            label = formatText(object.lynxIR.value, x, y)
-        } else {
-            label = name
-        }
-    } else {
-        label = name
-    }
-
-    return (
-        <text
-            onClick={function(){
-                setActive(node, nodeIndex)
-            }}
-            onMouseLeave={function(){
-
-            }}
-            textAnchor="middle"
-            fontWeight={active ? 600 : 400}
-            opacity = {active ? 1 : 0.7}
-            fill={isPrimitive? 'blue': 'black'}
-            x={x}
-            y={y}
-            >
-            {label}
-        </text>
-    )
-}
 
 
 const Link = ({ source, target, attr, type }) => {

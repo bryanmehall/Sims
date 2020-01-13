@@ -57,7 +57,7 @@ class Debug extends React.Component {
                 {runtime.lynxText}
             </pre>
         )
-        if (this.props.debugType === 'tree' || this.props.debugType === 'ast'){
+        if (this.props.debugType === 'tree'){
             return (
                 <div style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', padding: 20, top: 547 }}>
                     <ObjectData node={this.state.activeNode}></ObjectData>
@@ -70,10 +70,7 @@ class Debug extends React.Component {
 
                         >
                         {
-                            this.props.debugType === 'ast' ?
-                                <AstVis ast={runtime.outputs.apphash.ast} objectTable={runtime.hashTable} setActive={setActive}></AstVis>
-                                : <TreeVis
-                                      ast={runtime.outputs.apphash.ast}
+                            <TreeVis
                                       objectTable={runtime.hashTable}
                                       setActive={setActive}
                                       activeNode={this.state.activeNode}></TreeVis>

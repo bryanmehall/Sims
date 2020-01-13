@@ -1,38 +1,31 @@
-import React from 'react'
-import { connect } from 'react-redux'
-//import { Collapse } from 'react-collapse'
-import { getActiveObject } from '../ducks/object/selectors'
-import ObjectActions from '../ducks/object/actions'
+import { getName } from './Debug'
+import { getHash } from '../ducks/object/hashUtils'
+import React from "react"
 
+export const Node = (node) => {
+    const { x, y, object, setActive, ast, activeNode, nodeIndex } = node
+    const activeHash = activeNode.object.hash
+    const active = activeHash === getHash(object)
+    const name = getName(object)
+    const isPrimitive = ast !== undefined
+    const label = name
 
+    return (
+        <text
+            onClick={function(){
+                setActive(node, nodeIndex)
+            }}
+            onMouseLeave={function(){
 
-class TreeNode extends React.Component {
-	constructor(props){
-		super(props)
-	}
-
-	render() {
-		return (
-			<g>
-				<circle></circle>
-			</g>
-		)
-	}
+            }}
+            textAnchor="middle"
+            fontWeight={active ? 600 : 400}
+            opacity = {active ? 1 : 0.7}
+            fill={isPrimitive? 'blue': 'black'}
+            x={x}
+            y={y}
+            >
+            {label}
+        </text>
+    )
 }
-const mapStateToProps = (state) => {
-
-	let attrs = []
-	return {
-		attrs: attrs
-	}
-}
-
-const mapDispatchToProps = (dispatch) => (
-	{
-		setActiveObject: (id) => {
-			dispatch(ObjectActions.setActiveObject(id))
-		}
-	}
-)
-
-export default connect(mapStateToProps, mapDispatchToProps)(TreeNode)
