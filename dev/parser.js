@@ -40,12 +40,14 @@ module.exports = (function(){
         "Module": parse_Module,
         "Declaration": parse_Declaration,
         "Object": parse_Object,
+        "New": parse_New,
+        "Name": parse_Name,
         "Attribute": parse_Attribute,
         "Expression": parse_Expression,
-        "DefaultState": parse_DefaultState,
         "Conditional": parse_Conditional,
         "MultilineConditional": parse_MultilineConditional,
         "ConditionalCase": parse_ConditionalCase,
+        "DefaultState": parse_DefaultState,
         "Or": parse_Or,
         "And": parse_And,
         "Equal": parse_Equal,
@@ -56,22 +58,21 @@ module.exports = (function(){
         "GroupedExpression": parse_GroupedExpression,
         "Value": parse_Value,
         "Apply": parse_Apply,
-        "Name": parse_Name,
-        "New": parse_New,
+        "GlobalSearch": parse_GlobalSearch,
         "Search": parse_Search,
         "Get": parse_Get,
         "Number": parse_Number,
         "Int": parse_Int,
         "Float": parse_Float,
         "String": parse_String,
+        "Bool": parse_Bool,
+        "Primitive": parse_Primitive,
         "ArrayElement": parse_ArrayElement,
         "Array": parse_Array,
         "SingleLineArray": parse_SingleLineArray,
         "MultilineArray": parse_MultilineArray,
-        "Map": parse_Map,
-        "Bool": parse_Bool,
-        "Primitive": parse_Primitive,
         "ArgsList": parse_ArgsList,
+        "Map": parse_Map,
         "_": parse__,
         "Comment": parse_Comment,
         "BlockComment": parse_BlockComment
@@ -533,6 +534,124 @@ module.exports = (function(){
         return result0;
       }
       
+      function parse_New() {
+        var cacheKey = "New@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1, result2, result3;
+        var pos0, pos1;
+        
+        pos0 = pos;
+        pos1 = pos;
+        if (input.substr(pos, 4) === "new ") {
+          result0 = "new ";
+          pos += 4;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"new \"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_Name();
+          if (result1 !== null) {
+            result2 = parse__();
+            if (result2 !== null) {
+              result3 = parse_Comment();
+              result3 = result3 !== null ? result3 : "";
+              if (result3 !== null) {
+                result0 = [result0, result1, result2, result3];
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, name) {return name})(pos0, result0[1]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_Name() {
+        var cacheKey = "Name@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1;
+        var pos0;
+        
+        reportFailures++;
+        pos0 = pos;
+        if (/^[a-zA-Z0-9]/.test(input.charAt(pos))) {
+          result1 = input.charAt(pos);
+          pos++;
+        } else {
+          result1 = null;
+          if (reportFailures === 0) {
+            matchFailed("[a-zA-Z0-9]");
+          }
+        }
+        if (result1 !== null) {
+          result0 = [];
+          while (result1 !== null) {
+            result0.push(result1);
+            if (/^[a-zA-Z0-9]/.test(input.charAt(pos))) {
+              result1 = input.charAt(pos);
+              pos++;
+            } else {
+              result1 = null;
+              if (reportFailures === 0) {
+                matchFailed("[a-zA-Z0-9]");
+              }
+            }
+          }
+        } else {
+          result0 = null;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, name) {return name.join("")})(pos0, result0);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("name");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
       function parse_Attribute() {
         var cacheKey = "Attribute@" + pos;
         var cachedResult = cache[cacheKey];
@@ -634,77 +753,13 @@ module.exports = (function(){
         result0 = parse_Conditional();
         if (result0 === null) {
           result0 = parse_Array();
+          if (result0 === null) {
+            result0 = parse_Or();
+          }
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
           matchFailed("expression");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_DefaultState() {
-        var cacheKey = "DefaultState@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0, result1, result2;
-        var pos0, pos1;
-        
-        reportFailures++;
-        pos0 = pos;
-        pos1 = pos;
-        if (input.charCodeAt(pos) === 40) {
-          result0 = "(";
-          pos++;
-        } else {
-          result0 = null;
-          if (reportFailures === 0) {
-            matchFailed("\"(\"");
-          }
-        }
-        if (result0 !== null) {
-          result1 = parse_Expression();
-          if (result1 !== null) {
-            if (input.charCodeAt(pos) === 41) {
-              result2 = ")";
-              pos++;
-            } else {
-              result2 = null;
-              if (reportFailures === 0) {
-                matchFailed("\")\"");
-              }
-            }
-            if (result2 !== null) {
-              result0 = [result0, result1, result2];
-            } else {
-              result0 = null;
-              pos = pos1;
-            }
-          } else {
-            result0 = null;
-            pos = pos1;
-          }
-        } else {
-          result0 = null;
-          pos = pos1;
-        }
-        if (result0 !== null) {
-          result0 = (function(offset, defaultState) {return defaultState})(pos0, result0[1]);
-        }
-        if (result0 === null) {
-          pos = pos0;
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("defaultState");
         }
         
         cache[cacheKey] = {
@@ -809,9 +864,6 @@ module.exports = (function(){
         }
         if (result0 === null) {
           result0 = parse_MultilineConditional();
-          if (result0 === null) {
-            result0 = parse_Or();
-          }
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -1130,6 +1182,73 @@ module.exports = (function(){
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
           matchFailed("conditional case");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_DefaultState() {
+        var cacheKey = "DefaultState@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1, result2;
+        var pos0, pos1;
+        
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 40) {
+          result0 = "(";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"(\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_Expression();
+          if (result1 !== null) {
+            if (input.charCodeAt(pos) === 41) {
+              result2 = ")";
+              pos++;
+            } else {
+              result2 = null;
+              if (reportFailures === 0) {
+                matchFailed("\")\"");
+              }
+            }
+            if (result2 !== null) {
+              result0 = [result0, result1, result2];
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, defaultState) {return defaultState})(pos0, result0[1]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("defaultState");
         }
         
         cache[cacheKey] = {
@@ -1781,11 +1900,14 @@ module.exports = (function(){
             if (result0 === null) {
               result0 = parse_String();
               if (result0 === null) {
-                result0 = parse_Get();
+                result0 = parse_Object();
                 if (result0 === null) {
-                  result0 = parse_Object();
+                  result0 = parse_GlobalSearch();
                   if (result0 === null) {
-                    result0 = parse_Name();
+                    result0 = parse_Get();
+                    if (result0 === null) {
+                      result0 = parse_Search();
+                    }
                   }
                 }
               }
@@ -1945,8 +2067,8 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_Name() {
-        var cacheKey = "Name@" + pos;
+      function parse_GlobalSearch() {
+        var cacheKey = "GlobalSearch@" + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;
@@ -1954,93 +2076,24 @@ module.exports = (function(){
         }
         
         var result0, result1;
-        var pos0;
+        var pos0, pos1;
         
         reportFailures++;
         pos0 = pos;
-        if (/^[a-zA-Z0-9]/.test(input.charAt(pos))) {
-          result1 = input.charAt(pos);
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 92) {
+          result0 = "\\";
           pos++;
         } else {
-          result1 = null;
-          if (reportFailures === 0) {
-            matchFailed("[a-zA-Z0-9]");
-          }
-        }
-        if (result1 !== null) {
-          result0 = [];
-          while (result1 !== null) {
-            result0.push(result1);
-            if (/^[a-zA-Z0-9]/.test(input.charAt(pos))) {
-              result1 = input.charAt(pos);
-              pos++;
-            } else {
-              result1 = null;
-              if (reportFailures === 0) {
-                matchFailed("[a-zA-Z0-9]");
-              }
-            }
-          }
-        } else {
-          result0 = null;
-        }
-        if (result0 !== null) {
-          result0 = (function(offset, name) {return name.join("")})(pos0, result0);
-        }
-        if (result0 === null) {
-          pos = pos0;
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("name");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_New() {
-        var cacheKey = "New@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0, result1, result2, result3;
-        var pos0, pos1;
-        
-        pos0 = pos;
-        pos1 = pos;
-        if (input.substr(pos, 4) === "new ") {
-          result0 = "new ";
-          pos += 4;
-        } else {
           result0 = null;
           if (reportFailures === 0) {
-            matchFailed("\"new \"");
+            matchFailed("\"\\\\\"");
           }
         }
         if (result0 !== null) {
           result1 = parse_Name();
           if (result1 !== null) {
-            result2 = parse__();
-            if (result2 !== null) {
-              result3 = parse_Comment();
-              result3 = result3 !== null ? result3 : "";
-              if (result3 !== null) {
-                result0 = [result0, result1, result2, result3];
-              } else {
-                result0 = null;
-                pos = pos1;
-              }
-            } else {
-              result0 = null;
-              pos = pos1;
-            }
+            result0 = [result0, result1];
           } else {
             result0 = null;
             pos = pos1;
@@ -2054,6 +2107,10 @@ module.exports = (function(){
         }
         if (result0 === null) {
           pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("global search");
         }
         
         cache[cacheKey] = {
@@ -2503,6 +2560,138 @@ module.exports = (function(){
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
           matchFailed("string");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_Bool() {
+        var cacheKey = "Bool@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0;
+        var pos0;
+        
+        reportFailures++;
+        pos0 = pos;
+        if (input.substr(pos, 4) === "true") {
+          result0 = "true";
+          pos += 4;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"true\"");
+          }
+        }
+        if (result0 === null) {
+          if (input.substr(pos, 5) === "false") {
+            result0 = "false";
+            pos += 5;
+          } else {
+            result0 = null;
+            if (reportFailures === 0) {
+              matchFailed("\"false\"");
+            }
+          }
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, value) {
+            var value = value==="true"
+            return {
+                	lynxIR: {type:"bool", value:value},
+                    jsRep:value
+                    //definition: createDef(value)
+               }
+            })(pos0, result0);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("bool");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_Primitive() {
+        var cacheKey = "Primitive@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1, result2, result3;
+        var pos0, pos1;
+        
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 123) {
+          result0 = "{";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"{\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_Name();
+          if (result1 !== null) {
+            result2 = parse_ArgsList();
+            result2 = result2 !== null ? result2 : "";
+            if (result2 !== null) {
+              if (input.charCodeAt(pos) === 125) {
+                result3 = "}";
+                pos++;
+              } else {
+                result3 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\"}\"");
+                }
+              }
+              if (result3 !== null) {
+                result0 = [result0, result1, result2, result3];
+              } else {
+                result0 = null;
+                pos = pos1;
+              }
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, type, args) {return {type:type, args:args}})(pos0, result0[1], result0[2]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("static primitive");
         }
         
         cache[cacheKey] = {
@@ -2971,234 +3160,6 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_Map() {
-        var cacheKey = "Map@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0, result1, result2, result3, result4, result5, result6, result7;
-        var pos0;
-        
-        reportFailures++;
-        pos0 = pos;
-        if (input.charCodeAt(pos) === 123) {
-          result0 = "{";
-          pos++;
-        } else {
-          result0 = null;
-          if (reportFailures === 0) {
-            matchFailed("\"{\"");
-          }
-        }
-        if (result0 !== null) {
-          result1 = parse__();
-          if (result1 !== null) {
-            result2 = parse_ArrayElement();
-            if (result2 !== null) {
-              if (input.charCodeAt(pos) === 58) {
-                result3 = ":";
-                pos++;
-              } else {
-                result3 = null;
-                if (reportFailures === 0) {
-                  matchFailed("\":\"");
-                }
-              }
-              if (result3 !== null) {
-                result4 = parse__();
-                if (result4 !== null) {
-                  result5 = parse_ArrayElement();
-                  if (result5 !== null) {
-                    result6 = parse__();
-                    if (result6 !== null) {
-                      if (input.charCodeAt(pos) === 125) {
-                        result7 = "}";
-                        pos++;
-                      } else {
-                        result7 = null;
-                        if (reportFailures === 0) {
-                          matchFailed("\"}\"");
-                        }
-                      }
-                      if (result7 !== null) {
-                        result0 = [result0, result1, result2, result3, result4, result5, result6, result7];
-                      } else {
-                        result0 = null;
-                        pos = pos0;
-                      }
-                    } else {
-                      result0 = null;
-                      pos = pos0;
-                    }
-                  } else {
-                    result0 = null;
-                    pos = pos0;
-                  }
-                } else {
-                  result0 = null;
-                  pos = pos0;
-                }
-              } else {
-                result0 = null;
-                pos = pos0;
-              }
-            } else {
-              result0 = null;
-              pos = pos0;
-            }
-          } else {
-            result0 = null;
-            pos = pos0;
-          }
-        } else {
-          result0 = null;
-          pos = pos0;
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("map");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_Bool() {
-        var cacheKey = "Bool@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0;
-        var pos0;
-        
-        reportFailures++;
-        pos0 = pos;
-        if (input.substr(pos, 4) === "true") {
-          result0 = "true";
-          pos += 4;
-        } else {
-          result0 = null;
-          if (reportFailures === 0) {
-            matchFailed("\"true\"");
-          }
-        }
-        if (result0 === null) {
-          if (input.substr(pos, 5) === "false") {
-            result0 = "false";
-            pos += 5;
-          } else {
-            result0 = null;
-            if (reportFailures === 0) {
-              matchFailed("\"false\"");
-            }
-          }
-        }
-        if (result0 !== null) {
-          result0 = (function(offset, value) {
-            return {
-                	lynxIR: {type:"bool", value:value==="true"},
-                    //definition: createDef(value)
-               }
-            })(pos0, result0);
-        }
-        if (result0 === null) {
-          pos = pos0;
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("bool");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_Primitive() {
-        var cacheKey = "Primitive@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0, result1, result2, result3;
-        var pos0, pos1;
-        
-        reportFailures++;
-        pos0 = pos;
-        pos1 = pos;
-        if (input.charCodeAt(pos) === 123) {
-          result0 = "{";
-          pos++;
-        } else {
-          result0 = null;
-          if (reportFailures === 0) {
-            matchFailed("\"{\"");
-          }
-        }
-        if (result0 !== null) {
-          result1 = parse_Name();
-          if (result1 !== null) {
-            result2 = parse_ArgsList();
-            result2 = result2 !== null ? result2 : "";
-            if (result2 !== null) {
-              if (input.charCodeAt(pos) === 125) {
-                result3 = "}";
-                pos++;
-              } else {
-                result3 = null;
-                if (reportFailures === 0) {
-                  matchFailed("\"}\"");
-                }
-              }
-              if (result3 !== null) {
-                result0 = [result0, result1, result2, result3];
-              } else {
-                result0 = null;
-                pos = pos1;
-              }
-            } else {
-              result0 = null;
-              pos = pos1;
-            }
-          } else {
-            result0 = null;
-            pos = pos1;
-          }
-        } else {
-          result0 = null;
-          pos = pos1;
-        }
-        if (result0 !== null) {
-          result0 = (function(offset, type, args) {return {type:type, args:args}})(pos0, result0[1], result0[2]);
-        }
-        if (result0 === null) {
-          pos = pos0;
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("static primitive");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
       function parse_ArgsList() {
         var cacheKey = "ArgsList@" + pos;
         var cachedResult = cache[cacheKey];
@@ -3308,6 +3269,104 @@ module.exports = (function(){
         }
         if (result0 === null) {
           pos = pos0;
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_Map() {
+        var cacheKey = "Map@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1, result2, result3, result4, result5, result6, result7;
+        var pos0;
+        
+        reportFailures++;
+        pos0 = pos;
+        if (input.charCodeAt(pos) === 123) {
+          result0 = "{";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"{\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse__();
+          if (result1 !== null) {
+            result2 = parse_ArrayElement();
+            if (result2 !== null) {
+              if (input.charCodeAt(pos) === 58) {
+                result3 = ":";
+                pos++;
+              } else {
+                result3 = null;
+                if (reportFailures === 0) {
+                  matchFailed("\":\"");
+                }
+              }
+              if (result3 !== null) {
+                result4 = parse__();
+                if (result4 !== null) {
+                  result5 = parse_ArrayElement();
+                  if (result5 !== null) {
+                    result6 = parse__();
+                    if (result6 !== null) {
+                      if (input.charCodeAt(pos) === 125) {
+                        result7 = "}";
+                        pos++;
+                      } else {
+                        result7 = null;
+                        if (reportFailures === 0) {
+                          matchFailed("\"}\"");
+                        }
+                      }
+                      if (result7 !== null) {
+                        result0 = [result0, result1, result2, result3, result4, result5, result6, result7];
+                      } else {
+                        result0 = null;
+                        pos = pos0;
+                      }
+                    } else {
+                      result0 = null;
+                      pos = pos0;
+                    }
+                  } else {
+                    result0 = null;
+                    pos = pos0;
+                  }
+                } else {
+                  result0 = null;
+                  pos = pos0;
+                }
+              } else {
+                result0 = null;
+                pos = pos0;
+              }
+            } else {
+              result0 = null;
+              pos = pos0;
+            }
+          } else {
+            result0 = null;
+            pos = pos0;
+          }
+        } else {
+          result0 = null;
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("map");
         }
         
         cache[cacheKey] = {

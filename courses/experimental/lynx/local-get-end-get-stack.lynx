@@ -8,6 +8,6 @@ window = new group
         op1:new object
             value:new get
                 lynxIR:{get}
-                attribute:equalTo
+                attribute:\equalTo
                 rootObject:new object
                     equalTo:"test"

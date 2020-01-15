@@ -176,7 +176,8 @@ export const getValue = (state, prop, objectData, context) => (
 
 export const getValueAndContext = (state, prop, objectData, context) => { //getFirst is a bool for directly evaluating get nodes
     checkObjectData(objectData)
-	let def = getAttr(objectData, prop)
+    //console.log(def, prop, objectData)
+    let def = getAttr(objectData, prop)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
@@ -195,7 +196,7 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
     }
     
 	const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
-	if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
+    if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
 			return { context: [], value: addHashToObject(valueData) }
@@ -222,7 +223,10 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
 const evaluatePrimitive = (state, valueData, objectData, context) => { //allow this to return curried functions
     const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor?
     const argsList = jsRepValue.args || []
-    const args = argsList.map((argName) => (getValue(state, argName, objectData, context).value))
+
+    const args = argsList.map((argName) => (
+        getValue(state, argName, objectData, context).value
+    ))
     if (args.length === 0){ //test for primitive needs to be cleaner
         return { context, value: { value: jsRepValue } }
     } else {
@@ -241,7 +245,8 @@ const primitiveOps = {
     conditional: (op1, op2, op3) => (op1 ? op2 : op3),
     equalTo: (op1, op2) => (op1 === op2),
     lessThan: (op1, op2) => (op1 < op2),
-    greaterThan: (op1, op2) => (op1 > op2)
+    greaterThan: (op1, op2) => (op1 > op2),
+    concat: (op1, op2) => (op1 + op2)
 }
 
 const checkObjectData = (objectData) => {

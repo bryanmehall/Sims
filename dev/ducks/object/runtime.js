@@ -113,6 +113,7 @@ export class Runtime {
         const windowContext = createParentContext(this.hashTable, [[]], windowObject, canvasRepHash)
         const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value, context).value.value
+        console.log(canvasString)
         const renderFunction = new Function('ctx', canvasString)
         
         //const getAppJSObject = this.parse(this.lynxText, 'appRoot')

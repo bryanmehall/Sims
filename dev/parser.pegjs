@@ -122,25 +122,28 @@ Object "object"
     	return props
     }
 
+New = "new "name:Name _ Comment? {return name}
+
+Name "name"
+	= name:[a-zA-Z0-9]+ {return name.join("")}
+
 Attribute 
-    = name:Name":"" "?value:(Expression) _ Comment? {
+    = name:Name":"" "? value:(Expression) _ Comment? {
         return {
         	name:name,
             value:value
        }
    }
+
 Expression "expression"
-	=  Conditional / Array
+	=  Conditional / Array / Or
 
-DefaultState "defaultState"
-    = "("defaultState:Expression")" {return defaultState}
-
+ //#####################  conditionals  ########################
 Conditional "conditional"
     =  condition:Or _ "?"_ then:Expression _":"_ alt:Expression {
     return createNOp([condition, then, alt], "conditional")
     }
     / MultilineConditional
-    / Or
 
 MultilineConditional "multiline conditional" 
     = "condition" _ defaultState:DefaultState? "{#{" cases:(ConditionalCase)+ defaultCase:("\n""    "* Expression _ )"}#}"{
@@ -154,6 +157,11 @@ ConditionalCase "conditional case"
         return {condition, value}
     }
 
+DefaultState "defaultState"
+    = "("defaultState:Expression")" {return defaultState}
+
+
+//######################### operators  ######################
 Or "or"
 	= left:And _ op:"||" _ right:Or { return createNOp([left, right], "or")}
     / And
@@ -187,7 +195,7 @@ GroupedExpression "grouped expression"
     / Value
     
 Value "value"
-	=  Primitive / Bool / Number / String / Get / Object / Name
+	=  Primitive / Bool / Number / String / Object / GlobalSearch / Get / Search
 
 Apply "function application"
 	= name:Name "("arg0:Expression args:("," _ Expression)*")"{
@@ -195,10 +203,9 @@ Apply "function application"
         return createNOp([arg0].concat(argsList), name)
     }
 
-Name "name"
-	= name:[a-zA-Z0-9]+ {return name.join("")}
-
-New = "new "name:Name _ Comment? {return name}
+//###########################  references ############################
+GlobalSearch "global search"
+    = "\\"name:Name {return name}
 
 Search = query:Name {
 	return {
@@ -206,13 +213,12 @@ Search = query:Name {
         }
     }
 
-////////references
 Get "get"
     = root:Search? attributes:("."Name)+ {
     return attributes.reduce(buildPath, root)
 }
      
-////////primitives
+//#########################  primitives  ################################
 Number 
 	= value:(Float / Int) {
         return {
@@ -238,6 +244,20 @@ String "string"
          return createString(value)//Object.assign(createString(value), {definition: createDef(value)})
      }
 
+Bool "bool"
+    = value:("true" / "false") {
+    var value = value==="true"
+    return {
+        	lynxIR: {type:"bool", value:value},
+            jsRep:value
+            //definition: createDef(value)
+       }
+    }
+
+Primitive "static primitive"
+    ="{"type:Name args:ArgsList?"}" {return {type:type, args:args}}
+
+//########################### arrays  ##############################
 ArrayElement "array element"
 	= Object / Expression
     
@@ -254,30 +274,20 @@ MultilineArray "multi line array"
         var remaining = tail.map(function(expr){return expr[2]})
         return createArray([head].concat(remaining))
     }
-
-Map "map"
-    = '{'_ firstKey:ArrayElement ':'_ firstValue:ArrayElement _"}"
-
-Bool "bool"
-    = value:("true" / "false") {
-    return {
-        	lynxIR: {type:"bool", value:value==="true"},
-            //definition: createDef(value)
-       }
-    }
-
-Primitive "static primitive"
-    ="{"type:Name args:ArgsList?"}" {return {type:type, args:args}}
-
 ArgsList = ", ["firstArg:Name args:(", "Name)*"]" {
 	var argList = args.map(function(arg) {return arg[1]})
 	return [firstArg].concat(argList)
     }
 
-//whitespace
+Map "map"
+    = '{'_ firstKey:ArrayElement ':'_ firstValue:ArrayElement _"}"
+
+
+
+//######################  whitespace  ##########################
 _ = " "*
 
-//comment
+//#######################  comments  ###########################
 Comment "comment"
 	="//"[^\n]*
 

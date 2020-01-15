@@ -6,8 +6,8 @@ window = new group
         y:30
         innerText:new get
             lynxIR:{get}
-            attribute:equalTo
-            instanceOf:get
+            attribute:\equalTo
+            instanceOf:\get
             rootObject: new object
                 name:"apply1"
                 equalTo:apply1.function.result

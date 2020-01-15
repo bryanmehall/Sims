@@ -4,7 +4,7 @@ window = new group
         name:"txt"
         x:new get
             lynxIR:{get}
-            attribute: equalTo
+            attribute: \equalTo
             rootObject: new object
                 name:"apply1"
                 x:10

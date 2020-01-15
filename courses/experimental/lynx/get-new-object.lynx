@@ -6,6 +6,6 @@ window = new group
             lynxIR:{get}
             rootObject: new object
                 op1:20
-            attribute: op1
+            attribute: \op1
         y:30
         innerText:"test"

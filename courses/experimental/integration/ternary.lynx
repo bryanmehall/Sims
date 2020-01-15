@@ -3,6 +3,13 @@ window = new group
     childElement1: new text
         name:"txt"
         op1:true
-        x:txt.op1 ? 20 : 100
-        y:20
+        x:30
+        y:double(50)
         innerText:"test"
+
+double = new funct
+    name:"double"
+    jsRep:{addition, [op1, op2]}
+    op1: double.caller.op1.jsRep
+    op2: double.caller.op1.jsRep
+    result: double.op1*2   

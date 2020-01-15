@@ -1,7 +1,6 @@
 
 object = new object
     name:"object"
-
 attribute = new object
     name:"attribute"
 get = new object
@@ -23,21 +22,6 @@ assemble = new object
 call = new object
     name:"call"
     lynxIR:{call}
-appRoot = new get
-    name:"appRoot"
-    lynxIR:{get}
-    instanceOf:get
-    rootObject:app
-    attribute:jsModule
-
-appParse = new object
-    name:"appParse"
-    lynxIR:{apply}
-    function:assemble
-    lynxText:new string
-        name:"lynxTextInput"
-        lynxIR:{input}
-    op1: compile(parse(appParse.lynxText))
 
 app = new object
     lynxIR:{app}
@@ -75,7 +59,7 @@ app = new object
         currentKeysPressed: [
             appkeyboard.currentKeysDown[0]
         ]
-    graphicalRepresentation:window
+    graphicalRepresentation:\window
 canvasRep = new attribute
     name:"canvasRep"
 canvasIR = new attribute
@@ -97,6 +81,7 @@ input = new object
     name:"input"
 number = new object
     name:"number"
+
 string = new object
     name:"string"
 group = new object
@@ -106,11 +91,11 @@ group = new object
 
 childElement1 = new attribute
     name:"childElement1"
-    inverseAttribute: parentGroup
+    inverseAttribute: \parentGroup
 
 childElement2 = new attribute
     name:"childElement2"
-    inverseAttribute: parentGroup
+    inverseAttribute: \parentGroup
 
 element = new object
     name:"element"
@@ -139,7 +124,7 @@ firstElement = new attribute
 
 nextElement = new attribute
     name:"nextElement"
-    inverseAttribute:previousElement
+    inverseAttribute:\previousElement
 
 previousElement = new attribute
     name:"previousElement"
@@ -148,12 +133,12 @@ value = new attribute
     name:"value"
 arrayElement = new attribute
     name:"arrayElement"
-    inverseAttribute:parentArray
+    inverseAttribute:\parentArray
 parentArray = new attribute
     name:"parentArray"
 elementValue = new attribute
     name:"elementValue"
-    inverseAttribute:parentElement
+    inverseAttribute:\parentElement
 
 parentElement = new attribute
     name:"parentElement"
@@ -163,14 +148,14 @@ parentConcept = new attribute
 
 textRepresentation = new attribute
     name:"textRepresentation"
-    inverseAttribute:parentConcept
+    inverseAttribute:\parentConcept
 
 graphicalRepresentation = new attribute
     name:"graphicalRepresentation"
-    inverseAttribute:parentConcept
+    inverseAttribute:\parentConcept
 accordianRep = new attribute
     name:"accordianRep"
-    inverseAttribute:parentConcept
+    inverseAttribute:\parentConcept
 
 attributes = new attribute
     name:"attributes"
@@ -311,10 +296,18 @@ forEach = new attribute
 
 ternary = new object
     name:"ternary"
-    lynxIR:{ternary}
-conditional =new attribute
-    name: "conditional"
     jsRep:{conditional, [op1, op2, op3]}
+    op1: ternary.caller.condition.jsRep
+    op2: ternary.caller.then.jsRep
+    op3: ternary.caller.alt.jsRep
+    lynxIR:{ternary}
+
+conditional = new object
+    name: "conditional" 
+    jsRep:{conditional, [op1, op2, op3]}
+    op1: conditional.caller.op1.jsRep
+    op2: conditional.caller.op2.jsRep
+    op3: conditional.caller.op3.jsRep
     lynxIR:{conditional}
 
 condition = new attribute
@@ -342,6 +335,9 @@ addition = new func
     jsRep:{addition, [op1, op2]}
     op1: addition.caller.op1.jsRep
     op2: addition.caller.op2.jsRep
+    equalTo:addition.result //in type number
+    result: new object //number
+        jsRep:addition.jsRep
     lynxIR:{addition}
 
 subtraction = new func
@@ -406,6 +402,16 @@ not = new func
     op1: not.caller.op1.jsRep
     lynxIR:{not}
 
+concat = new func
+    name:"concat"
+    jsRep:{concat, [op1, op2]}
+    op1: concat.caller.op1.jsRep
+    op2: concat.caller.op2.jsRep
+    equalTo:concat.result //in type string
+    result:new string
+        jsRep: {concat, [op1, op2]}
+
+
 index = new func
     name:"index"
     lynxIR:{index}
@@ -414,9 +420,7 @@ apply = new object
     name:"apply"
     result:new object
         name: "result1"
-        jsRep:apply.function.jsRep //{addition}
-        op1:apply.op1.jsRep //have this ref hard coded? 
-        op2:apply.op2.jsRep
+        jsRep:apply.function.jsRep
     lynxIR:{apply}
 
 op1 = new attribute
@@ -433,6 +437,6 @@ caller = new attribute
     name:"caller"
 function = new attribute
     name:"function"
-    inverseAttribute:caller
+    inverseAttribute:\caller
 funct = new object
     name:"funct"
