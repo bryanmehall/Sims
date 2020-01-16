@@ -1,4 +1,3 @@
-
 object = new object
     name:"object"
 attribute = new object
@@ -81,9 +80,12 @@ input = new object
     name:"input"
 number = new object
     name:"number"
+    equalTo:number
 
 string = new object
     name:"string"
+    equalTo:string
+
 group = new object
     name:"group"
     lynxIR:{group}
@@ -330,11 +332,19 @@ func = new object
     name:"func"
     lynxIR:{function}
 
+apply = new object
+    name:"apply"
+    equalTo:apply.result //replace with optimization
+    result:new object
+        name: "result1"
+        jsRep:apply.function.jsRep
+    lynxIR:{apply}
+
 addition = new func
     name:"addition"
     jsRep:{addition, [op1, op2]}
-    op1: addition.caller.op1.jsRep
-    op2: addition.caller.op2.jsRep
+    op1: addition.caller.op1.equalTo.jsRep
+    op2: addition.caller.op2.equalTo.jsRep
     equalTo:addition.result //in type number
     result: new object //number
         jsRep:addition.jsRep
@@ -415,13 +425,6 @@ concat = new func
 index = new func
     name:"index"
     lynxIR:{index}
-
-apply = new object
-    name:"apply"
-    result:new object
-        name: "result1"
-        jsRep:apply.function.jsRep
-    lynxIR:{apply}
 
 op1 = new attribute
     name:"op1"

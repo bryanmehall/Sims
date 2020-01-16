@@ -104,7 +104,7 @@ export const addObjectToTable = (table, objectData) => {
     table[getHash(objectData)] = objectData
 }
 
-const getInheritedName = (state, value, context) => {    
+const getInheritedName = (state, value, context) => { 
     const isNotInherited = hasAttribute(value, context[0][0].forwardAttr)//break into function
     if (isNotInherited){
         return getNameFromAttr(value)
@@ -114,9 +114,9 @@ const getInheritedName = (state, value, context) => {
     }  
 }
 
-const traceGet = false
-const evaluateSearch = (state, def, context) => { //evaluate search component of reference
-    const query = getAttr(getAttr(def, "rootObject"), "lynxIR").query
+const traceGet = true
+const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
+    const query = getAttr(searchObject, "lynxIR").query
     if (context === undefined){
         throw new Error('context undefined')
     } else if (context[0].length === 0){
@@ -130,7 +130,7 @@ const evaluateSearch = (state, def, context) => { //evaluate search component of
     if (name === query){
         return { context: newContext, value }
     } else {
-        return evaluateSearch(state, def, newContext)
+        return evaluateSearch(state, searchObject, newContext)
     }
 }
 
@@ -144,7 +144,8 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
   //root is a structure containing the value and the context
     if (rootType === 'search'){
         const newContext = addContextPath(context)
-        var root = evaluateSearch(state, getObject, newContext)
+        const searchObject = getAttr(getObject, "rootObject")
+        var root = evaluateSearch(state, searchObject, newContext)
     } else if (rootType === 'get'){
         root = evaluateReference(state, rootObject, context)
     } else {
@@ -178,10 +179,11 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
     let def = getAttr(objectData, prop)
+
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
-		const isInstance = hasAttribute(objectData, 'instanceOf')
+        const isInstance = hasAttribute(objectData, 'instanceOf')
         if (isInstance) {
             const inherited = getValueAndContext(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack
             var inheritedData = inherited.value
@@ -195,7 +197,7 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
 		throw new Error(`def is undefined for ${prop} of ${name}`)
     }
     
-	const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
+    const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
     if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
@@ -213,9 +215,12 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
 		}
 	} else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
-	} else if (prop === JS_REP){
+	} else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //clean this condition up
+        return evaluateSearch(state, valueData, context)
+    } else if (prop === JS_REP){
         return evaluatePrimitive(state, valueData, objectData, context)
 	} else {
+        console.log(prop)
         return { context, value: addHashToObject(valueData) }
 	}
 }
@@ -223,7 +228,6 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
 const evaluatePrimitive = (state, valueData, objectData, context) => { //allow this to return curried functions
     const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor?
     const argsList = jsRepValue.args || []
-
     const args = argsList.map((argName) => (
         getValue(state, argName, objectData, context).value
     ))

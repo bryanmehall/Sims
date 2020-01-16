@@ -16,6 +16,9 @@ var symbolTable = {
 function createString(str){
 	return {
         jsRep:str,
+        name: {jsRep:"string", lynxIR:{value:"string"}},//todo: clean this up -- remove lynxIR and just use jsRep?
+        //creates infinite loop where instanceOf:createLocalSearch("string"),
+        equalTo:createLocalSearch("string"),
         lynxIR:{type:"string", value:str}
 	}
 }
@@ -35,7 +38,6 @@ function createNOp(args, op, defaultState){
         lynxIR:{type:"apply"},
         function:op,
         instanceOf:"apply"
-        //result:"$applyPrimitive$"
     }
     if (typeof defaultState !== 'undefined' && defaultState !== ""){
         applyObject.defaultState = defaultState
@@ -43,7 +45,7 @@ function createNOp(args, op, defaultState){
     args.forEach((arg, i) => {
         applyObject["op"+(i+1)] = arg
     })
-    return createReferenceNode(applyObject, "result")
+    return applyObject//createReferenceNode(applyObject, "equalTo")
 }
 
 function createFunction(name){
@@ -64,6 +66,12 @@ function createArray(elementValues){
             lynxIR:{ type:"array", value:elements}
     }
 }
+function createLocalSearch(query){
+    return {
+        lynxIR:{type:"search", "query":query}
+    }
+}
+
 function buildPath(rootObject, attr, str){
     var getData = {
         lynxIR:{type:"get"},
@@ -207,23 +215,25 @@ Apply "function application"
 GlobalSearch "global search"
     = "\\"name:Name {return name}
 
-Search = query:Name {
-	return {
-            lynxIR:{type:"search", "query":query}
-        }
+Search "local search"
+    = query:Name {
+	return createLocalSearch(query)
     }
 
 Get "get"
     = root:Search? attributes:("."Name)+ {
     return attributes.reduce(buildPath, root)
-}
+    }
      
 //#########################  primitives  ################################
-Number 
+Number "number"
 	= value:(Float / Int) {
         return {
+            instanceOf:"number",
+            name:createString("number"),
             lynxIR:{type:"number", value: value},
             jsRep:value,
+            equalTo: createLocalSearch("number")
             //definition: createDef(value.toString())
         }
     }
