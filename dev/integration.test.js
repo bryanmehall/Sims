@@ -33,10 +33,9 @@ const runTest = (done, lynxText) => {
     canvasResult = {}
     const runtime = new Runtime(lynxText, canvas, ()=>{})
     const windowObject = runtime.parse(lynxText, 'window') //remove state side effect here
-    const canvasRepHash = getHash(objectFromName(runtime.hashTable, 'canvasRep'))
-    const windowContext = createParentContext(runtime.hashTable, [[]], windowObject, canvasRepHash)
-    const {value, context} = getValueAndContext(runtime.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
-    const canvasString = getValueAndContext(runtime.hashTable, "jsRep", value, context).value.value
+    const { value, context } = getValueAndContext(runtime.hashTable, "canvasRep", windowObject, [[]])//this is the lynx string for canvasRep
+    const { value: value1, context: context1 } = getValueAndContext(runtime.hashTable, "equalTo", value, context)
+    const canvasString = getValueAndContext(runtime.hashTable, "jsRep", value1, context1).value.value
     if (canvasString.includes("ctx.fillText('test', 20, 30)")){
         done()
     } else {

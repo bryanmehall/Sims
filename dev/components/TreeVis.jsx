@@ -1,10 +1,9 @@
 import React from "react"
 import * as d3 from "d3"
 import { formatArg } from '../ducks/object/utils'
-import { objectFromName, getPrimitiveType, getValue, hashFromName } from '../ducks/object/objectUtils'
+import { objectFromName, getPrimitiveType, getValue, getValueAndContext } from '../ducks/object/objectUtils'
 import { getHash } from '../ducks/object/hashUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
-import { createParentContext } from '../ducks/object/contextUtils'
 import { Node } from './TreeNode'
 
 class TreeVis extends React.Component {
@@ -136,14 +135,12 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     }
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep', 'equalTo'].includes(entry[0])
         ))
         .map((entry) => {
             const context = first.context || [[]]
             const attr = entry[0]
-            const attrHash = hashFromName(objectTable, attr)
-            const newContext = createParentContext(objectTable, context, first.object, attrHash)
-            const object = getValue(objectTable, attr, first.object, newContext)
+            const {value: object, context: newContext } = getValueAndContext(objectTable, attr, first.object, context)
             newContext[0][0].sourceHash = getHash(object) //add sourceHash for debug
             return { object: object, context: newContext, attr, parId: first.object.hash, level: level+1 }
         })

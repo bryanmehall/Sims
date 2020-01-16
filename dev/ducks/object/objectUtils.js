@@ -114,7 +114,7 @@ const getInheritedName = (state, value, context) => {
     }  
 }
 
-const traceGet = true
+const traceGet = false
 const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
     const query = getAttr(searchObject, "lynxIR").query
     if (context === undefined){
@@ -221,7 +221,6 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
 	} else if (prop === JS_REP){
         return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData? 
 	} else {
-        console.log(prop)
         return { context, value: addHashToObject(valueData) }
 	}
 }

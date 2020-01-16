@@ -108,21 +108,13 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        const windowObject = this.parse(this.lynxText, 'window')//use generic lynx parse function---stte modification is handled in getValue
-        const canvasRepHash = getHash(objectFromName(this.hashTable, 'canvasRep'))
-        const windowContext = createParentContext(this.hashTable, [[]], windowObject, canvasRepHash)
-
-        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])//this is the lynx string for canvasRep
-        const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "result", value, context)
-        console.log(value1, context1)
+        const windowObject = this.parse(this.lynxText, 'window') //use generic lynx parse function---stte modification is handled in getValue
+        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])
+        const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "equalTo", value, context)
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value1, context1).value.value
-        //const renderFunction = new Function('ctx', canvasString)
-        
-        //const getAppJSObject = this.parse(this.lynxText, 'appRoot')
-        //const appGenIR = this.compile(getAppJSObject)
-        //this.appIRGen = this.assemble(appGenIR)
+        const renderFunction = new Function('ctx', canvasString)
 
-        //this.initApp(lynxText)
+
         const width = canvas.getBoundingClientRect().width //this assumes that the size won't change
         const height = canvas.getBoundingClientRect().height
         canvas.width = width
