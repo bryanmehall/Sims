@@ -9,7 +9,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "gForceVector",
@@ -20,10 +20,10 @@
 							"tailY": "bobY",
 							"x": "fg_x",
 							"y": "fg_y",
-							"opacity": 0
+							"opacity": 0,
+							"label": "mg"
 						},
 						"children": [
-
 						]
 					},
 					"interp": "linear"
@@ -35,7 +35,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "tensionVector",
@@ -46,7 +46,8 @@
 							"tailY": "bobY",
 							"x": "ft_x",
 							"y": "ft_y",
-							"opacity": 0
+							"opacity": 0,
+							"label":"F_t"
 						},
 						"children": [
 
@@ -77,7 +78,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 0.5,
 					"params": {
 						"name": "netForceVector",
@@ -88,7 +89,8 @@
 							"tailY": "bobY",
 							"x": "fnet_x",
 							"y": "fnet_y",
-							"opacity": 0
+							"opacity": 0,
+							"label": "F_net"
 						},
 						"children": [
 
@@ -116,7 +118,7 @@
 		}
 	],
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
 				"props": {},
@@ -157,7 +159,8 @@
 					"anchorY":"anchorY",
 					"stringHighlight":0,
 					"massHighlight":0,
-					"anchorHighlight":0
+					"anchorHighlight":0,
+					"angleHighlight":0
 				}
 			}
 		},

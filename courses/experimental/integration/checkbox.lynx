@@ -1,0 +1,33 @@
+window = new group
+    name:"window"
+    childElements: [
+        new get
+            lynxIR:{get}
+            rootObject:checkbox
+            attribute:graphicalRepresentation
+    ]
+checkbox = new object
+    name:"checkbox"
+    isChecked: condition(false)
+        if checkbox.graphicalRepresentation.isClicked then !checkbox.isChecked.previousState
+        checkbox.isChecked.previousState
+    graphicalRepresentation: new text
+        name:"box"
+        mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30 && app.mouse.pos.y < 40 && app.mouse.pos.y > 15
+        isClicked: box.mouseOver && app.mouse.clicked
+        innerText: checkbox.isChecked ? "1" : "0"
+        x:30
+        y:30
+
+state = new object
+    name:"state"
+
+isChecked = new attribute
+    name:"isChecked"
+mouseOver = new attribute
+    name:"mouseOver"
+isClicked = new attribute
+    name:"isClicked"
+left = new attribute
+right = new attribute
+isChanged = new attribute

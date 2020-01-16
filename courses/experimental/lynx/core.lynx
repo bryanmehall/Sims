@@ -1,0 +1,445 @@
+object = new object
+    name:"object"
+attribute = new object
+    name:"attribute"
+get = new object
+    definition:{initial} //no name and definition is primitive to avoid infinite loop
+functionalRep = new attribute
+    name:"functionalRep"
+functionalRepresentation = new object
+    name:"functionalRepresentation"
+compile = new object
+    name:"compile"
+    lynxIR:{compile}
+definition = new attribute
+    name: "definition"
+jsModule = new attribute
+    name:"jsModule"
+assemble = new object
+    name:"assemble"
+    lynxIR:{assemble}
+call = new object
+    name:"call"
+    lynxIR:{call}
+
+app = new object
+    lynxIR:{app}
+    name:"app"
+    lynxText: new object
+        name:"lynxTextInput"
+        lynxIR:{input}
+    definition:parse(app.lynxText, "app")
+    jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
+    canvasRep:"a"+"b"
+    mouse: new object
+        down: new input
+            name:"mouseDown"
+            defaultState:false
+            lynxIR:{input}
+        pos: new coordinatePosition
+            x:new input
+                name:"mouseX"
+                lynxIR:{input}
+            y:new input
+                name:"mouseY"
+                lynxIR:{input}
+        clicked: condition(false)
+            if app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState then true
+            false
+        isPressedDown: condition(false)
+            if !app.mouse.down.previousState && app.mouse.down && !app.mouse.isPressedDown.previousState then true
+            false
+    keyboard: new object
+        name:"appkeyboard"
+        currentKeysDown: new array
+            name:"currentKeys"
+            length:0
+            lynxIR:{input}
+        currentKeysPressed: [
+            appkeyboard.currentKeysDown[0]
+        ]
+    graphicalRepresentation:\window
+canvasRep = new attribute
+    name:"canvasRep"
+canvasIR = new attribute
+    name:"canvasIR"
+currentKeysPressed = new attribute
+    name:"currentKeyPressed"
+previousState = new attribute
+    name:"previousState"
+lynxText = new attribute
+    name:"lynxText"
+keyboard = new attribute
+    name: "keyboard"
+
+currentKeysDown = new attribute
+    name:"currentKeysDown"
+isPressedDown = new attribute
+    name:"isPressedDown"
+input = new object
+    name:"input"
+number = new object
+    name:"number"
+    equalTo:number
+
+string = new object
+    name:"string"
+    equalTo:string
+
+group = new object
+    name:"group"
+    lynxIR:{group}
+    canvasRep:group.childElement1.canvasRep
+
+childElement1 = new attribute
+    name:"childElement1"
+    inverseAttribute: \parentGroup
+
+childElement2 = new attribute
+    name:"childElement2"
+    inverseAttribute: \parentGroup
+
+element = new object
+    name:"element"
+    index:new number
+        name:"arrayIndex"
+        lynxIR:{arrayIndex}
+    lynxIR:{arrayElement}
+
+parentGroup = new attribute
+    name:"parentGroup"
+
+div = new group
+    name:"div"
+    childElement1: div.firstElement
+    firstElement:new text
+        innerText:"abc"
+        x:div.parentGroup.x
+        y:100 //div.parentGroup.pos.y
+        nextElement: new text
+            innerText:"abc"
+            x:10
+            y:100
+
+firstElement = new attribute
+    name:"firstElement"
+
+nextElement = new attribute
+    name:"nextElement"
+    inverseAttribute:\previousElement
+
+previousElement = new attribute
+    name:"previousElement"
+
+value = new attribute
+    name:"value"
+arrayElement = new attribute
+    name:"arrayElement"
+    inverseAttribute:\parentArray
+parentArray = new attribute
+    name:"parentArray"
+elementValue = new attribute
+    name:"elementValue"
+    inverseAttribute:\parentElement
+
+parentElement = new attribute
+    name:"parentElement"
+
+parentConcept = new attribute
+    name:"parentConcept"
+
+textRepresentation = new attribute
+    name:"textRepresentation"
+    inverseAttribute:\parentConcept
+
+graphicalRepresentation = new attribute
+    name:"graphicalRepresentation"
+    inverseAttribute:\parentConcept
+accordianRep = new attribute
+    name:"accordianRep"
+    inverseAttribute:\parentConcept
+
+attributes = new attribute
+    name:"attributes"
+
+lynxIR = new attribute
+    name:"lynxIR"
+jsRep = new attribute
+    name:"jsRep"
+jsPrimitive = new attribute
+    name:"jsPrimitive"
+parse = new func
+    name:"parse"
+    lynxIR:{parse}
+childElements = new attribute
+    name:"childElements"
+name = new attribute
+    name:"name"
+parentValue = new attribute
+    name:"parentValue"
+inverseAttribute = new attribute
+    name:"inverseAttribute"
+instanceOf = new attribute
+    name:"instanceOf"
+prevVal = new attribute
+    name:"prevVal"
+    textRepresentation:new text
+        name:"textRep"
+        innerText:"abc"
+        x:10
+        y:10
+
+type = new attribute
+    name:"type"
+equalTo = new attribute
+    name:"equalTo"
+mouse = new attribute
+    name:"mouse"
+set = new object
+    name:"set"
+    lynxIR:{set}
+
+array = new object
+    name:"array"
+    length:0
+
+length = new attribute
+    name:"length"
+arrayLength = new func
+    name:"arrayLength"
+    lynxIR:{arrayLength}
+concat = new func
+    name:"concat"
+    lynxIR:{concat}
+
+slice = new func
+    name:"slice"
+    lynxIR:{slice}
+splice = new func
+    name:"splice"
+    lynxIR:{splice}
+substring = new func
+    name:"substring"
+    lynxIR:{substring}
+insert = new func
+    name: "insert"
+    op1:"insertString"
+    op2:"targetString"
+    op3:3
+    result:substring(insert.op2, 0, insert.op3-1)+insert.op1+substring(insert.op2, insert.op3-1)
+
+index = new attribute
+    name:"index"
+setEquiv = new attribute
+    name:"setEquiv"
+subset1 = new attribute
+    name:"subset1"
+subset2 = new attribute
+    name:"subset2"
+
+text = new object
+    lynxIR:{text}
+    name:"text"
+    r:0
+    g:0
+    b:0
+    x:text.pos.x
+    y:text.pos.y
+    canvasRep:"ctx.font = '18px Arial'; ctx.fillText('"+text.innerText+"', "+text.x+", "+text.y+")"
+    pos: new coordinatePosition
+        x:app.mouse.pos.x
+        y:app.mouse.pos.y
+
+pos = new attribute
+    name:"pos"
+x = new attribute
+    name:"x"
+y = new attribute
+    name:"y"
+coordinatePosition = new attribute
+    name:"coordinatePosition"
+
+innerText = new attribute
+    name:"innerText"
+r = new attribute
+    name:"r"
+g = new attribute
+    name:"g"
+b = new attribute
+    name:"b"
+width = new attribute
+    name:"width"
+height = new attribute
+    name:"height"
+
+line = new object
+    lynxIR:{line}
+    name:"line"
+    r:0
+    g:0
+    b:0
+    x1:0
+    y1:0
+    x2:20
+    y2:20
+x1 = new attribute
+    name:"x1"
+y1 = new attribute
+    name:"y1"
+x2 = new attribute
+    name:"x2"
+y2 = new attribute
+    name:"y2"
+
+rootObject = new attribute
+    name:"rootObject"
+forEach = new attribute
+    name:"forEach"
+
+ternary = new object
+    name:"ternary"
+    jsRep:{conditional, [op1, op2, op3]}
+    op1: ternary.caller.condition.jsRep
+    op2: ternary.caller.then.jsRep
+    op3: ternary.caller.alt.jsRep
+    lynxIR:{ternary}
+
+conditional = new object
+    name: "conditional" 
+    jsRep:{conditional, [op1, op2, op3]}
+    op1: conditional.caller.op1.jsRep
+    op2: conditional.caller.op2.jsRep
+    op3: conditional.caller.op3.jsRep
+    lynxIR:{conditional}
+
+condition = new attribute
+    name:"condition"
+then = new attribute
+    name:"then"
+alt = new attribute
+    name:"alt"
+
+down = new attribute
+    name:"down"
+clicked = new attribute
+    name:"clicked"
+query = new attribute
+    name:"query"
+search = new object
+    name:"search"
+
+func = new object
+    name:"func"
+    lynxIR:{function}
+
+apply = new object
+    name:"apply"
+    equalTo:apply.result //replace with optimization
+    result:new object
+        name: "result1"
+        jsRep:apply.function.jsRep
+    lynxIR:{apply}
+
+addition = new func
+    name:"addition"
+    jsRep:{addition, [op1, op2]}
+    op1: addition.caller.op1.equalTo.jsRep
+    op2: addition.caller.op2.equalTo.jsRep
+    equalTo:addition.result //in type number
+    result: new object //number
+        jsRep:addition.jsRep
+    lynxIR:{addition}
+
+subtraction = new func
+    name:"subtraction"
+    jsRep:{subtraction, [op1, op2]}
+    op1: subtraction.caller.op1.jsRep
+    op2: subtraction.caller.op2.jsRep
+    lynxIR:{subtraction}
+
+multiplication = new func
+    name:"multiplication"
+    jsRep:{multiplication, [op1, op2]}
+    op1: multiplication.caller.op1.jsRep
+    op2: multiplication.caller.op2.jsRep
+    lynxIR:{multiplication}
+
+division = new func
+    name:"division"
+    jsRep:{division, [op1, op2]}
+    op1: division.caller.op1.jsRep
+    op2: division.caller.op2.jsRep
+    lynxIR:{division}
+
+equal = new func
+    name:"equal"
+    jsRep:{equal, [op1, op2]}
+    op1: equal.caller.op1.jsRep
+    op2: equal.caller.op2.jsRep
+    lynxIR:{equal}
+
+lessThan = new func
+    name:"lessThan"
+    jsRep:{lessThan, [op1, op2]}
+    op1: lessThan.caller.op1.jsRep
+    op2: lessThan.caller.op2.jsRep
+    lynxIR:{lessThan}
+
+greaterThan = new func
+    name:"greaterThan"
+    jsRep:{greaterThan, [op1, op2]}
+    op1: greaterThan.caller.op1.jsRep
+    op2: greaterThan.caller.op2.jsRep
+    lynxIR:{greaterThan}
+
+and = new func
+    name:"and"
+    jsRep:{and, [op1, op2]}
+    op1: and.caller.op1.jsRep
+    op2: and.caller.op2.jsRep
+    lynxIR:{and}
+
+or = new func
+    name:"or"
+    jsRep:{or, [op1, op2]}
+    op1: or.caller.op1.jsRep
+    op2: or.caller.op2.jsRep
+    lynxIR:{or}
+
+not = new func
+    name:"not"
+    jsRep:{not, [op1]}
+    op1: not.caller.op1.jsRep
+    lynxIR:{not}
+
+concat = new func
+    name:"concat"
+    jsRep:{concat, [op1, op2]}
+    op1: concat.caller.op1.jsRep
+    op2: concat.caller.op2.jsRep
+    equalTo:concat.result //in type string
+    result:new string
+        jsRep: {concat, [op1, op2]}
+
+
+index = new func
+    name:"index"
+    lynxIR:{index}
+
+op1 = new attribute
+    name:"op1"
+op2 = new attribute
+    name:"op2"
+op3 = new attribute
+    name:"op3"
+op4 = new attribute
+    name:"op4"
+result = new attribute
+    name:"result"
+caller = new attribute
+    name:"caller"
+function = new attribute
+    name:"function"
+    inverseAttribute:\caller
+funct = new object
+    name:"funct"

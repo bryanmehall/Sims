@@ -1,0 +1,21 @@
+window = new group
+    name:"window"
+    value: window.isBeingDragged || window.mouseOver
+    isBeingDragged: window.value.previousState
+    mouseOver: window.value.previousState
+    childElement1: new text
+        name:"windowHandle"
+        innerText:"x"
+        x:window.value
+        y:65
+
+isChanged = new attribute
+    name:"isChanged"
+handle = new attribute
+    name:"handle"
+mouseOver = new attribute
+    name:"mouseOver"
+dragOffset = new attribute
+    name:"dragOffset"
+isBeingDragged = new attribute
+    name:"isBeingDragged"

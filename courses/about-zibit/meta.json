@@ -4,11 +4,15 @@
 	"description": "A guided walkthrough of the philosophy behind Zibit and its features structured like a course",
 	"parts":[
 		{
-			"id":"",
+			"id":"introduction",
 			"title":"Introduction",
 			"contentBlocks":[
 				{
-
+					"id": "a-new-tool-for-learning",
+					"title":"A New Tool for Learning",
+					"text":"",
+					"type":"anim",
+					"length":34
 				}
 			]
 		},
@@ -33,9 +37,14 @@
 					"title": "Concept Checks",
 					"text": "At every step along the way students check their understanding and can go back to fill any gaps so they are never lost",
 					"type":"test"
+				},
+				{
+					"id":"a-learning-ecosystem",
+					"title":"A Learning Ecosystem",
+					"text":"Zibit finds deficincies in the studen't learning and adapts the curiculum to fill in the gaps",
+					"type":"anim"
 				}
 			]
 		}
-
 	]
 }

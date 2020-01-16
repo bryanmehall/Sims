@@ -1,0 +1,9 @@
+window = new group
+    name:"window"
+    textRepresentation: new text
+        name:"txt"
+        innerText:"test"
+        x:txt.parentGroup.x
+        y:30
+    childElement1: window.textRepresentation
+    x:20

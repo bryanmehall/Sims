@@ -16,7 +16,7 @@
 			"dt": 0,
 			"actions": [
 				{
-					"type": "fadeWidgetIn",
+					"type": "fadeObjectIn",
 					"dur": 1,
 					"params": {
 						"name": "posPlot",
@@ -48,7 +48,7 @@
 		}
 	],
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
 				"props": {},

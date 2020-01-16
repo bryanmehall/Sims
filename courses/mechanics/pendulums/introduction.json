@@ -29,7 +29,7 @@
 			"actions": [
 				{
 					"type": "tweenProperty",
-					"dur": 0.2,
+					"dur": 1,
 					"params": {
 						"objectName": "pendulum",
 						"propName": "massHighlight",
@@ -63,7 +63,7 @@
 			"actions": [
 				{
 					"type": "tweenProperty",
-					"dur": 0.2,
+					"dur": 1,
 					"params": {
 						"objectName": "pendulum",
 						"propName": "stringHighlight",
@@ -97,7 +97,7 @@
 			"actions": [
 				{
 					"type": "tweenProperty",
-					"dur": 0.2,
+					"dur": 1,
 					"params": {
 						"objectName": "pendulum",
 						"propName": "anchorHighlight",
@@ -125,6 +125,23 @@
 			]
 		},
 		{
+			"time": 15,
+			"dt": 0,
+			"actions": [
+				{
+					"type": "tweenProperty",
+					"dur": 0.5,
+					"params": {
+						"objectName": "pendulum",
+						"propName": "angleHighlight",
+						"initValue": 0,
+						"finalValue": 1
+					},
+					"interp": "linear"
+				}
+			]
+		},
+		{
 			"time": 21,
 			"dt": 0,
 			"actions": [
@@ -142,180 +159,622 @@
 		}
 	],
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
-				"props": {},
-				"children": [
-					"pendulumPlot"
-				]
+				"props": {
+					"name":"app",
+					"activeObject": "app",
+					"childElements": "appChildren",
+					"instanceOf":"object",
+					"attributes":"unionResult",
+					"mouseInput":"mouse"
+				}
 			},
-			"pendulumPlot":{
+			"objectAttrs": {
+				"type": "set",
+				"props": {
+					"lynxIR": { "type": "set", "elements": ["accordianRep"] }
+				}
+			},
+			"appAttrs":{
+				"type":"set",
+				"props": {
+					"lynxIR":{ "type": "set", "elements": ["name","childElements"] }
+				}
+			},
+			"unionAttrs":{
+				"type":"apply",
+				"props":{
+					"set1":"objectAttrs",
+					"set2":"appAttrs",
+					"result":"unionResult",
+					"lynxIR":{"type":"apply"},
+					"function": "unionFunction"
+				}
+			},
+			"unionResult":{
+				"type":"set",
+				"props":{
+					"lynxIR":{"type":"set"},
+                    "setEquiv":"unionAttrs"
+				}
+			},
+			"mouse":{
+				"type":"mouse",
+				"props":{
+					"pos":"mousePos",
+					"down":"mouseDown"
+				}
+			},
+			"mouseX":{
+				"type":"number",
+				"props": {
+					"lynxIR":{"type":"number", "value":0}
+				}
+			},
+			"mouseY":{
+				"type":"number",
+				"props":{
+					"lynxIR":{"type":"number", "value":0}
+				}
+			},
+			"mousePos":{
+				"type":"coordinatePoint",
+				"props":{
+					"x":"mouseX",
+					"y":"mouseY"
+				}
+			},
+			"mouseDown":{
+				"type":"bool",
+				"props":{
+					"lynxIR": {"type": "bool", "value":false}
+				}
+			},
+			"object":{
+				"type": "object",
+				"props":{
+					"attributes":"objectAttrs"
+				}
+			},
+			"attribute":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"object"
+				}
+			},
+			"attributes":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"accordianRep":{
+				"type":"attribute",
+				"props":{
+					"instanceOf": "attribute"
+				}
+			},
+			"undef":{
+				"type":"undef",
+				"props":{
+					"name":"undef"
+				}
+			},
+			"true":{
+				"type":"bool",
+				"props":{
+					"name":"true",
+					"lynxIR": {"type":"bool", "value":true}
+				}
+			},
+			"false":{
+				"type":"bool",
+				"props":{
+					"name":"false",
+					"lynxIR": {"type":"bool", "value":false}
+				}
+			},
+			"number":{
+				"type":"number",
+				"props":{
+					"name":"number",
+					"lynxIR": {"type":"number", "value":0}
+				}
+			},
+			"appChildren": {
+				"type":"set",
+				"props": {
+					"name":"appChildren",
+					"lynxIR":{ "type": "set", "elements": ["pendulumPlot"] }
+				}
+			},
+			"name":{
+				"type":"attribute",
+				"props": {
+					"instanceOf": "attribute"
+				}
+			},
+			"childElements":{
+				"type":"attribute",
+				"props": {
+					"instanceOf": "attribute"
+				}
+			},
+			"pendulumPlot": {
 				"type": "Plot",
 					"props": {
+						"name":"pendulumPlot",
 						"xVar": "bobX",
 						"yVar": "bobY",
-						"xVars": [
-							"bobX"
-						],
-						"yVars": [
-							"bobY"
-						],
-						"width": 400,
-						"height": 400,
-						"pos": {
-							"x": 50,
-							"y": 450
-						},
-					"visibility": 1
-					},
-					"children": [
-						"pendulum"
-					]
+						"coordinateSystem":"pendulumCoordSys",
+						"xVars": "bobX",
+						"yVars": "bobY",
+						"width": "plotWidth",
+						"height": "plotHeight",
+						"pos": "plotPos",
+						"visibility": "plotVisibility",
+						"childElements":"plotChildren"
+					}
 			},
-
-			"pendulum":{
-				"type": "Pendulum",
+			"plotVisibility":{
+				"type":"number",
 				"props":{
-					"bobX":"bobX",
-					"bobY":"bobY",
-					"anchorX":"anchorX",
-					"anchorY":"anchorY",
-					"stringHighlight":0,
-					"massHighlight":0,
+					"name":"plotVisibility",
+					"lynxIR": {"type": "number", "value": 1}
+				}
+			},
+			"plotChildren":{
+				"type": "set",
+				"props":{
+					"name":"plotChildren",
+					"lynxIR": {"type":"set", "elements":["circle", "circle1"]}
+				}
+			},
+			"plotWidth":{
+				"type":"number",
+				"props":{
+					"name":"plotWidth",
+					"lynxIR": {"type": "number", "value": 400}
+				}
+			},
+			"plotHeight":{
+				"type":"number",
+				"props":{
+					"name":"plotHeight",
+					"lynxIR": {"type": "number", "value": 450}
+				}
+			},
+			"plotPos": {
+				"type": "coordinatePoint",
+				"props": {
+					"name":"plotPos",
+					"x": "plotX",
+					"y": "plotY"
+				}
+			},
+			"plotX":{
+				"type":"number",
+				"props":{
+					"name":"plotX",
+					"lynxIR": {"type": "number", "value": 50}
+				}
+			},
+			"plotY":{
+				"type":"number",
+				"props":{
+					"name":"plotY",
+					"lynxIR": {"type": "number", "value": 500}
+				}
+			},
+			"pendulumCoordSys":{
+				"type":"coordSys",
+				"props":{
+					"name":"pendulumCoordSys",
+					"xMin":"xMin",
+					"xMax":"xMax",
+					"yMin":"yMin",
+					"yMax":"yMax"
+				}
+			},
+			"xMin":{
+				"type":"number",
+				"props":{
+					"name":"xMin",
+					"lynxIR": {"type": "number", "value": -30}
+				}
+			},
+			"xMax":{
+				"type":"number",
+				"props":{
+					"name":"xMax",
+					"lynxIR": {"type": "number", "value": 30}
+				}
+			},
+			"yMin":{
+				"type":"number",
+				"props":{
+					"name":"yMin",
+					"lynxIR": {"type": "number", "value": -50}
+				}
+			},
+			"yMax":{
+				"type":"number",
+				"props":{
+					"name":"yMax",
+					"lynxIR": {"type": "number", "value": 10}
+				}
+			},
+			"circle": {
+				"type":"Circle",
+				"props":{
+					"name":"circle",
+					"radius":"getCircleRadius",
+					"centerPoint":"circleCenter",
+					"highlighted":"false",
+					"lynxIR":{ "type": "circle" }
+				}
+			},
+			"getCircleRadius": {
+				"type":"get",
+				"props":{
+					"name":"getCircleRadius",
+					"lynxIR": {"type": "get"},
+					"rootObject": "radiusExpression",
+					"attribute": "numericalEquiv"
+				}
+			},
+			"radiusExpression":{
+				"type":"expression",
+				"props":{
+					"name":"radiusExpression",
+					"left": "radiusLeft",
+					"right": "radiusRight",
+					"function": "additionFunction",
+					"numericalEquiv": "radiusResult",
+					"textRep": "expressionText",
+					"lynxIR": { "type":"apply" }
+				}
+			},
+			"expressionText":{
+				"type": "string",
+				"props":{
+					"name":"expressionText",
+					"lynxIR":{"type": "string", "value":"3+2"}
+				}
+			},
+			"numericalEquiv":{
+				"type":"attribute",
+				"props":{
+					"name":"numericalEquiv"
+				}
+			},
+			"additionFunction":{
+				"type": "function",
+				"props": {
+					"name":"additionFunction",
+					"lynxIR": { "type":"function", "function": "add"}
+				}
+			},
+			"unionFunction":{
+				"type":"function",
+				"props":{
+					"name":"unionFunction",
+					"lynxIR": { "type":"function", "function": "union"}
+				}
+			},
+			"radiusLeft":{
+				"type":"number",
+				"props":{
+					"name":"radiusLeft",
+					"lynxIR": {"type": "number", "value": 50}
+				}
+			},
+			"radiusResult":{
+				"type":"number",
+				"props":{
+					"name":"radiusResult",
+					"numericalEquiv": "radiusExpression",
+					"lynxIR": { "type": "number" }
+				}
+			},
+			"radiusRight":{
+				"type":"number",
+				"props":{
+					"name":"radiusRight",
+					"lynxIR": {"type": "number", "value": 100}
+				}
+			},
+			"circleCenter": {
+				"type":"coordinatePoint",
+				"props":{
+					"name":"circleCenter",
+					"x": "radiusX",
+					"y": "radiusY"
+				}
+			},
+			"radiusX":{
+				"type":"number",
+				"props":{
+					"name":"radiusX",
+					"lynxIR": {"type": "number", "value": 250}
+				}
+			},
+			"radiusY":{
+				"type":"number",
+				"props":{
+					"name":"radiusY",
+					"lynxIR": {"type": "number", "value": 200}
+				}
+			},
+			"circle1": {
+				"type":"Circle",
+				"props":{
+					"name":"circle1",
+					"radius":"conditionalBlock",
+					"centerPoint":"circle1Center",
+					"expanded":"expandedBool",
+					"highlighted":"false",
+					"lynxIR":{ "type": "circle" }
+				}
+			},
+			"conditionalBlock": {
+				"type":"ternary",
+				"props":{
+					"lynxIR": {"type":"ternary"},
+					"condition": "expandedBool",
+					"then":"radiusRight",
+					"else":"radiusLeft"
+				}
+			},
+			"expandedBool":{
+				"type":"bool",
+				"props": {
+					"name":"expandedBool",
+					"lynxIR": {"type":"bool", "value":false}
+				}
+			},
+			"circle1Center": {
+				"type":"coordinatePoint",
+				"props":{
+					"name":"circle1Center",
+					"x": "radiusX",
+					"y": "radiusY1"
+				}
+
+			},
+			"radiusY1": {
+				"type": "number",
+				"props":{
+					"name":"radiusY1",
+					"lynxIR": {"type": "number", "value": 100}
+				}
+			},
+			"coordinateTransform":{
+				"type": "coordinateTransform",
+				"props":{
+					"name":"coordinateTransform",
+					"from":"pendulumCoordSys",
+					"to":""
+				}
+			},
+			"pendulum": {
+				"type": "Pendulum",
+				"props": {
+					"name":"pendulum",
+					"length": "length",
+					"angle": "theta",
+					"anchorPos": "anchorPos",
+					"graphicalRepresentation":"pendulumDiagram",
+					"stringHighlight": 0,
+					"massHighlight": 0,
 					"anchorHighlight":0
 				}
-			}
+			},
+			"pendulumDiagram":{
+				"type": "Pendulum",
+				"props": {
+					"name":"pendulumDiagram",
+					"bobPos":"bobPos"
+				}
+			},
+			"bobPos":{
+				"type":"coordinatePoint",
+				"props":{
+					"name":"bobPos",
+					"x": "bobX",
+					"y": "bobY",
+					"coordinateSystem": "pendulumCoordSys"
+				}
+			},
+			"anchorPos": {
+				"type": "coordinatePoint",
+				"props": {
+					"name":"anchorPos",
+					"x": "anchorX",
+					"y": "anchorY",
+					"coordinateSystem": "pendulumCoordSys"
+				}
+			},
 
-		},
-		"quantity": {
 			"bobX": {
-				"value": 0,
-				"min": -30,
-				"max": 30,
-				"previousValues":[],
-				"independent": false,
-				"symbol": "x",
-				"highlighted": false,
-				"color": "#ffa020"
+				"type":"quantity",
+				"props":{
+					"value": 0,
+					"min": -30,
+					"max": 30,
+					"independent": false,
+					"symbol": "x",
+					"highlighted": false,
+					"color": "#ffa020"
+				}
 			},
 			"bobY": {
-				"value": -30,
-				"min": -50,
-				"max": 10,
-				"abstractions": 0,
-				"previousValues":[],
-				"independent": false,
-				"symbol": "y",
-				"highlighted": false
+				"type":"quantity",
+				"props":{
+					"value": -30,
+					"min": -50,
+					"max": 10,
+					"abstractions": 0,
+					"independent": false,
+					"symbol": "y",
+					"highlighted": false
+				}
 			},
 			"theta0":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":true,
-				"symbol":"theta_0"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":true,
+					"symbol":"theta_0"
+				}
 			},
 			"theta":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":false,
-				"symbol":"theta"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":false,
+					"symbol":"theta"
+				}
 			},
 			"omega":{
-				"value":0,
-				"min":-3.1415,
-				"max":3.1415,
-				"independent":false,
-				"symbol":"w"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":-3.1415,
+					"max":3.1415,
+					"independent":false,
+					"symbol":"w"
+				}
 			},
 			"length":{
-				"value":40,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"l"
+				"type":"quantity",
+				"props":{
+					"value": 40,
+					"min": 0,
+					"max": 50,
+					"independent": true,
+					"symbol": "l"
+				}
 			},
 			"g":{
-				"value":-981,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"g"
+				"type":"quantity",
+				"props":{
+					"value":-981,
+					"min":0,
+					"max":50,
+					"independent":true,
+					"symbol":"g"
+				}
 			},
 			"m":{
-				"value":10,
-				"min":0,
-				"max":50,
-				"independent":true,
-				"symbol":"m"
+				"type":"quantity",
+				"props":{
+					"value":10,
+					"min":0,
+					"max":50,
+					"independent":true,
+					"symbol":"m"
+				}
 			},
 			"t":{
-				"value": 0,
-				"min": 0,
-				"max": 20,
-				"abstractions": 200,
-				"independent": true,
-				"symbol": "t",
-				"highlighted": false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value": 0,
+					"min": 0,
+					"max": 20,
+					"abstractions": 200,
+					"independent": true,
+					"symbol": "t",
+					"highlighted": false,
+					"color": "#0055ff"
+				}
 			},
 			"anchorX":{
-				"value":0,
-				"independent":true,
-				"min":-30,
-				"max":30
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":true,
+					"min":-30,
+					"max":30
+				}
 			},
 			"anchorY":{
-				"value":0,
-				"independent":true,
-				"min":-50,
-				"max":10
+				"type":"quantity",
+					"props":{
+					"value":0,
+					"independent":true,
+					"min":-50,
+					"max":10
+				}
 			},
 			"fg_x":{
-				"value":0,
-				"independent":true,
-				"min":0,
-				"max":10,
-				"symbol":"F_g",
-				"color": "rgba(255,0,0,0.5)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":true,
+					"min":0,
+					"max":10,
+					"symbol":"F_g",
+					"color": "rgba(255,0,0,0.5)"
+				}
 			},
 			"fg_y":{
-				"value":0,
-				"independent":false,
-				"min":0,
-				"max":10000,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"independent":false,
+					"min":0,
+					"max":10000,
+					"color": "#0055ff"
+				}
 			},
 			"ft_x":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "rgba(255, 232, 0, 0.8)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "rgba(255, 232, 0, 0.8)"
+				}
 			},
 			"ft_y":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "#0055ff"
+				}
 			},
 			"fnet_x":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "rgba(0,0,255,0.5)"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "rgba(0,0,255,0.5)"
+				}
 			},
 			"fnet_y":{
-				"value":0,
-				"min":0,
-				"max":10000,
-				"independent":false,
-				"color": "#0055ff"
+				"type":"quantity",
+				"props":{
+					"value":0,
+					"min":0,
+					"max":10000,
+					"independent":false,
+					"color": "#0055ff"
+				}
 			}
-		}
+		},
+		"quantity":{}
 	}
 }

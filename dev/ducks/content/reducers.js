@@ -138,7 +138,7 @@ const partReducer = (state = [], action) => {
 				courseId:action.payload.courseId,
 				partId: partData.id,
 				title: partData.title,
-				contentBlocks:partData.contentBlocks.map((contentBlockData)=>(contentBlockData.id))
+				contentBlocks:partData.contentBlocks.map((contentBlockData)=>(contentBlockData.id)),
 			}
 			return Object.assign({}, state, partMetaData)
 		default:
@@ -151,7 +151,6 @@ const contentBlockReducer = (state={} , action) => {
 		case "INITIALIZE_CONTENT_BLOCK_STATE": {
 			const contentBlockData = action.payload.contentBlockData
 			const type = contentBlockData.type
-
 			let contentMetaData = {
 				courseId: action.payload.courseId,
 				partId: action.payload.partId,
@@ -163,7 +162,7 @@ const contentBlockReducer = (state={} , action) => {
 			if (type ==='anim'){
 				contentMetaData.anim = {
 					playing: false,
-					length: 10,
+					length: contentBlockData.length,
 					time: 0
 				}
 			}

@@ -1,0 +1,11 @@
+window = new group
+    x:20
+    childElement1: new dbSearch
+        lynxIR:{dbSearch}
+        query:"dbtext"
+
+dbtext = new text
+    name:"dbtext"
+    x:txt.parentGroup.x
+    y:30
+    innerText:"test"

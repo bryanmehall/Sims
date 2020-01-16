@@ -1,0 +1,11 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:txt.function.x
+        function:new object
+            name:"obj"
+            x:obj.caller.op1
+        op1:20
+        y:30
+        innerText:"test"

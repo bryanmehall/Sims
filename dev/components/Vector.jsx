@@ -5,6 +5,7 @@ import QuantityActions from '../ducks/quantity/actions';
 import {getTransformedValue, getValue, getCoordSys, getQuantityData, getColor} from '../ducks/quantity/selectors'
 import Draggable from "./Draggable"
 import Path from './Path'
+import Label from './Label'
 
 
 class Vector extends React.Component {
@@ -58,15 +59,16 @@ class Vector extends React.Component {
 		const arrowPath = calcVector(length, 10)
 		const transform = `translate(${tailX},${tailY}) rotate(${angle})`
 		return (
-			<g>
+			<g style={{opacity:opacity}}>
 
 				<Path
-					style={{ pointerEvents:'none', opacity:opacity}}
+					style={{ pointerEvents:'none'}}
 					points={arrowPath}
 					transform={transform}
 					fill={this.props.color}
 					strokeWidth="0"
 					/>
+				<Label x={tailX+dx/2} y={tailY+dy/2} label={this.props.label} />
 				{draggable ? dragHandle : null}
 			</g>
     	)

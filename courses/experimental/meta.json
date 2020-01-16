@@ -1,0 +1,277 @@
+{
+	"id": "experimental",
+	"title": "Experimental",
+	"description": "Experimental and development features",
+	"parts":[
+		{
+			"id":"lynx",
+			"title":"Lynx",
+			"contentBlocks":[
+				{
+					"id": "simple-get",
+					"title":"Simple Get Test",
+					"text":"test for directly getiitng a value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "multiple-get",
+					"title":"Multiple Get",
+					"text":"test for getting attribute of an attribute",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "get-end-chain",
+					"title":"Get End Chain",
+					"text":"test for when the end of a get chain is another get object",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "append-parent-get",
+					"title":"Append parent get",
+					"text":"append a get that is above the current level to then end of the get stack",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "get-middle-chain",
+					"title":"Get Middle Chain",
+					"text":"test for when the a get chain is inserted in the middle of another one",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "non-local-root",
+					"title":"Non-local Root",
+					"text":"test for when the root node is more than one attribute above the definition",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "parent-path",
+					"title":"Parent Path",
+					"text":"test for parentValue of get root",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "inverse-no-prim",
+					"title":"Inverse Without Primitive",
+					"text":"test where inverse object does not have a primitive",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "get-new-object",
+					"title":"Get New Object",
+					"text":"test for getting atttribute of new object",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "parent-of-get",
+					"title":"Parent Of get",
+					"text":"test for passing context of get to resulting value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "primitive-context",
+					"title":"Primitive Context",
+					"text":"test for passing context of get to resulting value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "vardef-in-get-append",
+					"title":"vardef-in-get-append",
+					"text":"",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "vardef-in-get-chain",
+					"title":"vardef-in-get-chain",
+					"text":"",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "local-new-object-get",
+					"title":"local new object get",
+					"text":"test for agruments passing up through new object get",
+					"type":"anim",
+					"length":10
+				},
+                {
+                    "id": "local-get-end-get-stack",
+					"title":"local-get-end-get-stack",
+					"text":"test for when new object get is part of get stack" ,
+					"type":"anim",
+					"length":10
+                },
+                {
+                    "id": "parent-of-new-get",
+					"title":"parent-of-new-get",
+					"text":"local search goes out of new get" ,
+					"type":"anim",
+					"length":10
+                },
+                {
+                    "id": "recursive-get",
+					"title":"recursive Get",
+					"text":"local search goes out of new get" ,
+					"type":"anim",
+					"length":10
+                }
+			]
+		},
+        {
+			"id":"dbsearch",
+			"title":"DbSearch",
+			"contentBlocks":[
+                {
+					"id": "simple-get",
+					"title":"Simple Get Test for db search",
+					"text":"test for directly getiitng a value",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "direct-child",
+					"title":"Direct Child",
+					"text":"test for when dbSearch is direct child of primitive",
+					"type":"anim",
+					"length":10
+                },
+                {
+					"id": "parent",
+					"title":"Parent",
+					"text":"test for when dbSearch needs to get context",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "self-interpret",
+					"title":"Self Interpret",
+					"text":"test self-interpreter",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "call-primitive",
+					"title":"Call Primitive",
+					"text":"test call first system",
+					"type":"anim",
+					"length":10
+				}
+            ]
+        },
+        {
+			"id":"integration",
+			"title":"Integration",
+			"contentBlocks":[
+                {
+					"id": "simple-state",
+					"title":"Simple state",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "textbox",
+					"title":"Textbox",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "checkbox",
+					"title":"Checkbox",
+					"text":"simple state demonstration",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "accordian",
+					"title":"Accordian",
+					"text":"Accordian",
+					"type":"anim",
+					"length":10
+				},
+				{
+					"id": "factorial",
+					"title":"Factorial",
+					"text":"example of the factorial function",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "functions",
+					"title":"Functions",
+					"text":"Functions",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "ternary",
+					"title":"Ternary",
+					"text":"Ternary",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "linked-list",
+					"title":"Linked List",
+					"text":"Linked List",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "array",
+					"title":"Array",
+					"text":"array",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "copy",
+					"title":"array problem",
+					"text":"array",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "group-children",
+					"title":"Group Children",
+					"text":"test making child elements of group be array",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "structs",
+					"title":"Structs",
+					"text":"simple struct example",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "slider",
+					"title":"Slider",
+					"text":"slider",
+					"type":"anim",
+					"length":10
+				},
+                {
+					"id": "metacircular",
+					"title":"Metacircular",
+					"text":"develop homoiconic behavior",
+					"type":"anim",
+					"length":10
+				}
+            ]
+        }
+	]
+}

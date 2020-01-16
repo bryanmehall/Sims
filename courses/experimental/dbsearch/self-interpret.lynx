@@ -1,0 +1,12 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:app.mouse.down ? 20 : 40
+        y:30
+        op1:new string
+            name:"lynxTextInput1"
+            lynxIR:{input}
+        op2:"app.mouse.pos.y"
+        op3: app.mouse.down ? txt.op1 : txt.op2
+        innerText:call(assemble(compile(parse(txt.op3))))

@@ -1,35 +1,24 @@
 //import types from "./types";
+import ObjectActions from '../object/actions'
+const setValue = (name, value, keepHistory=false) => (
+	ObjectActions.setProp(name, 'value', value)//need to keep history
+)
 
-const setValue = (name, value, keepHistory=false) => ({
+	/*{
 	type: "SET_VALUE",
 	payload: {
 		name: name,
 		value: value,
 		keepHistory: keepHistory
 	}
-})
+})*/
 
 const setPlay = (name, value) => {
 	if (value === true) {
-		return {
-			type: "ANIM_PLAY",
-			payload: {
-				name: name,
-				value: value
-
-			}
-		}
+		return ObjectActions.setProp(name, 'playing', true)
 	} else {
-		return {
-			type: "ANIM_PAUSE",
-			payload: {
-				name: name,
-				value: false
-
-			}
-		}
+		return ObjectActions.setProp(name, 'playing', false)
 	}
-
 }
 
 const animStep = (name, initTime, initValue) => ({

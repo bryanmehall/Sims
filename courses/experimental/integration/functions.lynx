@@ -1,0 +1,61 @@
+window = new group
+    name:"group"
+    childElements: new set
+        subset1: new text
+            name:"txt"
+            x:20
+            y:20
+            innerText:new ternary
+				condition:true
+				then:"abc"
+				alt:"xyz"
+
+contains = new funct
+    name:"contains"
+    list:contains.caller.list
+    op1:contains.caller.op1
+    result:new ternary
+        name:"tern"
+        condition:contains.list.value == contains.op1
+        then:true
+        alt:new get
+            attribute:equalTo
+            lynxIR:{get}
+            rootObject: new object
+                name:"apl"
+                function:new dbSearch
+                    query:"contains"
+                    lynxIR:{dbSearch}
+                list:contains.list.nextElement
+                op1:contains.op1
+                equalTo:true
+
+sq = new func
+    name:"sq"
+    op1:sq.parentObject.op1
+    numericalEquiv:sq.op1+sq.op1
+
+list = new attribute
+equalTo = new attribute
+appl = new object
+
+
+factorial = new func
+    name:"factorial"
+	op1:factorial.caller.op1
+    result:new apply
+		function:ternary
+		op1:fac.op1<1
+        op2:1
+        op3: new apply
+            function:multiplication
+            op1:fac.op1
+			op2:new apply
+                function:new search
+                    query:"fac"
+                    lynxIR:{dbSearch}
+                op1:fac.op1-1
+sum = new func
+    name:"sum"
+    op1:sum.caller.op1
+    result:1

@@ -1,8 +1,7 @@
 import React from 'react'
-import {connect} from "react-redux"
+import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import { linkStyle } from './styles'
-import { Route, Switch, Redirect } from 'react-router'
 import ContentActions from '../ducks/content/actions'
 import {UnmountClosed} from 'react-collapse'
 import Link from 'redux-first-router-link'
@@ -31,7 +30,7 @@ class Course extends React.Component {
 		const createPartList = (partId, index) => {
 			return (
 					<div key={partId}>
-						<Part partId={partId} courseId={courseId}></Part>
+						<Part partId={partId} courseId={courseId} index={index}></Part>
 					</div>
 			)
 		}

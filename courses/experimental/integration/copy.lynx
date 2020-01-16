@@ -1,0 +1,49 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        attributes:[
+            "a",
+            2
+        ]
+        name:"txt"
+        x:30
+        y:20
+        innerText:txt.attributes.firstElement.value
+
+array = new object
+    name:"array"
+    firstElement:new element
+        name:"firstElem"
+        value:new get
+            lynxIR:{get}
+            attribute:equalTo
+            rootObject:new object
+                name:"apply" 
+                equalTo: apply.function.result //should be a contains object with array and value as args
+                function: new function
+                    name:"contains"
+                    result:new object
+                        lynxIR:{contains}
+                        array:txt.attributes
+                        value: contains.caller.value
+                array:txt.attributes //apply.attributes works but array.attributes does not
+                value:"c"
+
+getIndex = new function
+    name:"getIndex"
+    result:new object
+        lynxIR:{getIndex}
+        array:getIndex.caller.array
+        index:getIndex.caller.index
+
+
+element = new object
+    name:"element"
+
+length = new attribute
+nextElement = new attribute
+previousElement = new attribute
+index = new attribute
+    name:"index"
+value = new attribute
+    name:"value"

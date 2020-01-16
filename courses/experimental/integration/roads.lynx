@@ -1,0 +1,26 @@
+map = \graphicalElement //backslash graphicalElement
+    pos: \screenCoordinate
+        x: 20
+        y: 20
+    width: 500
+    height: 500
+    mapElements: []
+    bounds: new BoundingBox
+
+//enforce the isA relation by forcing there to be an isomorphic mapping between the two types --subtypes are restrictions on these isomorphisms? 
+//ie int32 isAn integer given the type conversion function int->int32() predecated on that the int is guaranteed to be less than 2^32
+        
+//geographic polar coordiante point creates an identity of a polar coordinate point and the instanceOf relation  forces there to be a round trip function to convert from a polar coordinate point to a geographicCoordinatePoint and back
+geographicCoordinatePoint: new polarCoordinatePoint 
+    isA: SphericalCoordinatePoint
+        
+    latitude: 39.00 degrees
+    longitude: -130.00 degrees
+    mapRepresentation: new circle
+        name:"placemark"
+        map: placemark.parnetMap
+        centerPos: map.pos
+        
+        
+        
+    

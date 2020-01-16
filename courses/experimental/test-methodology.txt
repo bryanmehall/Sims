@@ -1,0 +1,15 @@
+
+orthogonal test variables:
+gets:
+    1. get root can be:
+        immediately defined: get-new-object
+        defined by query: simple get
+    2. getPath attribute can be:
+        non-inverse:
+        inverse:
+    3. get path next value can be:
+        object with primitive
+        object without primitive
+        another get node
+        a dbSearch
+        

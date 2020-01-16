@@ -1,0 +1,27 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"box"
+        mouseOver: 10 + box.x
+        innerText: box.mouseOver
+        x:app.mouse.pos.x
+        y:150
+
+state = new object
+    name:"state"
+
+previousState = new attribute
+    name:"previousState"
+isChecked = new attribute
+    name:"isChecked"
+isDragging = new attribute
+    name:"isDragging"
+count = new attribute
+    name:"count"
+mouseOver = new attribute
+    name:"mouseOver"
+isClicked = new attribute
+    name:"isClicked"
+left = new attribute
+right = new attribute
+isChanged = new attribute

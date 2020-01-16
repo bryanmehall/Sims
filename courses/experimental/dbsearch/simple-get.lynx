@@ -1,0 +1,15 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:txt.op1.x
+        y:30
+        op1:new dbSearch
+            lynxIR:{dbSearch}
+            query:"dbobject"
+        innerText:"test"
+
+dbSearch = new object
+
+dbobject = new object
+    x:20

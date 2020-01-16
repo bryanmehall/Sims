@@ -13,7 +13,7 @@
 	"keyframes": [
 	],
 	"initialState": {
-		"widget": {
+		"object": {
 			"app": {
 				"type": "SmdApp",
 				"props": {},

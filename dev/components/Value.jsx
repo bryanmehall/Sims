@@ -2,9 +2,9 @@ import React from "react"
 import ReactDOM from "react-dom"
 import { connect } from "react-redux"
 import QuantityActions from '../ducks/quantity/actions'
-import WidgetActions from '../ducks/widget/actions'
+import ObjectActions from '../ducks/object/actions'
 import { UpArrow, DownArrow, Anim } from './icons'
-import { getActive } from '../ducks/widget/selectors'
+import { getActive } from '../ducks/object/selectors'
 import { clamp } from '../utils/quantity'
 import {
 	getValue,
@@ -220,7 +220,7 @@ function mapDispatchToProps(dispatch) {
 			dispatch(QuantityActions.setHighlight(name, value))
 		},
 		setActive:(name, value) => {
-			dispatch(WidgetActions.setActive(name, value))
+			dispatch(ObjectActions.setActive(name, value))
 		},
 		setValue:(name, value) => {
 			dispatch(QuantityActions.setValue(name, value))

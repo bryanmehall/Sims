@@ -1,0 +1,13 @@
+window = new group
+    name:"window"
+    childElement1: new text
+        name:"txt"
+        x:20
+        y:30
+        innerText:txt.op1.value
+        op1:new object
+            value:new get
+                lynxIR:{get}
+                attribute:\equalTo
+                rootObject:new object
+                    equalTo:"test"

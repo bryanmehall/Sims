@@ -12,4 +12,10 @@ baseConfig.plugins = [
 ];*/
 baseConfig.watch = true
 
+const nodeEnv = new webpack.DefinePlugin({
+	'process.env':{
+		'NODE_ENV': JSON.stringify('dev')
+	}
+})
+baseConfig.plugins.push(nodeEnv)
 module.exports = baseConfig;

@@ -27,6 +27,23 @@ const getPartById = (state, courseId, partId) => {
 		)
 	)
 }
+const getPartsOfCourse = (state, courseId) => {
+	return state.content.parts.filter(
+		(partData) => (
+			partData.courseId === courseId
+		)
+	)
+}
+
+export const getPartIdByIndex = (state, courseId, index) => {
+	const part = getPartsOfCourse(state, courseId)[index]
+	if (part === undefined){
+		return undefined
+	} else {
+		return part.partId
+	}
+}
+
 export const getPartTitle = (state, courseId, partId) => (getPartById(state, courseId, partId).title)
 const getCurrentPart = (state) => (getPartById(state, getCurrentPartId(state)))
 // contentBlock

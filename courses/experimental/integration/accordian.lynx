@@ -1,0 +1,30 @@
+window = new group
+    name:"window"
+    pos: new coordinatePosition
+        x:100
+        y:100
+    childElements: [
+        window.accordianRep
+    ]
+    accordianRep: new group
+        name:"accordianRepresentation"
+        pos: accordianRepresentation.parentConcept.pos
+        childElements:new apply
+            function: map
+            op1:accordianRepresentation.parentConcept.attributes
+            op2:new element
+                elementValue:new text
+                    name:"txt"
+                    x:accordianRepresentation.pos.x
+                    y:txt.parentElement.index*25+accordianRepresentation.pos.y
+                    innerText:txt.parentElement.index
+
+map = new func
+    name:"map"
+    lynxIR:{map}
+
+inputArray = new attribute
+    name:"inputArray"
+
+result = new attribute
+    name:"result"

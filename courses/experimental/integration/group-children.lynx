@@ -1,0 +1,27 @@
+window = new group
+    name:"window"
+    x:40
+    childElements:concat(window.op1, window.op2)
+    letterWidth:11
+    op1:[
+        new text
+            name:"txta"
+            innerText:"a"
+            x:txta.parentElement.index*window.letterWidth+window.x
+            y:30
+    ]
+    op2:[
+        new text
+            name:"txtb"
+            innerText:"b"
+            x:txtb.parentElement.index*window.letterWidth+window.x
+            y:30
+        new text
+            name:"txtc"
+            innerText:"c"
+            x:txtc.parentElement.index*window.letterWidth+window.x
+            y:30
+    ]
+
+letterWidth = new attribute
+    name:"letterWidth"

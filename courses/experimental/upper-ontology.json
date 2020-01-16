@@ -1,0 +1,55 @@
+{
+	"onComplete": {
+		"action": "goTo",
+		"course":"mechanics",
+		"part":"pendulums",
+		"contentBlock": "forces"
+	},
+	"keyframes": [],
+	"initialState": {
+		"object": {
+			"object":{
+				"type": "object",
+				"props": {
+				}
+			},
+			"set":{
+				"type":"set",
+				"props":{
+					"instanceOf":"object"
+				}
+			},
+			"undef":{
+				"type":"object",
+				"props":{
+
+				}
+			},
+			"app":{
+				"type":"object",
+				"props":{
+					"instanceOf":"object"
+				}
+			},
+			"attribute":{
+				"type":"object",
+				"props":{
+					"instanceOf":"object"
+				}
+			},
+			"attributes":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			},
+			"instanceOf":{
+				"type":"attribute",
+				"props":{
+					"instanceOf":"attribute"
+				}
+			}
+		},
+		"quantity":{}
+	}
+}

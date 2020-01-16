@@ -31,7 +31,7 @@ if (isDevelopment) {
 			colors: true
 		}
 	}))
-	app.use('/content', express.static(__dirname))
+	app.use('/content', express.static(__dirname, { maxAge: 0 }))
 	app.get("*", (req, res, next) => {
 		const type = req.accepts('html', 'json')
 		if (type === 'html'){

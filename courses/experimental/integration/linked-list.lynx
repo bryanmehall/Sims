@@ -1,0 +1,113 @@
+window = new group
+    childElement1: new text
+        x:new get
+            lynxIR:{get}//varDefs are here
+            attribute:equalTo
+            rootObject:new apply
+                name:"apply"
+                function: sum
+                equalTo:apply.function.result
+                op1:new list
+                    name:"list"
+                    length:list.lastElement.index+1
+                    lastElement:new element
+                        value:10
+                    firstElement:new element
+                        value:50
+                        nextElement: new element
+                            value:9
+        y:20
+        innerText:"test"
+
+sum = new function //new is just short for new object...isA --parent chain
+    name:"sum"
+    list: sum.caller.op1
+    result: new ternary //{sum.list.length, sum.list}
+        condition: sum.list.length == 0
+        then: 0
+        alt:new get
+            lynxIR:{get}
+            attribute: equalTo
+            rootObject: new object
+                name:"apply"
+                equalTo:apply.function.result
+                function:shift
+                list:sum.list.length
+
+shift = new function
+    name:"shift"
+    result:shift.op1
+    op1:shift.caller.list
+
+list = new object
+element = new object
+    name:"element"
+    index:new ternary
+        condition:element.previousElement.name == "undefined"
+        then:20
+        alt:element.previousElement.index
+
+length = new attribute
+index = new attribute
+lastElement = new attribute
+/*      
+getIndex = new function //for general lists
+    list<list>:caller.list
+    index<nat>:caller.index
+    wasmPrimitive:minResources(getIndex.wasmPrimitives)
+    wasmPrimitives:{
+        list.structPrimitive = lynxList ? new _____
+            
+        list.structPrimitive = array ? new wasmSubroutine
+            address: list.structPrimitive.address+structPrimitive.
+            ops:[
+                
+                i32.load
+            ] 
+        list.structPrimitive == linkedList 
+            
+    }
+
+splice = new function
+    name: "splice"
+    op1<list>:splice.caller.op1
+    result: new list
+        
+  
+addition = new function
+    wasmPrimitive:new wasmSubroutine
+        ops:[get_local op1.wasmPrimitive, get_local_op2.wasmPrimitive, i32.add]
+    computationTime: 3
+
+    
+list = new object
+    graphicalRepresentation: new group
+        childElement1: new rectangle
+        childElement2: 
+    firstElement <element>: new listElement
+        value:
+        index:0
+        
+    lastElement: <element>:
+    length: 
+    structPrimitive: minResources(list.structPrimitives, runEstimate)
+    structPrimitives:{linkedList, array, lynxList} //lynxList goes to interpreter
+    
+listElement = new object
+    index:new ternary
+        condition:#isfirst element#
+        then:0
+        else:prevElement +1
+
+linkedList = new struct
+    value<int32>:1
+    allocatedMemory:
+        address:
+        totalSize:
+        locations:
+    nextList<linkedList | null>: 
+
+array = new struct
+    length<int>:array.parentConcept.length
+    memorySize:array.length*elements.structPrimitive.allcatedMemory.totalSize
+*/

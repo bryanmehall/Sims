@@ -1,0 +1,10 @@
+window = new group
+    name:"window"
+    canvasRep:call(assemble(compile(window)))
+    childElement1: new text
+        canvasPrimitive:{text}
+        canvasRep:call(assemble(compile(txt)))
+        name:"txt"
+        x:20
+        y:30
+        innerText:"test"

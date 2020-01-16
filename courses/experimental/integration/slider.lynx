@@ -1,0 +1,45 @@
+window = new group
+    name:"window"
+    childElements:[
+        new get
+            lynxIR:{get}
+            rootObject:slider
+            attribute:graphicalRepresentation
+    ]
+
+slider = new object
+    name:"slider"
+    value:condition (10)
+        if slider.handle.isBeingDragged then app.mouse.pos.x-slider.handle.dragOffset
+        slider.value.previousState
+    handle:new text
+        name:"sliderHandle"
+        dragOffset:10
+        isBeingDragged:app.mouse.down
+        mouseOver:app.mouse.pos.x > slider.value.previousState  && app.mouse.pos.x < slider.value.previousState + 10
+        innerText:sliderHandle.mouseOver ? "x" : "0"
+        x:slider.value
+        y:65
+    graphicalRepresentation: new group
+        childElements:[
+            new line
+                x1:10
+                x2:210
+                y1:60
+                y2:60
+            slider.handle
+            new text
+                innerText:slider.value
+                x:10
+                y:20
+        ]
+isChanged = new attribute
+    name:"isChanged"
+handle = new attribute
+    name:"handle"
+mouseOver = new attribute
+    name:"mouseOver"
+dragOffset = new attribute
+    name:"dragOffset"
+isBeingDragged = new attribute
+    name:"isBeingDragged"

@@ -1,0 +1,12 @@
+window = new group
+    name:"window"
+    x:20
+    op1: new object
+        name:"test"
+        x:100
+        textRepresentation:new text 
+            name:"tests"
+            innerText:test.name
+            x:window.x
+            y:30
+    childElement1: window.op1.textRepresentation

@@ -13,7 +13,7 @@ const HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
 })
 
 var config = {
-	entry: ['babel-polyfill', DEV + "/smd.jsx"],
+	entry: ['babel-polyfill', DEV + "/index.jsx"],
 	output: {
 		filename: "bundle.js",
 		path: DIST,//__dist
@@ -25,14 +25,20 @@ var config = {
 	devtool: 'source-map',
 	module: {
 		loaders: [
-			{
-			include: DEV,
-			exclude: "/node_modules/",
-			loader: "babel-loader",
-		}]
+            //{ test: /\.tsx?$/, loader: "awesome-typescript-loader" },
+            {
+                include: DEV,
+                exclude: "/node_modules/",
+                loader: "babel-loader",
+            },
+            {
+                test: /\.peg$/,
+                loader: 'pegjs-loader?cache=true'
+            }
+		]
 	},
 	resolve: {
-		extensions: ['.js', '.jsx']
+		extensions: ['.js', '.jsx', ".ts", ".tsx"]
 	},
 	plugins: [
 		HtmlWebpackPluginConfig

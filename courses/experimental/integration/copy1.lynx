@@ -1,0 +1,18 @@
+window = new group
+    childElement1: new text
+        name:"text"
+        x:new get
+            name:"get"
+            x:100
+            lynxIR:{get}
+            attribute: equalTo
+            rootObject: new object
+                name:"apply"
+                x:10
+                equalTo:apply.function.result
+                function:new function
+                    name:"shift"
+                    result:shift.caller.op1
+                op1:text.y
+        y:20
+        innerText:"test"

@@ -1,7 +1,7 @@
 import { tween, getActiveTweens } from "./anim"
 import { getValue, getAnimatable, getMax, getPlaying } from './ducks/quantity/selectors'
 import { getAnimTime, getAnimPlaying, getAnimLength} from './ducks/content/selectors'
-import {getKeyframes} from './ducks/sim/selectors'
+import { getKeyframes } from './ducks/sim/selectors'
 import QuantityActions from './ducks/quantity/actions'
 import ContentActions from './ducks/content/actions'
 
@@ -56,6 +56,11 @@ export const animMiddleware = store => next => action => {
 		if (playing){
 			if (newTime > length){
 				const setTimeAction = ContentActions.setAnimTime(courseId, partId, contentBlockId, length)
+				const nextCourseId = 'about-zibit'
+				const nextPartId = 'features'
+				const nextContentBlockId = 'animations'
+				const animCompleteAction = ContentActions.activateContentBlock(nextCourseId, nextPartId, nextContentBlockId)
+				setTimeout(() => {store.dispatch(animCompleteAction)}, 1000)//wait 1 s before moving to next section
 				store.dispatch(setTimeAction)
 			} else {
 				const stepAction = ContentActions.animContentStep(courseId, partId, contentBlockId, initTime, initAnimTime)
@@ -70,21 +75,7 @@ export const animMiddleware = store => next => action => {
 		const prevTime = getAnimTime(state, courseId, partId, contentBlockId)
 		const activeTweens = getActiveTweens(prevTime, time, getKeyframes(state))
 		tween(store, activeTweens, time)
-	}
-	/*
-	if (action.type === "SET_VALUE" && action.payload.name === 'animTime'){
-		var state = store.getState()
-		var prevTime = getValue(state, 'animTime')
-		var t = action.payload.value
-		var activeTweens = getActiveTweens(prevTime, t)
-		tween(store, activeTweens, t)
-		if (audio.paused){
-			audio.currentTime = t
-		}
-	} */else if (action.type === 'ANIM_PLAY') {
-		/*if (action.payload.name === 'animTime'){
-			audio.play()
-		}*/
+	} else if (action.type === 'SET_PROP' && action.payload.prop === 'playing' && action.payload.value === true) {
 		requestAnimationFrame(animStart);
 	} else if (action.type === 'ANIM_STEP') {
 		requestAnimationFrame(animStep)

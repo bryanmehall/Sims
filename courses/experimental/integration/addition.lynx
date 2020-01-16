@@ -1,0 +1,38 @@
+set = new object
+realNumbers = new set
+
+naturalNumbers = new set
+    subsetOf:realNumbers
+    elements: new sumType
+        variant1:zero
+        variant2: new get
+            rootObject: new apply
+                function: successor
+                op1: naturalNumber
+            attribute: result
+        
+realNumber = new object
+
+naturalNumber = new object
+    memberOf:naturalNumbers
+    
+    
+zero = new naturalNumber
+    instanceOf:naturalNumber
+
+one = new naturalNumber
+    instanceOf:naturalNumber
+    equalTo:apply.succ
+
+successor = new function
+    
+
+addition = new function
+    op1:addition.caller.op1
+    op2: addition.caller.op2
+    result: new ternary
+        condition: addition.op1 == 0
+        then: addition.op2
+        alt: 
+    
+    

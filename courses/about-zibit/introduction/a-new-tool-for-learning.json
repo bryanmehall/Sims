@@ -1,0 +1,47 @@
+{
+	"onComplete": {
+		"action": "goTo",
+		"course":"mechanics",
+		"part":"pendulums",
+		"contentBlock": "forces"
+	},
+	"keyframes": [
+		{
+			"time": 0,
+			"dt": 0,
+			"actions": [
+				{
+					"type": "tweenProperty",
+					"dur": 34,
+					"params": {
+						"objectName": "video",
+						"propName": "time",
+						"initValue": 0,
+						"finalValue": 34
+					},
+					"interp": "linear"
+				}
+			]
+		}
+	],
+	"initialState": {
+		"object": {
+			"app": {
+				"type": "SmdApp",
+				"props": {},
+				"children": [
+					"video"
+				]
+			},
+			"video":{
+				"type":"Video",
+				"props":{
+					"playing":true
+				}
+			}
+
+		},
+		"quantity": {
+		}
+	}
+}

@@ -1,11 +1,8 @@
 import React from "react"
-import {connect} from "react-redux"
+import { connect } from "react-redux"
 import { bindActionCreators } from 'redux';
 import * as QuantityActions from '../ducks/quantity/actions';
-import {getValue, getQuantityData, getSymbol} from '../ducks/quantity/selectors'
-import {getChildren} from '../ducks/widget/selectors'
-import {mathVarStyle} from './styles'
-import {CoordSys, Scale} from '../utils/scale'
+import { mathVarStyle } from './styles'
 import Axis from './Axis'
 import Abstraction from './Abstraction'
 import Mass from './Mass'
@@ -14,65 +11,45 @@ import Anchor from './Anchor'
 import Damper from './Damper'
 import Pendulum from './Pendulum'
 import Vector from './Vector'
-
-
-
+import Circle from './Circle'
 
 class Plot extends React.Component {
 	render(){
-		var plotId = this.props.id,
-			width = this.props.width,//width in px from axis min
-			height = this.props.height,//height in px from axis min
-			pos = this.props.pos,
-			axisPadding = 50,
-			borderPadding = 10,
-			visibility = this.props.visibility !== undefined ? this.props.visibility: 1,
-			xQuantities = this.props.xQuantities,
-			yQuantities = this.props.yQuantities,
-			xQuantity = xQuantities[this.props.xActive],
-			yQuantity = yQuantities[this.props.yActive]
 
-		var xScale = new Scale({//change to functional version
-			min: xQuantity.min,
-			max: xQuantity.max,
-			tMin: axisPadding,
-			tMax: width + axisPadding
-		})
-		var yScale = new Scale({
-			min: yQuantity.min,
-			max: yQuantity.max,
-			tMin: height+borderPadding,
-		  	tMax: borderPadding
-		})
-		var coordSys = new CoordSys(xScale, yScale)
+		const	axisPadding = 50,
+			borderPadding = 10,
+			visibility = this.props.visibility === undefined ? 1 : this.props.visibility//do not use or because 0 i sfalse
+
+		const { xMin, yMin, xMax, yMax, plotId, width, height, pos } = this.props
 
 		var childTypes = {
 			Abstraction: Abstraction,
-			Mass:Mass,
+			Mass: Mass,
 			Spring: Spring,
 			Anchor: Anchor,
 			Damper: Damper,
 			Pendulum: Pendulum,
-			Vector: Vector
+			Vector: Vector,
+			Circle: Circle
 		}
 
 		function createChild(childData){
 			var type = childTypes[childData.type]
 			var props = childData.props
 			props.key = props.id
-			props.coordSys = coordSys
-			props.boundingRect = {xMin:axisPadding, xMax:axisPadding+width, yMin:height+borderPadding, yMax:borderPadding}
-			props.mask = plotId
+			//props.coordSys = coordSys
+			//props.boundingRect = {xMin:axisPadding, xMax:axisPadding+width, yMin:height+borderPadding, yMax:borderPadding}
 			return React.createElement(type, props)
 		}
+
 		var children = this.props.childData.map(createChild)
 		return (
 			<svg
 				style={{
-					position:"absolute",
-					left:pos.x-axisPadding,
+					position: "absolute",
+					left: pos.x-axisPadding,
 					//backgroundColor:'gray',//for debug
-					top:pos.y-height
+					top: pos.y-height
 				}}
 				width={width+axisPadding+borderPadding}
 				height={height+axisPadding+borderPadding}
@@ -85,20 +62,20 @@ class Plot extends React.Component {
 					</defs>
 					{children}
 					<Axis
-						min={xScale.min}
-						max={xScale.max}
-						p1={{x:axisPadding, y:height+borderPadding}}
-						p2={{x:width+axisPadding, y:height+borderPadding}}
+						min={xMin}
+						max={xMax}
+						p1={{ x: axisPadding, y: height+borderPadding }}
+						p2={{ x: width+axisPadding, y: height+borderPadding }}
 						offs={15}
 						/>
 					<text
 						x={width/2+axisPadding} y={height+axisPadding} textAnchor="middle" style={mathVarStyle}>{this.props.xLabel}
 					</text>
 					<Axis
-						min={yScale.min}
-						max={yScale.max}
-						p1={{x:axisPadding, y:height+borderPadding}}
-						p2={{x:axisPadding, y:borderPadding}}
+						min={yMin}
+						max={yMax}
+						p1={{ x: axisPadding, y: height+borderPadding }}
+						p2={{ x: axisPadding, y: borderPadding }}
 						offs={-15}
 						/>
 					<text
@@ -116,23 +93,34 @@ class Plot extends React.Component {
 }
 
 function mapStateToProps(state, props) {
-	function getQuantities(quantityList){
-		var quantities = {}
-		quantityList.forEach(function(name){
-			quantities[name] = getQuantityData(state, name)
-		})
-		return quantities
-	}
+	const id = props.id
 	const xActive = props.xVars[0]
 	const yActive = props.yVars[0]
+
+	const posObject = props.pos
+	const coordSys = props.coordinateSystem
+	const xMin = getJSValue(state, coordSys, 'xMin')
+	const xMax = getJSValue(state, coordSys, 'xMax')
+	const yMin = getJSValue(state, coordSys, 'yMin')
+	const yMax = getJSValue(state, coordSys, 'yMax')
 	return {
 		xActive,
 		yActive,
-		xLabel: getSymbol(state, xActive),
-		yLabel: getSymbol(state, yActive),
-		xQuantities: getQuantities(props.xVars),
-		yQuantities: getQuantities(props.yVars),
-		childData: getChildren(state,props.id)
+		xMin,
+		yMin,
+		xMax,
+		yMax,
+		pos: {
+			x: getJSValue(state, posObject, "x"),
+			y: getJSValue(state, posObject, "y")
+		},
+		width: getJSValue(state, id, "width"),
+		height: getJSValue(state, id, "height"),
+		//xLabel: getSymbol(state, xActive),
+		//yLabel: getSymbol(state, yActive),
+		//xQuantities: getQuantities(props.xVars),
+		//yQuantities: getQuantities(props.yVars),
+		childData: []//get Children(state,props.id)
 	};
 }
 

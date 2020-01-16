@@ -14,21 +14,26 @@ class AnimBlock extends React.Component {
 		this.onDragStart = this.onDragStart.bind(this)
 		this.onDragMove = this.onDragMove.bind(this)
 		this.onDragEnd = this.onDragEnd.bind(this)
-		const {courseId, partId, contentBlockId} = this.props
-		const audioUrl = `/content/courses/${courseId}/${partId}/${contentBlockId}.mp3`
-		this.audio = new Audio(audioUrl)
-		this.audio.addEventListener('error', (error) => {
-			throw new Error( `audio failed to load at ${audioUrl}`)
-		})
-		this.audio.addEventListener('loadedmetadata', () => {
-			//set audio to correct time when sim is reloaded
-			this.audio.currentTime = this.props.time
-			//read audio length property and put in store
-			self.props.setAnimLength(courseId, partId, contentBlockId, this.audio.duration)
-		})
+		const { courseId, partId, contentBlockId } = this.props
+
+		this.hasAudio = this.props.length === undefined
+		if (this.hasAudio){
+			const audioUrl = `/content/courses/${courseId}/${partId}/${contentBlockId}.mp3`
+			this.audio = new Audio(audioUrl)
+			this.audio.addEventListener('error', () => {
+					throw new Error(`audio failed to load or length missing at ${audioUrl}`)
+			})
+			this.audio.addEventListener('loadedmetadata', () => {
+				//set audio to correct time when sim is reloaded
+				self.audio.currentTime = this.props.time
+				//read audio length property and put in store
+				self.props.setAnimLength(courseId, partId, contentBlockId, this.audio.duration)
+			})
+		}
 	}
 	componentWillUpdate(nextProps){
-		if (this.props.playing !== nextProps.playing){
+		const playStateChanged = this.props.playing !== nextProps.playing
+		if (playStateChanged && this.hasAudio){
 			if (nextProps.playing === true){
 				this.audio.play()
 			} else {
@@ -44,7 +49,9 @@ class AnimBlock extends React.Component {
 	onDragMove(fractionDone){
 		const time = this.props.length*fractionDone
 		const { courseId, partId, contentBlockId } = this.props
-		this.audio.currentTime = time
+		if (this.hasAudio){
+			this.audio.currentTime = time
+		}
 		this.props.setAnimTime(courseId, partId, contentBlockId, time)
 	}
 	onDragEnd() {

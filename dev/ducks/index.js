@@ -52,7 +52,7 @@ state Shape:
 	},
 	sim:{
 		quantity     	//quantity reducers
-		widget			//widgetreducers
+		object			//objectreducers
 	}
 */
 

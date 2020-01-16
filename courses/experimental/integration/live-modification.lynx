@@ -1,0 +1,10 @@
+//this is to demonstrate live modification of code
+
+window = new group
+    checkbox:children.subset1
+    childElements:[
+        new text
+            innerText:"abc"
+            x:30
+            y:40
+    ]
