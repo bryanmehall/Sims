@@ -2131,17 +2131,20 @@ module.exports = (function(){
         var result0;
         var pos0;
         
+        reportFailures++;
         pos0 = pos;
         result0 = parse_Name();
         if (result0 !== null) {
           result0 = (function(offset, query) {
-        	return {
-                    lynxIR:{type:"search", "query":query}
-                }
+        	return createLocalSearch(query)
             })(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("local search");
         }
         
         cache[cacheKey] = {
@@ -2233,7 +2236,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, root, attributes) {
             return attributes.reduce(buildPath, root)
-        })(pos0, result0[0], result0[1]);
+            })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
           pos = pos0;
@@ -2261,6 +2264,7 @@ module.exports = (function(){
         var result0;
         var pos0;
         
+        reportFailures++;
         pos0 = pos;
         result0 = parse_Float();
         if (result0 === null) {
@@ -2269,14 +2273,21 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, value) {
                 return {
+                    instanceOf:"number",
+                    name:createString("number"),
                     lynxIR:{type:"number", value: value},
                     jsRep:value,
+                    equalTo: createLocalSearch("number")
                     //definition: createDef(value.toString())
                 }
             })(pos0, result0);
         }
         if (result0 === null) {
           pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("number");
         }
         
         cache[cacheKey] = {
@@ -3688,6 +3699,9 @@ module.exports = (function(){
       function createString(str){
       	return {
               jsRep:str,
+              name: {jsRep:"string", lynxIR:{value:"string"}},//todo: clean this up -- remove lynxIR and just use jsRep?
+              //creates infinite loop where instanceOf:createLocalSearch("string"),
+              equalTo:createLocalSearch("string"),
               lynxIR:{type:"string", value:str}
       	}
       }
@@ -3707,7 +3721,6 @@ module.exports = (function(){
               lynxIR:{type:"apply"},
               function:op,
               instanceOf:"apply"
-              //result:"$applyPrimitive$"
           }
           if (typeof defaultState !== 'undefined' && defaultState !== ""){
               applyObject.defaultState = defaultState
@@ -3715,7 +3728,7 @@ module.exports = (function(){
           args.forEach((arg, i) => {
               applyObject["op"+(i+1)] = arg
           })
-          return createReferenceNode(applyObject, "result")
+          return applyObject//createReferenceNode(applyObject, "equalTo")
       }
       
       function createFunction(name){
@@ -3736,6 +3749,12 @@ module.exports = (function(){
                   lynxIR:{ type:"array", value:elements}
           }
       }
+      function createLocalSearch(query){
+          return {
+              lynxIR:{type:"search", "query":query}
+          }
+      }
+      
       function buildPath(rootObject, attr, str){
           var getData = {
               lynxIR:{type:"get"},

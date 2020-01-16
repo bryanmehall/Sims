@@ -1,7 +1,7 @@
 import { astToFunctionTable, buildFunction, getStateArgs } from './IRutils'
 import { getHash } from './hashUtils'
 import { resolveDBSearches } from './DBsearchUtils'
-import { INTERMEDIATE_REP, GET_HASH } from './constants'
+import { INTERMEDIATE_REP, GET_HASH, JS_REP } from './constants'
 
 /*returns:
     list of outputs
@@ -59,12 +59,14 @@ export const flattenState = (state) => {
     }, {})
     return hashTable
 }
+const exemptProps = [INTERMEDIATE_REP, JS_REP, 'jsPrimitive', "initialObjectType", "attribute", 'lynxIR']
+
 const replaceNamesWithHashes = (state, object) => (
     Object.fromEntries(Object.entries(object)
         .map((entry) => {
             const attr = entry[0]
             const value = entry[1]
-            if (attr === INTERMEDIATE_REP || attr === 'jsRep' || attr === 'jsPrimitive' || attr === "initialObjectType" || attr === "attribute"){
+            if (exemptProps.includes(attr)){
                 return [attr, value]
             } else if (typeof value === 'string'){
                 const hash = getHash(replaceNamesWithHashes(state, state[value]))
