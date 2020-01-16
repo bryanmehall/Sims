@@ -111,11 +111,11 @@ export class Runtime {
         const windowObject = this.parse(this.lynxText, 'window')//use generic lynx parse function---stte modification is handled in getValue
         const canvasRepHash = getHash(objectFromName(this.hashTable, 'canvasRep'))
         const windowContext = createParentContext(this.hashTable, [[]], windowObject, canvasRepHash)
-        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, windowContext)//this is the lynx string for canvasRep
+
+        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])//this is the lynx string for canvasRep
         const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "result", value, context)
         console.log(value1, context1)
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value1, context1).value.value
-        console.log(canvasString)
         //const renderFunction = new Function('ctx', canvasString)
         
         //const getAppJSObject = this.parse(this.lynxText, 'appRoot')

@@ -162,7 +162,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     } else {
         
 		context = createParentContext(state, root.context, rootValue, hashFromName(state, attribute)) //refactor/rename this block
-        const result1 = getValueAndContext(state, attribute, rootValue, context)
+        const result1 = getValueAndContext(state, attribute, rootValue, root.context)
         const result = result1.value
         delete result.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = { ...result, definition: getObject }
@@ -175,9 +175,10 @@ export const getValue = (state, prop, objectData, context) => (
 	getValueAndContext(state, prop, objectData, context).value
 )
 
-export const getValueAndContext = (state, prop, objectData, context) => { //getFirst is a bool for directly evaluating get nodes
+export const getValueAndContext = (state, prop, objectData, oldContext) => { //getFirst is a bool for directly evaluating get nodes
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
+    let context = createParentContext(state, oldContext, objectData, hashFromName(state, prop))
     let def = getAttr(objectData, prop)
 
     if (typeof def === "string" && isHash(def)){
@@ -217,8 +218,8 @@ export const getValueAndContext = (state, prop, objectData, context) => { //getF
         return evaluateReference(state, valueData, context) 
 	} else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //clean this condition up
         return evaluateSearch(state, valueData, context)
-    } else if (prop === JS_REP){
-        return evaluatePrimitive(state, valueData, objectData, context)
+	} else if (prop === JS_REP){
+        return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData? 
 	} else {
         console.log(prop)
         return { context, value: addHashToObject(valueData) }
