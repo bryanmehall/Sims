@@ -1940,7 +1940,10 @@ module.exports = (function(){
         reportFailures++;
         pos0 = pos;
         pos1 = pos;
-        result0 = parse_Name();
+        result0 = parse_Search();
+        if (result0 === null) {
+          result0 = parse_GlobalSearch();
+        }
         if (result0 !== null) {
           if (input.charCodeAt(pos) === 40) {
             result1 = "(";
@@ -2047,9 +2050,9 @@ module.exports = (function(){
           pos = pos1;
         }
         if (result0 !== null) {
-          result0 = (function(offset, name, arg0, args) {
+          result0 = (function(offset, search, arg0, args) {
                 const argsList = args.map((arg) => (arg[2]))
-                return createNOp([arg0].concat(argsList), name)
+                return createNOp([arg0].concat(argsList), search)
             })(pos0, result0[0], result0[2], result0[3]);
         }
         if (result0 === null) {
@@ -2618,7 +2621,9 @@ module.exports = (function(){
             var value = value==="true"
             return {
                 	lynxIR: {type:"bool", value:value},
-                    jsRep:value
+                    jsRep:value,
+                    name:createString("bool"),
+                    equalTo: createLocalSearch("bool")
                     //definition: createDef(value)
                }
             })(pos0, result0);
@@ -3728,7 +3733,7 @@ module.exports = (function(){
           args.forEach((arg, i) => {
               applyObject["op"+(i+1)] = arg
           })
-          return applyObject//createReferenceNode(applyObject, "equalTo")
+          return applyObject
       }
       
       function createFunction(name){

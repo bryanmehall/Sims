@@ -135,7 +135,7 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     }
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep', 'equalTo'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep', 'equalTo', 'op3'].includes(entry[0])
         ))
         .map((entry) => {
             const context = first.context || [[]]

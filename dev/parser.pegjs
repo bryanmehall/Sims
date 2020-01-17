@@ -45,7 +45,7 @@ function createNOp(args, op, defaultState){
     args.forEach((arg, i) => {
         applyObject["op"+(i+1)] = arg
     })
-    return applyObject//createReferenceNode(applyObject, "equalTo")
+    return applyObject
 }
 
 function createFunction(name){
@@ -169,7 +169,7 @@ DefaultState "defaultState"
     = "("defaultState:Expression")" {return defaultState}
 
 
-//######################### operators  ######################
+//#########################  operators  ######################
 Or "or"
 	= left:And _ op:"||" _ right:Or { return createNOp([left, right], "or")}
     / And
@@ -206,9 +206,9 @@ Value "value"
 	=  Primitive / Bool / Number / String / Object / GlobalSearch / Get / Search
 
 Apply "function application"
-	= name:Name "("arg0:Expression args:("," _ Expression)*")"{
+	= search:(Search / GlobalSearch) "("arg0:Expression args:("," _ Expression)*")"{
         const argsList = args.map((arg) => (arg[2]))
-        return createNOp([arg0].concat(argsList), name)
+        return createNOp([arg0].concat(argsList), search)
     }
 
 //###########################  references ############################
@@ -259,7 +259,9 @@ Bool "bool"
     var value = value==="true"
     return {
         	lynxIR: {type:"bool", value:value},
-            jsRep:value
+            jsRep:value,
+            name:createString("bool"),
+            equalTo: createLocalSearch("bool")
             //definition: createDef(value)
        }
     }

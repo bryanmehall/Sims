@@ -112,6 +112,7 @@ export class Runtime {
         const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])
         const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "equalTo", value, context)
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value1, context1).value.value
+        console.log(canvasString)
         const renderFunction = new Function('ctx', canvasString)
 
 

@@ -14,6 +14,7 @@ import {
     isHash
     } from './hashUtils'
 import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
+import { limiter } from './utils'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -114,7 +115,7 @@ const getInheritedName = (state, value, context) => {
     }  
 }
 
-const traceGet = false
+const traceGet = true
 const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
     const query = getAttr(searchObject, "lynxIR").query
     if (context === undefined){
@@ -226,14 +227,20 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
 }
 
 const evaluatePrimitive = (state, valueData, objectData, context) => { //allow this to return curried functions
-    const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor?
+    const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor by moving get check before jsRep check??
     const argsList = jsRepValue.args || []
-    const args = argsList.map((argName) => (
-        getValue(state, argName, objectData, context).value
-    ))
-    if (args.length === 0){ //test for primitive needs to be cleaner
+    if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
+        const condition = getValue(state, 'op1', objectData, context).value
+        limiter(2000, 50)
+        const returnValue = condition ? getValue(state, 'op2', objectData, context).value : getValue(state, 'op3', objectData, context).value
+        return { context, value: { value: returnValue } }
+    } else if (argsList.length === 0){ //test for primitive needs to be cleaner
         return { context, value: { value: jsRepValue } }
     } else {
+        const args = argsList.map((argName) => (
+            getValue(state, argName, objectData, context).value
+        ))
+        console.log(args, jsRepValue.type)
         return { context, value: { value: primitiveOps[jsRepValue.type].apply(null, args) } }
     }
 }
@@ -247,7 +254,7 @@ const primitiveOps = {
     or: (op1, op2) => (op1 || op2),
     not: (op1) => (!op1),
     conditional: (op1, op2, op3) => (op1 ? op2 : op3),
-    equalTo: (op1, op2) => (op1 === op2),
+    equal: (op1, op2) => (op1 === op2),
     lessThan: (op1, op2) => (op1 < op2),
     greaterThan: (op1, op2) => (op1 > op2),
     concat: (op1, op2) => (op1 + op2)

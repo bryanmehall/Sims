@@ -4,12 +4,10 @@ window = new group
         name:"txt"
         op1:true
         x:30
-        y:double(50)
+        y:\double(50)
         innerText:"test"
 
 double = new funct
     name:"double"
-    jsRep:{addition, [op1, op2]}
-    op1: double.caller.op1.jsRep
-    op2: double.caller.op1.jsRep
-    result: double.op1*2   
+    op1: double.caller.op1
+    result: 20 == 30 ? 30:100
