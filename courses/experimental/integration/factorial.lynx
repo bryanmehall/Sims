@@ -3,8 +3,8 @@ window = new group
     childElement1: new text
         name:"txt"
         innerText:"test"
-        y:20
-        x:\factorial(2)
+        x:\factorial(4) - 4
+        y:30
 
 dbSearch = new object
 
@@ -13,4 +13,4 @@ factorial = new funct
     op1: factorial.caller.op1
     result:condition 
         if factorial.op1<2 then 1
-        factorial(1)
+        factorial.op1*factorial(factorial.op1-1)

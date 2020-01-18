@@ -109,10 +109,12 @@ export class Runtime {
             run: (lynxModule) => (runtime.run(lynxModule))
         }
         const windowObject = this.parse(this.lynxText, 'window') //use generic lynx parse function---stte modification is handled in getValue
+        //console.time('eval')
         const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])
         const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "equalTo", value, context)
         const canvasString = getValueAndContext(this.hashTable, "jsRep", value1, context1).value.value
-        console.log(canvasString)
+        //console.timeEnd('eval')
+        //console.log(canvasString)
         const renderFunction = new Function('ctx', canvasString)
 
 

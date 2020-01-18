@@ -35,7 +35,6 @@ function createDef(str){
 
 function createNOp(args, op, defaultState){
     const applyObject = {
-        lynxIR:{type:"apply"},
         function:op,
         instanceOf:"apply"
     }
@@ -233,8 +232,8 @@ Number "number"
             name:createString("number"),
             lynxIR:{type:"number", value: value},
             jsRep:value,
-            equalTo: createLocalSearch("number")
-            //definition: createDef(value.toString())
+            equalTo: createLocalSearch("number"),
+            definition: createDef(value.toString())
         }
     }
     
@@ -261,8 +260,8 @@ Bool "bool"
         	lynxIR: {type:"bool", value:value},
             jsRep:value,
             name:createString("bool"),
-            equalTo: createLocalSearch("bool")
-            //definition: createDef(value)
+            equalTo: createLocalSearch("bool"),
+            definition: createDef(value)
        }
     }
 

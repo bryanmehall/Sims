@@ -25,7 +25,6 @@ export const lynxParser = (lynxString) => {
             outString += ("}#}".repeat(Math.abs(change))+"\n"+line)
         }
     })
-    console.log(parser.parse(outString))
     return parser.parse(outString)
     //throw new Error(`parsing failed: ${e.message} line: ${e.line} column:${e.column}`)
 

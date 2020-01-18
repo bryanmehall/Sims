@@ -115,7 +115,7 @@ const getInheritedName = (state, value, context) => {
     }  
 }
 
-const traceGet = true
+const traceGet = false
 const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
     const query = getAttr(searchObject, "lynxIR").query
     if (context === undefined){
@@ -161,14 +161,11 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
 		const value = getInverseParent(state, root.context, attribute)
         return { context: newContext , value: value }
     } else {
-        
-		context = createParentContext(state, root.context, rootValue, hashFromName(state, attribute)) //refactor/rename this block
-        const result1 = getValueAndContext(state, attribute, rootValue, root.context)
-        const result = result1.value
-        delete result.hash //remove hash because we are going to add definition to it
-        const resultWithDefinition = { ...result, definition: getObject }
+        const result = getValueAndContext(state, attribute, rootValue, root.context)
+        delete result.value.hash //remove hash because we are going to add definition to it
+        const resultWithDefinition = { ...result.value, definition: getObject }
         addObjectToTable(state, resultWithDefinition)
-        return { context: result1.context, value: resultWithDefinition }
+        return { context: result.context, value: resultWithDefinition }
     }
 }
 
@@ -218,7 +215,8 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
 	} else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
 	} else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //clean this condition up
-        return evaluateSearch(state, valueData, context)
+        const value = evaluateSearch(state, valueData, context).value
+        return { value, context } //return the old context so recursive functions have different args
 	} else if (prop === JS_REP){
         return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData? 
 	} else {
@@ -234,13 +232,14 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
         limiter(2000, 50)
         const returnValue = condition ? getValue(state, 'op2', objectData, context).value : getValue(state, 'op3', objectData, context).value
         return { context, value: { value: returnValue } }
+    } else if (jsRepValue.type === 'mouseX') {
+        return { context, value: { value: inputs['mouseX'] } }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
         return { context, value: { value: jsRepValue } }
     } else {
         const args = argsList.map((argName) => (
             getValue(state, argName, objectData, context).value
         ))
-        console.log(args, jsRepValue.type)
         return { context, value: { value: primitiveOps[jsRepValue.type].apply(null, args) } }
     }
 }
@@ -257,7 +256,11 @@ const primitiveOps = {
     equal: (op1, op2) => (op1 === op2),
     lessThan: (op1, op2) => (op1 < op2),
     greaterThan: (op1, op2) => (op1 > op2),
-    concat: (op1, op2) => (op1 + op2)
+    concat: (op1, op2) => (op1 + op2),
+    mouseX: () => (50)
+}
+const inputs= {
+    mouseX: 20
 }
 
 const checkObjectData = (objectData) => {

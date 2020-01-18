@@ -2280,8 +2280,8 @@ module.exports = (function(){
                     name:createString("number"),
                     lynxIR:{type:"number", value: value},
                     jsRep:value,
-                    equalTo: createLocalSearch("number")
-                    //definition: createDef(value.toString())
+                    equalTo: createLocalSearch("number"),
+                    definition: createDef(value.toString())
                 }
             })(pos0, result0);
         }
@@ -2623,8 +2623,8 @@ module.exports = (function(){
                 	lynxIR: {type:"bool", value:value},
                     jsRep:value,
                     name:createString("bool"),
-                    equalTo: createLocalSearch("bool")
-                    //definition: createDef(value)
+                    equalTo: createLocalSearch("bool"),
+                    definition: createDef(value)
                }
             })(pos0, result0);
         }
@@ -3723,7 +3723,6 @@ module.exports = (function(){
       
       function createNOp(args, op, defaultState){
           const applyObject = {
-              lynxIR:{type:"apply"},
               function:op,
               instanceOf:"apply"
           }

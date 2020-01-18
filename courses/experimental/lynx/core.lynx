@@ -88,8 +88,10 @@ string = new object
 
 group = new object
     name:"group"
-    lynxIR:{group}
     canvasRep:group.childElement1.canvasRep
+    mouse: new object
+        x:new number
+            jsRep:{mouseX}
 
 childElement1 = new attribute
     name:"childElement1"
@@ -238,7 +240,6 @@ subset2 = new attribute
     name:"subset2"
 
 text = new object
-    lynxIR:{text}
     name:"text"
     r:0
     g:0
@@ -339,7 +340,6 @@ func = new object
 apply = new object
     name:"apply"
     equalTo:apply.function.result.equalTo //get numerical equiv of result of function --replace with optimization
-    lynxIR:{apply}
 
 addition = new func
     name:"addition"
@@ -350,7 +350,6 @@ addition = new func
         name:"addResult"
         equalTo:addResult
         jsRep:addition.jsRep //applying the jsRep
-    lynxIR:{addition}
 
 subtraction = new func
     name:"subtraction"
@@ -361,7 +360,6 @@ subtraction = new func
         name:"subResult"
         equalTo:subResult
         jsRep:subtraction.jsRep
-    lynxIR:{subtraction}
 
 multiplication = new func
     name:"multiplication"
@@ -372,7 +370,6 @@ multiplication = new func
         name:"multResult"
         equalTo:multResult
         jsRep:multiplication.jsRep
-    lynxIR:{multiplication}
 
 division = new func
     name:"division"
@@ -383,7 +380,6 @@ division = new func
         name:"divResult"
         equalTo:divResult
         jsRep:division.jsRep
-    lynxIR:{division}
 
 equal = new func
     name:"equal"
@@ -394,7 +390,6 @@ equal = new func
         name:"eqResult"
         equalTo:eqResult
         jsRep:equal.jsRep
-    lynxIR:{equal}
 
 lessThan = new func
     name:"lessThan"
@@ -405,7 +400,6 @@ lessThan = new func
         name:"ltResult"
         equalTo:ltResult
         jsRep:lessThan.jsRep
-    lynxIR:{lessThan}
 
 greaterThan = new func
     name:"greaterThan"
@@ -416,7 +410,6 @@ greaterThan = new func
         name:"gtResult"
         equalTo:gtResult
         jsRep:greaterThan.jsRep
-    lynxIR:{greaterThan}
 
 and = new func
     name:"and"
@@ -427,7 +420,6 @@ and = new func
         name:"andResult"
         equalTo:andResult
         jsRep:and.jsRep
-    lynxIR:{and}
 
 or = new func
     name:"or"
@@ -438,7 +430,6 @@ or = new func
         name:"orResult"
         equalTo:orResult
         jsRep:or.jsRep
-    lynxIR:{or}
 
 not = new func
     name:"not"
@@ -448,7 +439,6 @@ not = new func
         name:"notResult"
         equalTo:notResult
         jsRep:not.jsRep
-    lynxIR:{not}
 
 concat = new func
     name:"concat"

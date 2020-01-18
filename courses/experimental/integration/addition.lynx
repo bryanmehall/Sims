@@ -2,29 +2,28 @@ set = new object
 realNumbers = new set
 
 naturalNumbers = new set
-    subsetOf:realNumbers
-    elements: new sumType
-        variant1:zero
-        variant2: new get
-            rootObject: new apply
-                function: successor
-                op1: naturalNumber
-            attribute: result
+    
+    subsetOf:realNumbers //this should be calculated and constrained
         
 realNumber = new object
 
-naturalNumber = new object
+naturalNumber = new type \\new type or object? type formation rule
+    typeSignature: either zero or suc(nat)
     memberOf:naturalNumbers
-    
+
+uint32 = new object 
+    isA: naturalNumber //how to show that this is not a term introduction rule for nats?
     
 zero = new naturalNumber
+    isA: naturalNumber //term introduction rule for natural number
     instanceOf:naturalNumber
 
 one = new naturalNumber
     instanceOf:naturalNumber
-    equalTo:apply.succ
+    equalTo:succ(zero)
 
 successor = new function
+    op1<naturalNumber>: 
     
 
 addition = new function
@@ -34,5 +33,15 @@ addition = new function
         condition: addition.op1 == 0
         then: addition.op2
         alt: 
+
+coordinatePoint = ...
+//equivalence requires evidence
+//either mark x and y as essential or create type signature
+//ie type signature 
+2dcoordinatePoint = new coordinatePoint  
+    typeSignature: number(x) and number(y)
+    dimensions: 2
+    equiv_coordPoint: coordinatePoint given coordinatePoint.dimension == 2
+    x (essential): 
     
     
