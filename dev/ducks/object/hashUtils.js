@@ -12,7 +12,7 @@ export const objectFromHash = (state, hash) => {
 }
 
 export const isHash = (str) => (
-    str.includes("$hash")
+    typeof str === 'string' && str.includes("$hash")
 )
 
 //helper for converting each attribute to hash

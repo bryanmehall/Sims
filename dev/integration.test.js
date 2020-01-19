@@ -1,10 +1,7 @@
 import { Runtime } from './ducks/object/runtime'
-import { createParentContext } from './ducks/object/contextUtils'
-import { getValueAndContext, objectFromName } from './ducks/object/objectUtils'
-import { getHash } from './ducks/object/hashUtils'
-
+import { getValueAndContext } from './ducks/object/objectUtils'
 import fs from 'fs'
-import { object } from 'prop-types'
+import { coreFiles } from './lynxParser'
 
 //create mock functions and canvas
 console.group = function(){}
@@ -48,22 +45,35 @@ const loadAndRunTest = (testName, folder, done) => {
     //const path = path.join(__dirname, '..', 'courses', 'experimental', 'folder', `${testName}.lynx`)
     const corePath = __dirname + '/../courses/experimental/lynx/core.lynx'
     const path = `${__dirname}/../courses/experimental/${folder}/${testName}.lynx`
-    fs.readFile(corePath, 'utf8', (err, coreData) => {
+    fs.readFile(path, 'utf8', (err, fileData) => {
+        if (err) {
+            done.fail('could not read filename')
+        } else {
+            const run = (coreText) => {
+                const lynxText = coreText + fileData
+                try {
+                    runTest(done, lynxText)
+                } catch (e){
+                    done.fail(`error running ${testName} \n ${e}`)
+                }
+            }
+            loadCoreText(coreFiles, done, run)
+        }
+    })
+}
+
+const loadCoreText = (fileList, done, cb, index, text) => {
+    index = index || 0
+    text = text || ''
+    const fileName = fileList[index]
+    const path = __dirname+`/../courses/experimental/lynx/${fileName}.lynx`
+    fs.readFile(path, 'utf8', (err, lynxText) => {
         if (err) {
             done.fail('could not read core')
+        } else if (index == fileList.length-1) {
+            cb(text+lynxText)
         } else {
-            fs.readFile(path, 'utf8', (err, fileData) => {
-                if (err) {
-                    done.fail('could not read filename')
-                } else {
-                    const lynxText = coreData + fileData
-                    try {
-                        runTest(done, lynxText)
-                    } catch (e){
-                        done.fail(`error running ${testName} \n ${e}`)
-                    }
-                }
-            })
+            loadCoreText(fileList, done, cb, index+1, text+lynxText)
         }
     })
 }
@@ -85,8 +95,8 @@ const coreTests = [
     'local-get-end-get-stack',
     'parent-of-new-get'
 ]
-const dbTests = [
-    //'simple-get',
+const integrationTests = [
+    'factorial',
     //'direct-child',
     //'parent'
 ]
@@ -101,7 +111,7 @@ const generateTestSuite = (testNames, folder) => (
 )
 
 const coreTestString = generateTestSuite(coreTests, 'lynx')
-const dbTestString = generateTestSuite(dbTests, 'dbsearch')
+const dbTestString = generateTestSuite(integrationTests, 'integration')
 
 eval(coreTestString + '\n' + dbTestString)
     //terrible hack because jest doesn't have programatic test generation

@@ -2,7 +2,7 @@ import { call, put, takeEvery, takeLatest, fork } from 'redux-saga/effects'
 import SimActions from './ducks/sim/actions'
 import ContentActions from './ducks/content/actions'
 import axios from 'axios'
-import { lynxParser } from './lynxParser'
+import { coreFiles } from './lynxParser'
 
 function fetchJson(path) {
 	let url
@@ -24,18 +24,19 @@ function* fetchSimData(action) {
 	try {
         let response
         try {
-            const lynxFile = yield call(fetchLynx, action.payload.path)
-            const corePath = "/courses/experimental/lynx/core"
-            const lynxCore = yield call(fetchLynx, corePath)
-            const fileData = lynxParser(lynxFile.data)
-            const coreData = lynxParser(lynxCore.data)
-            //console.log(Object.assign(coreData, fileData))
+			const lynxFile = yield call(fetchLynx, action.payload.path)
+			let coreLynxText = ''
+			for (var i=0; i<coreFiles.length; i++) {
+				const fileName = coreFiles[i]
+				const path = `/courses/experimental/lynx/${fileName}`
+				const file = yield call(fetchLynx, path)
+				coreLynxText += file.data
+			}
             response = {
                 keyframes: [],
                 quantity: {},
                 initialState: {
-                    object: Object.assign(coreData, fileData), //remove
-                    lynxText: lynxFile.data + lynxCore.data
+                    lynxText: lynxFile.data + coreLynxText
                 }
             }
         } catch (e) {

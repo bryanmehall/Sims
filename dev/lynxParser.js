@@ -1,6 +1,8 @@
 import parser from './parser'
 //pegjs --track-line-and-column --cache parser.peg
 
+export const coreFiles = ["core", 'operators']
+
 export const lynxParser = (lynxString) => {
     //convert indents to double curly braces so grammar is context free
     const lines = lynxString.split("\n")

@@ -14,7 +14,6 @@ import {
     isHash
     } from './hashUtils'
 import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
-import { limiter } from './utils'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -94,13 +93,6 @@ export const getPrimitiveType = (objectData) => {
 
 }
 
-const addHashToObject = (valueData) => {
-    //adds hash
-    const hash = getHash(valueData)
-    const newProps = Object.assign({}, valueData, { hash })
-    return newProps
-}
-
 export const addObjectToTable = (table, objectData) => {
     table[getHash(objectData)] = objectData
 }
@@ -176,9 +168,9 @@ export const getValue = (state, prop, objectData, context) => (
 export const getValueAndContext = (state, prop, objectData, oldContext) => { //getFirst is a bool for directly evaluating get nodes
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
-    let context = createParentContext(state, oldContext, objectData, hashFromName(state, prop))
+    
     let def = getAttr(objectData, prop)
-
+    let context = createParentContext(state, oldContext, objectData, hashFromName(state, prop), def)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
@@ -200,7 +192,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
     if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
-			return { context: [], value: addHashToObject(valueData) }
+			return { context: [], value: valueData }
 		} else {
 			let attrs = Object.keys(objectData)
 			attrs.unshift('prevVal')
@@ -210,7 +202,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
                 elementValue: objectLib.constructString(attrName) //should this be an attribute not just a string of the name?
                  }))
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
-			return { context, value: addHashToObject(attrSet) }
+			return { context, value: attrSet }
 		}
 	} else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
@@ -220,7 +212,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
 	} else if (prop === JS_REP){
         return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData? 
 	} else {
-        return { context, value: addHashToObject(valueData) }
+        return { context, value: valueData }
 	}
 }
 
@@ -229,7 +221,6 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
     const argsList = jsRepValue.args || []
     if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
         const condition = getValue(state, 'op1', objectData, context).value
-        limiter(2000, 50)
         const returnValue = condition ? getValue(state, 'op2', objectData, context).value : getValue(state, 'op3', objectData, context).value
         return { context, value: { value: returnValue } }
     } else if (jsRepValue.type === 'mouseX') {
@@ -244,7 +235,7 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
     }
 }
 
-const primitiveOps = {
+const primitiveOps = { // TODO: move to differnent file
     addition: (op1, op2) => (op1 + op2),
     subtraction: (op1, op2) => (op1 - op2),
     multiplication: (op1, op2) => (op1 * op2),
@@ -256,11 +247,12 @@ const primitiveOps = {
     equal: (op1, op2) => (op1 === op2),
     lessThan: (op1, op2) => (op1 < op2),
     greaterThan: (op1, op2) => (op1 > op2),
-    concat: (op1, op2) => (op1 + op2),
-    mouseX: () => (50)
+    concat: (op1, op2) => (op1 + op2)
 }
+
 const inputs= {
-    mouseX: 20
+    mouseX: 20,
+    mouseDown: false
 }
 
 const checkObjectData = (objectData) => {

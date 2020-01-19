@@ -1,6 +1,5 @@
 import { assemble, flattenState } from './assembler'
 import { getValue, objectFromName, getValueAndContext } from './objectUtils'
-import { createParentContext } from './contextUtils'
 import { getHash } from './hashUtils'
 import { INPUT, INTERMEDIATE_REP } from './constants'
 import { lynxParser } from './../../lynxParser'

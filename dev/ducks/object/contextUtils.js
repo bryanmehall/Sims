@@ -6,13 +6,14 @@ import {
 
 import { 
     objectFromHash,
-    getHash
+    getHash,
+    isHash
 } from './hashUtils'
 import { INVERSE_ATTRIBUTE } from './constants'
 
 const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttrHash) => { //rename to addContextElement
+export const createParentContext = (state, context, objectData, forwardAttrHash, valueData) => { //rename to addContextElement
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
@@ -31,7 +32,7 @@ export const createParentContext = (state, context, objectData, forwardAttrHash)
         forwardAttr: forwardAttr,
         attr: inverseAttr,
         value: hash,
-        source: "sourceHash" //remove for debug
+        sourceHash: valueData === undefined ? 'undefHash' : isHash(valueData) ? valueData : getHash(valueData)
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){

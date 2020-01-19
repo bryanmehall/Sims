@@ -4,7 +4,7 @@ import { formatArg } from '../ducks/object/utils'
 import { objectFromName, getPrimitiveType, getValue, getValueAndContext } from '../ducks/object/objectUtils'
 import { getHash } from '../ducks/object/hashUtils'
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, INTERMEDIATE_REP } from '../ducks/object/constants'
-import { Node } from './TreeNode'
+import { Node, Link } from './TreeNode'
 
 class TreeVis extends React.Component {
     constructor(props){
@@ -14,7 +14,7 @@ class TreeVis extends React.Component {
         this.state = { nodes, links, allNodes: nodes, allLinks: links }
         this.simulation = d3.forceSimulation(nodes)
             .force("link", d3.forceLink(links)
-                .id((d) => (d.object.hash))
+                .id((d) => (d.hash))
                 .strength(0)
                 )
             .force("forceY", d3.forceY()
@@ -67,25 +67,26 @@ class TreeVis extends React.Component {
 
 	render() {
         const { nodes, links } = this.state
-        getPath(nodes, this.props.activeNode.object.hash)
         const setActive = (node, index) => {
-            const defNode = getValue(this.props.objectTable, "definition", node.object, node.context, false)
-            const defTree = bfsObjectTree(this.props.objectTable, defNode, { nodes: [], links: [] }, [{ object: defNode, level: node.level }])
+            const defObject = getValue(this.props.objectTable, "definition", node.object, node.context, false)
+            const defHash = getHash(defObject)
+            const defTree = bfsObjectTree(this.props.objectTable, defObject, { nodes: [], links: [] }, [{ object: defObject, hash: defHash, level: node.level }])
 
             const defNodes = defTree.nodes
             const defLinks = defTree.links
             const left = nodes.slice(0,index)
             const right = nodes.slice(index)
             this.state.allNodes = left.concat(defNodes, right)
-            const defLink = { source: node.object.hash, target: defNode.hash, attr: "definition" }
+            const defLink = { source: node.hash, target: defHash, attr: "definition" }
             const contextLinks = contextToLinks(node.context)
             this.state.allLinks = links.concat(defLinks, [defLink], contextLinks)
+            console.log(node.context, contextLinks)
             this.props.setActive(node)
             //console.log(this.state.links, this.state.links.concat([defLink]))
             this.simulation
                 .nodes(this.state.allNodes)
                 .force("link", d3.forceLink(this.state.allLinks)
-                    .id((d) => (d.object.hash))
+                    .id((d) => (d.hash))
                     .strength(0)
                     )
                 .alpha(0.2)
@@ -103,6 +104,7 @@ class TreeVis extends React.Component {
                 nodeIndex={i}
                 key={i}
                 object={node.object}
+                hash={node.hash}
                 parId={node.parId}
                 context={node.context}
                 activeNode={this.props.activeNode}
@@ -115,12 +117,14 @@ class TreeVis extends React.Component {
 //sort nodes in bfs order to apply forces to them
 
 const contextToLinks = (context) => (
-    context.map((contextElem) => ({
-        source: contextElem.sourceHash,
-        target: contextElem.value,
-        attr: contextElem.attr,
-        type: "context"
-    }))
+    context.map((contextPath) => (
+        contextPath.map((contextElem) => ({
+            source: contextElem.sourceHash,
+            target: contextElem.value,
+            forwardAttr: contextElem.attr,
+            type: "context"
+        })
+    ))).flat()
 )
 const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     objQueue = objQueue || [{ object: currentObj, level: 0 }]
@@ -129,20 +133,27 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     const first = objQueue.shift()
     const level = first.level
     const i = d3Data.nodes.length
+    const hash = getHash(first.object)
     const newD3Data = {
-        nodes: d3Data.nodes.concat({ id: i, parId: first.parId, object: first.object, context: first.context, objQueue, level }),
-        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: first.object.hash, attr: first.attr })
+        nodes: d3Data.nodes.concat({ 
+            id: i, 
+            parId: first.parId, 
+            object: first.object, 
+            context: first.context, 
+            objQueue, 
+            level, 
+            hash }),
+        links: i<1 ? [] : d3Data.links.concat({ source: first.parId, target: hash, attr: first.attr })
     }
     const children = Object.entries(first.object)
         .filter((entry) => ( //filter out hash and inverse properties
-            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'canvasRep', 'jsRep', 'equalTo', 'op3'].includes(entry[0])
+            !['hash', 'name', 'instanceOf', INTERMEDIATE_REP, 'definition', 'mouse', 'id', 'keyboard', "lynxText", 'jsModule', 'jsRep', 'equalTo', 'op3'].includes(entry[0])
         ))
         .map((entry) => {
             const context = first.context || [[]]
             const attr = entry[0]
-            const {value: object, context: newContext } = getValueAndContext(objectTable, attr, first.object, context)
-            newContext[0][0].sourceHash = getHash(object) //add sourceHash for debug
-            return { object: object, context: newContext, attr, parId: first.object.hash, level: level+1 }
+            const { value: object, context: newContext } = getValueAndContext(objectTable, attr, first.object, context)
+            return { object: object, context: newContext, attr, hash, parId: hash, level: level+1 }
         })
 
     let structureChildren = []
@@ -156,74 +167,5 @@ const bfsObjectTree = (objectTable, currentObj, d3Data, objQueue) => {
     const newQueue = contiuneTree ? objQueue : [...objQueue, ...children, ...structureChildren]
     return bfsObjectTree(objectTable, first.object, newD3Data, newQueue)
 }
-
-const getNodeIndex = (nodes, hash) => (nodes.findIndex((node) => (getHash(node.object) === hash)))
-
-const getPath = (nodes, hash) => {
-    const defNode = nodes[getNodeIndex(nodes, hash)]
-    const rootNodes = nodes.filter((node) => {
-        const hasAST = node.hasOwnProperty('ast')
-        if (hasAST) {
-            return node.ast.varDefs.some((varDef) => (varDef.key === hash))
-        } else {
-            return false
-        }
-    })
-    return { defNode, rootNodes }
-}
-
-const displayArgs = (ast) => {
-    const display = Object.keys(ast.args)
-        .map((argKey, i) => ([i=== 0 ? '' : ', ', displayArg(ast.args[argKey], argKey)]))
-    return <tspan>{'('}{display}{')'}</tspan>
-}
-
-const displayArg = (arg, argKey) => {
-    const color = (arg.type === LOCAL_SEARCH) ? "green" :
-        arg.type === INVERSE ? 'red' :
-        arg.type === GLOBAL_SEARCH ? 'purple' :
-        "black"
-    return <tspan key={argKey} style={{ fill: color }}>{formatArg(arg)}</tspan>
-}
-const formatText = (str, x, y) => {
-    const string = typeof str === 'string'? str : JSON.stringify(str)
-    return string.replace(/\t/g, '____')
-        .split('\n')
-        .map((line, i) => (<tspan key={i} textAnchor="start" x={x-10} y={y+20*i}>{line}</tspan>))
-}
-
-
-
-const Link = ({ source, target, attr, type }) => {
-    const color = attr === "definition" ? 'purple' : type === "context" ? "red" :  'black'
-    const inverse = Math.sign(source.y-target.y)
-
-    return (
-    <g>
-        <line
-            x1={attr === "definition" ? source.x-40 : source.x}
-            y1={attr === "definition" ? source.y-5 : source.y-5*inverse}
-            x2={attr === "definition" ? target.x+40 : target.x}
-            y2={attr === "definition" ? target.y-5 : target.y+15*inverse}
-            style={{
-                stroke: color,
-                strokeOpacity: ".7",
-                strokeWidth: 1.6
-
-            }}
-        />
-
-        <text
-            x={source.x+(target.x-source.x)/2}
-            y={source.y+(target.y-source.y)/2+10*inverse}
-            stroke={color}
-            textAnchor="middle"
-            opacity = {0.3}
-            >
-            {attr}
-        </text>
-    </g>)
-}
-
 
 export default TreeVis
