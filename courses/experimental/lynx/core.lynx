@@ -305,10 +305,6 @@ apply = new object
     name:"apply"
     equalTo:apply.function.result.equalTo //get numerical equiv of result of function --replace with optimization
 
-index = new func
-    name:"index"
-    lynxIR:{index}
-
 op1 = new attribute
     name:"op1"
 op2 = new attribute

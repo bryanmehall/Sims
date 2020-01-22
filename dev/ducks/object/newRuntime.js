@@ -12,7 +12,7 @@ export const initRuntime = (lynxText, canvas, updateDebug) => {
 
 const runtimeLoop = (hashTable, inputs, canvasContext, windowObject, updateDebug) => {
     //make canvasRep an array of [{op:text, }, {op:setFill, }...] ?
-    const canvasRep = getPath(hashTable, ['canvasRep', 'equalTo', 'jsRep'], windowObject, [[]]).value.value
+    const canvasRep = getPath(hashTable, ['canvasRep', 'equalTo', 'jsRep'], windowObject, [[]]).value
     updateDebug(hashTable)
     render(canvasContext, canvasRep)
     //window.requestAnimationFrame()

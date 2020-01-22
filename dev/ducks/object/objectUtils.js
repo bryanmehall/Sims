@@ -13,6 +13,7 @@ import {
     isHash
     } from './hashUtils'
 import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
+import { limiter } from './utils'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -149,8 +150,8 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     } else {
         const result = getValueAndContext(state, attribute, rootValue, root.context)
         delete result.value.hash //remove hash because we are going to add definition to it
-        const resultWithDefinition = { ...result.value, definition: getObject }
-        return { context: result.context, value: resultWithDefinition }
+        const resultWithDefinition = attribute === 'jsRep' ? result.value : { ...result.value, definition: getObject }
+        return { context: result.context, value: resultWithDefinition }//resultWithDefinition }
     }
 }
 
@@ -158,7 +159,8 @@ export const getValue = (state, prop, objectData, context) => (
 	getValueAndContext(state, prop, objectData, context).value
 )
 
-export const getValueAndContext = (state, prop, objectData, oldContext) => { //getFirst is a bool for directly evaluating get nodes
+export const getValueAndContext = (state, prop, objectData, oldContext) => {
+    
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
     
@@ -197,7 +199,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
 			return { context, value: attrSet }
 		}
-	} else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
+    } else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
 	} else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //clean this condition up
         const value = evaluateSearch(state, valueData, context).value
@@ -213,18 +215,18 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
     const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor by moving get check before jsRep check??
     const argsList = jsRepValue.args || []
     if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
-        const condition = getValue(state, 'op1', objectData, context).value
-        const returnValue = condition ? getValue(state, 'op2', objectData, context).value : getValue(state, 'op3', objectData, context).value
-        return { context, value: { value: returnValue } }
+        const condition = getValue(state, 'op1', objectData, context)
+        const returnValue = condition ? getValue(state, 'op2', objectData, context) : getValue(state, 'op3', objectData, context)
+        return { context, value: returnValue }
     } else if (jsRepValue.type === 'mouseX') {
-        return { context, value: { value: inputs['mouseX'] } }
+        return { context, value: inputs['mouseX'] }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
-        return { context, value: { value: jsRepValue } }
+        return { context, value: jsRepValue }
     } else {
         const args = argsList.map((argName) => (
-            getValue(state, argName, objectData, context).value
+            getValue(state, argName, objectData, context)
         ))
-        return { context, value: { value: primitiveOps[jsRepValue.type].apply(null, args) } }
+        return { context, value: primitiveOps[jsRepValue.type].apply(null, args) }
     }
 }
 
@@ -233,7 +235,7 @@ export const getPath = (state, propList, initialObject, initialContext) => (
         getValueAndContext(state, attr, value, context)
     ), { value: initialObject, context: initialContext })
 )
-const primitiveOps = { // TODO: move to differnent file
+const primitiveOps = { // TODO: move to different file
     addition: (op1, op2) => (op1 + op2),
     subtraction: (op1, op2) => (op1 - op2),
     multiplication: (op1, op2) => (op1 * op2),
@@ -245,7 +247,8 @@ const primitiveOps = { // TODO: move to differnent file
     equal: (op1, op2) => (op1 === op2),
     lessThan: (op1, op2) => (op1 < op2),
     greaterThan: (op1, op2) => (op1 > op2),
-    concat: (op1, op2) => (op1 + op2)
+    concat: (op1, op2) => (op1 + op2),
+    getIndex: (array, index) => (array[index])
 }
 
 const inputs= {

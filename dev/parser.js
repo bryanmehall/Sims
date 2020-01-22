@@ -1785,7 +1785,7 @@ module.exports = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, iterator, key) {
-                return createNOp([iterator, key], "index")
+                return createNOp([iterator, key], "getIndex")
             })(pos0, result0[0], result0[2]);
         }
         if (result0 === null) {
@@ -2899,7 +2899,7 @@ module.exports = (function(){
         if (result0 !== null) {
           result0 = (function(offset, head, tail) {
             	var remaining = tail.map(function(expr){return expr[2]})
-            	return createArray([head].concat(remaining))
+            	return createArray(head.concat(remaining))
             })(pos0, result0[2], result0[3]);
         }
         if (result0 === null) {
@@ -3742,15 +3742,11 @@ module.exports = (function(){
           }
       }
       function createArray(elementValues){
-          var elements = elementValues.map(function(value, i){
-              return {
-                  instanceOf:"element",
-                  elementValue:value
-              }
-          })
           return {
-                  instanceOf:"array",
-                  lynxIR:{ type:"array", value:elements}
+              instanceOf:"array",
+              jsRep:elementValues,
+              name:createString("array"),
+              equalTo: createLocalSearch("array")
           }
       }
       function createLocalSearch(query){

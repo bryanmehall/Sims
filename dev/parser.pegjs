@@ -54,15 +54,11 @@ function createFunction(name){
     }
 }
 function createArray(elementValues){
-    var elements = elementValues.map(function(value, i){
-        return {
-            instanceOf:"element",
-            elementValue:value
-        }
-    })
     return {
-            instanceOf:"array",
-            lynxIR:{ type:"array", value:elements}
+        instanceOf:"array",
+        jsRep:elementValues,
+        name:createString("array"),
+        equalTo: createLocalSearch("array")
     }
 }
 function createLocalSearch(query){
@@ -191,7 +187,7 @@ Not "not"
 
 ComputedMemberAccess "computed member access"
     = iterator: Value"[" key:Expression "]" {
-        return createNOp([iterator, key], "index")
+        return createNOp([iterator, key], "getIndex")
     }
     / Apply / GroupedExpression
     
@@ -278,7 +274,7 @@ Array "array"
 SingleLineArray "single line array"
     ='['_ head:ArrayElement* tail:(','_ ArrayElement)*']' {
     	var remaining = tail.map(function(expr){return expr[2]})
-    	return createArray([head].concat(remaining))
+    	return createArray(head.concat(remaining))
     }
 MultilineArray "multi line array"
     ='['"{#{\n""    "* head:ArrayElement tail:('\n' '    '*ArrayElement)*'}#}\n''    '*']'{

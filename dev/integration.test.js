@@ -1,7 +1,10 @@
-import { Runtime } from './ducks/object/runtime'
-import { getValueAndContext } from './ducks/object/objectUtils'
+
+import { getPath, objectFromName } from './ducks/object/objectUtils'
+import { flattenState } from './ducks/object/assembler'
+import { coreFiles, lynxParser } from './lynxParser'
+
 import fs from 'fs'
-import { coreFiles } from './lynxParser'
+
 
 //create mock functions and canvas
 console.group = function(){}
@@ -28,15 +31,14 @@ const canvas = {
 
 const runTest = (done, lynxText) => {
     canvasResult = {}
-    const runtime = new Runtime(lynxText, canvas, ()=>{})
-    const windowObject = runtime.parse(lynxText, 'window') //remove state side effect here
-    const { value, context } = getValueAndContext(runtime.hashTable, "canvasRep", windowObject, [[]])//this is the lynx string for canvasRep
-    const { value: value1, context: context1 } = getValueAndContext(runtime.hashTable, "equalTo", value, context)
-    const canvasString = getValueAndContext(runtime.hashTable, "jsRep", value1, context1).value.value
-    if (canvasString.includes("ctx.fillText('test', 20, 30)")){
+    const hashTable = flattenState(lynxParser(lynxText))
+    const windowObject = objectFromName(hashTable, 'window')
+    const canvasRep = getPath(hashTable, ['canvasRep', 'equalTo', 'jsRep'], windowObject, [[]]).value
+   
+    if (canvasRep.includes("ctx.fillText('test', 20, 30)")){
         done()
     } else {
-        done.fail(`conditions not met ${canvasString}`)
+        done.fail(`conditions not met ${canvasRep}`)
     }
 }
 
@@ -97,6 +99,7 @@ const coreTests = [
 ]
 const integrationTests = [
     'factorial',
+    'array'
     //'direct-child',
     //'parent'
 ]

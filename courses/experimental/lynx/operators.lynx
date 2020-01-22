@@ -1,4 +1,4 @@
-addition = new func
+addition = new func //TODO: clean up these with inheritance
     name:"addition"
     jsRep:{addition, [op1, op2]}
     op1: addition.caller.op1.equalTo.jsRep //get rid of jsRep here and have it hard coded
@@ -128,4 +128,15 @@ insert = new func
     op2:"targetString"
     op3:3
     result:substring(insert.op2, 0, insert.op3-1)+insert.op1+substring(insert.op2, insert.op3-1)
+
+getIndex = new func
+    name: "getIndex" 
+    jsRep:{getIndex, [op1, op2]}
+    op1: getIndex.caller.op1.equalTo.jsRep
+    op2: getIndex.caller.op2.equalTo.jsRep
+    result: new object //parametric polymorphism for result type
+        name:"indexResult"
+        equalTo:indexResult
+        jsRep:getIndex.jsRep.jsRep //applying the jsRep
+    lynxIR:{getIndex}
 
