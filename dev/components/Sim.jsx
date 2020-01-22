@@ -7,6 +7,7 @@ import { Runtime } from '../ducks/object/runtime'
 import Debug from './Debug'
 import { cardStyle } from './styles'
 import Link from 'redux-first-router-link'
+import { initRuntime } from "../ducks/object/newRuntime"
 
 class Sim extends React.Component {
 	constructor(props){
@@ -15,7 +16,8 @@ class Sim extends React.Component {
         this.state = {
             offset: { x: 300, y: 0 },
              //each of these is a function
-            runtime: null,
+			runtime: null,
+			hashTable: null,
             debugView: 'tree' //tree or other
         }
 	}
@@ -26,11 +28,15 @@ class Sim extends React.Component {
         this.canvas = document.getElementById('canvas')
 	}
     componentDidUpdate(nextProps){
-        const updateFunction = (runtime) => {
-            this.setState({ runtime: runtime })
+        const updateFunction = (hashTable, outputs ) => {
+            this.setState({ hashTable, outputs })
         }
-        if (this.props.loadState === 'loaded' && this.state.runtime === null){
-            this.runtime = new Runtime(this.props.state.sim.lynxText, this.canvas, updateFunction)
+        if (this.props.loadState === 'loaded' && this.state.hashTable === null){
+			const width = this.canvas.getBoundingClientRect().width //this assumes that the size won't change
+        	const height = this.canvas.getBoundingClientRect().height
+        	this.canvas.width = width
+        	this.canvas.height = height
+            initRuntime(this.props.state.sim.lynxText, this.canvas, updateFunction)
         }
 
 		const contentBlockId = nextProps.contentBlockId
@@ -71,11 +77,13 @@ class Sim extends React.Component {
 			backgroundColor: '#fff' 
 		}
 
-        const debug = this.props.loadState !=='loading' ?
-              <Debug
-                  runtime = {this.state.runtime}
-                  debugType={this.state.debugView}
-                ></Debug> : null
+		const debug = this.props.loadState === 'loading' 
+			? null 
+			:<Debug
+				hashTable = {this.state.hashTable}
+				lynxText = {this.props.state.sim.lynxText}
+				debugType={this.state.debugView}
+                ></Debug>
         //const debugTypes = [text, tree, ast, code, ]
         //const debugSelector = debugTypes.map()
 		return (

@@ -107,11 +107,13 @@ export class Runtime {
             assemble: (lynxIR) => (runtime.assemble(lynxIR)),
             run: (lynxModule) => (runtime.run(lynxModule))
         }
-        const windowObject = this.parse(this.lynxText, 'window') //use generic lynx parse function---stte modification is handled in getValue
+        const hashTable = flattenState(lynxParser(lynxText))
+        this.hashTable = hashTable
+        const windowObject = objectFromName(hashTable, 'window') 
         //console.time('eval')
-        const { value, context } = getValueAndContext(this.hashTable, "canvasRep", windowObject, [[]])
-        const { value: value1, context: context1 } = getValueAndContext(this.hashTable, "equalTo", value, context)
-        const canvasString = getValueAndContext(this.hashTable, "jsRep", value1, context1).value.value
+        const { value, context } = getValueAndContext(hashTable, "canvasRep", windowObject, [[]])
+        const { value: value1, context: context1 } = getValueAndContext(hashTable, "equalTo", value, context)
+        const canvasString = getValueAndContext(hashTable, "jsRep", value1, context1).value.value
         //console.timeEnd('eval')
         //console.log(canvasString)
         const renderFunction = new Function('ctx', canvasString)
@@ -296,6 +298,7 @@ export class Runtime {
             hashTable = flattenState(parsed) //returns hash table of objects--eventually this should be part of state
             Object.assign(this.hashTable, hashTable)
             if (searchName === undefined){
+                throw new Error('here')
                 const hash = getHash(parsed)
                 return Object.assign(parsed, { hash })
             } else {

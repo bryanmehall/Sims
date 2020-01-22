@@ -9,7 +9,6 @@ import {
 	getInverseParent
     } from './contextUtils'
 import {
-    getHash,
     objectFromHash,
     isHash
     } from './hashUtils'
@@ -73,7 +72,6 @@ export const getNameFromAttr = (objectData) => {
     if (typeof nameObject === 'undefined'){
         return 'unnamed'
     } else {
-        
         return getAttr(nameObject, INTERMEDIATE_REP).value
     }
 
@@ -91,10 +89,6 @@ export const getPrimitiveType = (objectData) => {
         return jsPrim.type
     }
 
-}
-
-export const addObjectToTable = (table, objectData) => {
-    table[getHash(objectData)] = objectData
 }
 
 const getInheritedName = (state, value, context) => { 
@@ -156,7 +150,6 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         const result = getValueAndContext(state, attribute, rootValue, root.context)
         delete result.value.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = { ...result.value, definition: getObject }
-        addObjectToTable(state, resultWithDefinition)
         return { context: result.context, value: resultWithDefinition }
     }
 }
@@ -170,7 +163,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => { //g
     //console.log(def, prop, objectData)
     
     let def = getAttr(objectData, prop)
-    let context = createParentContext(state, oldContext, objectData, hashFromName(state, prop), def)
+    let context = createParentContext(state, oldContext, objectData, prop, def)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
@@ -235,6 +228,11 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
     }
 }
 
+export const getPath = (state, propList, initialObject, initialContext) => (
+    propList.reduce(({ value, context }, attr) => (
+        getValueAndContext(state, attr, value, context)
+    ), { value: initialObject, context: initialContext })
+)
 const primitiveOps = { // TODO: move to differnent file
     addition: (op1, op2) => (op1 + op2),
     subtraction: (op1, op2) => (op1 - op2),
@@ -258,11 +256,5 @@ const inputs= {
 const checkObjectData = (objectData) => {
     if (objectData === undefined) {
         throw new Error('Lynx Error: objectData is undefined')
-    } else if (hasAttribute(objectData, 'hash') && getAttr(objectData, 'hash') !== getHash(objectData)){
-        // eslint-disable-next-line no-console
-        console.log(JSON.stringify(objectData, null, 2), getAttr(objectData, 'hash'))
-        throw new Error("hashes not equal")
-	} else if (typeof objectData === "string" && isHash(objectData)){ //needed???
-        throw 'string hash'
-    }
+    } 
 }

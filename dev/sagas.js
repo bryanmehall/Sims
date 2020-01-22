@@ -36,7 +36,7 @@ function* fetchSimData(action) {
                 keyframes: [],
                 quantity: {},
                 initialState: {
-                    lynxText: lynxFile.data + coreLynxText
+                    lynxText: lynxFile.data + "\n"+coreLynxText
                 }
             }
         } catch (e) {

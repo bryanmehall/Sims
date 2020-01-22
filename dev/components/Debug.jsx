@@ -13,10 +13,10 @@ class Debug extends React.Component {
         this.state = { offset: { x: 0, y: 0 }, activeNode: { object: {} } }
     }
 	render() {
-        if (this.props.loadState === 'loading' || this.props.runtime === null){
+        const { lynxText, hashTable } = this.props
+        if (this.props.loadState === 'loading' || this.props.hashTable === null){
             return <div>loading</div>
         }
-        const { runtime } = this.props
         const setCenter =  (x,y) => { this.setState({ offset: { x, y } }) }
         const setActive = (node) => {
             this.setState({ activeNode: node })
@@ -38,14 +38,14 @@ class Debug extends React.Component {
             treeVis.addEventListener('mousemove', mouseMoveHandler)
         }
         //const activeHash = this.state.active.object.hash
-        const functionTable = runtime.functionTable
+        const functionTable = []//runtime.functionTable
         const tableVis = Object.keys(functionTable).map((func) => (
                 `\n\n\n${func}:\n${functionTable[func].toString()}`
             ))
-        const rootASTs = Object.entries(runtime.outputs)
+        const rootASTs = []/*Object.entries(runtime.outputs)
             .map((entry) => (
                 `\n\n\n${entry[0]}:\n${entry[1].value.toString()}`
-            ))
+            ))*/
         const codeVis = (
             <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily: 'courier new', padding: 20, top: 547 }}>
                 {rootASTs}
@@ -54,7 +54,7 @@ class Debug extends React.Component {
         )
         const lynxTextVis = (
             <pre style={{ ...cardStyle, backgroundColor: "white", position: 'absolute', fontFamily: 'courier new', padding: 20, top: 547 }}>
-                {runtime.lynxText}
+                {lynxText}
             </pre>
         )
         if (this.props.debugType === 'tree'){
@@ -71,7 +71,7 @@ class Debug extends React.Component {
                         >
                         {
                             <TreeVis
-                                      objectTable={runtime.hashTable}
+                                      objectTable={hashTable}
                                       setActive={setActive}
                                       activeNode={this.state.activeNode}></TreeVis>
                         }
@@ -79,8 +79,6 @@ class Debug extends React.Component {
                     </svg>
                 </div>
             )
-        } else if (this.props.debugType === 'flow') {
-            return <FlowVis runtime={this.props.runtime}></FlowVis>
         } else if (this.props.debugType === "lynxText"){
             return lynxTextVis
         } else {

@@ -1,24 +1,22 @@
 import { 
     getNameFromAttr, 
     hasAttribute, 
-    getValue
+    getValue,
+    objectFromName
 } from './objectUtils'
 
 import { 
-    objectFromHash,
-    getHash,
-    isHash
+    objectFromHash
 } from './hashUtils'
 import { INVERSE_ATTRIBUTE } from './constants'
 
 const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttrHash, valueData) => { //rename to addContextElement
+export const createParentContext = (state, context, objectData, forwardAttr, valueData) => { //rename to addContextElement
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
-    const attrData = objectFromHash(state, forwardAttrHash)
-    const forwardAttr = getNameFromAttr(attrData)
+    const attrData = objectFromName(state, forwardAttr)
     if (hasAttribute(attrData, INVERSE_ATTRIBUTE)){
         const inverseAttrObject = getValue(state, INVERSE_ATTRIBUTE, attrData, context)
         var inverseAttr = getNameFromAttr(inverseAttrObject)
@@ -26,13 +24,12 @@ export const createParentContext = (state, context, objectData, forwardAttrHash,
         inverseAttr = 'undef'
     }
     
-    const hash =  getHash(objectData)
     const contextElement = {
-        debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr} = ${hash}`,
+        debug: `${getNameFromAttr(objectData)}.${forwardAttr} has inverse ${inverseAttr}`,
         forwardAttr: forwardAttr,
         attr: inverseAttr,
-        value: hash,
-        sourceHash: valueData === undefined ? 'undefHash' : isHash(valueData) ? valueData : getHash(valueData)
+        value: objectData,
+        sourceHash: valueData 
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){

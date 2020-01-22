@@ -3,11 +3,12 @@ import murmurhash from 'murmurhash' //switch to sipHash for data integrity?
 import { getNameFromAttr } from './objectUtils'
 
 export const objectFromHash = (state, hash) => {
-    const value = state[hash]
-    if (typeof value === 'undefined'){
+    if (state.hasOwnProperty(hash)){
+        return state[hash]
+    } else if (isHash(hash)) { 
         throw new Error(`could not find object named ${JSON.stringify(hash)} in state`)
-    } else {
-        return value
+    } else { //if hash is actually an object -clean up
+        return hash
     }
 }
 
