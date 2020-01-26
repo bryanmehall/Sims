@@ -54,12 +54,13 @@ module.exports = (function(){
         "Sum": parse_Sum,
         "Product": parse_Product,
         "Not": parse_Not,
-        "ComputedMemberAccess": parse_ComputedMemberAccess,
         "GroupedExpression": parse_GroupedExpression,
         "Value": parse_Value,
         "Apply": parse_Apply,
         "GlobalSearch": parse_GlobalSearch,
         "Search": parse_Search,
+        "GetIndex": parse_GetIndex,
+        "GetAttr": parse_GetAttr,
         "Get": parse_Get,
         "Number": parse_Number,
         "Int": parse_Int,
@@ -1714,92 +1715,11 @@ module.exports = (function(){
           pos = pos0;
         }
         if (result0 === null) {
-          result0 = parse_ComputedMemberAccess();
+          result0 = parse_GroupedExpression();
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
           matchFailed("not");
-        }
-        
-        cache[cacheKey] = {
-          nextPos: pos,
-          result:  result0
-        };
-        return result0;
-      }
-      
-      function parse_ComputedMemberAccess() {
-        var cacheKey = "ComputedMemberAccess@" + pos;
-        var cachedResult = cache[cacheKey];
-        if (cachedResult) {
-          pos = cachedResult.nextPos;
-          return cachedResult.result;
-        }
-        
-        var result0, result1, result2, result3;
-        var pos0, pos1;
-        
-        reportFailures++;
-        pos0 = pos;
-        pos1 = pos;
-        result0 = parse_Value();
-        if (result0 !== null) {
-          if (input.charCodeAt(pos) === 91) {
-            result1 = "[";
-            pos++;
-          } else {
-            result1 = null;
-            if (reportFailures === 0) {
-              matchFailed("\"[\"");
-            }
-          }
-          if (result1 !== null) {
-            result2 = parse_Expression();
-            if (result2 !== null) {
-              if (input.charCodeAt(pos) === 93) {
-                result3 = "]";
-                pos++;
-              } else {
-                result3 = null;
-                if (reportFailures === 0) {
-                  matchFailed("\"]\"");
-                }
-              }
-              if (result3 !== null) {
-                result0 = [result0, result1, result2, result3];
-              } else {
-                result0 = null;
-                pos = pos1;
-              }
-            } else {
-              result0 = null;
-              pos = pos1;
-            }
-          } else {
-            result0 = null;
-            pos = pos1;
-          }
-        } else {
-          result0 = null;
-          pos = pos1;
-        }
-        if (result0 !== null) {
-          result0 = (function(offset, iterator, key) {
-                return createNOp([iterator, key], "getIndex")
-            })(pos0, result0[0], result0[2]);
-        }
-        if (result0 === null) {
-          pos = pos0;
-        }
-        if (result0 === null) {
-          result0 = parse_Apply();
-          if (result0 === null) {
-            result0 = parse_GroupedExpression();
-          }
-        }
-        reportFailures--;
-        if (reportFailures === 0 && result0 === null) {
-          matchFailed("computed member access");
         }
         
         cache[cacheKey] = {
@@ -1867,7 +1787,10 @@ module.exports = (function(){
           pos = pos0;
         }
         if (result0 === null) {
-          result0 = parse_Value();
+          result0 = parse_Apply();
+          if (result0 === null) {
+            result0 = parse_Value();
+          }
         }
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
@@ -2157,6 +2080,126 @@ module.exports = (function(){
         return result0;
       }
       
+      function parse_GetIndex() {
+        var cacheKey = "GetIndex@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1, result2;
+        var pos0, pos1;
+        
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 91) {
+          result0 = "[";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\"[\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_Expression();
+          if (result1 !== null) {
+            if (input.charCodeAt(pos) === 93) {
+              result2 = "]";
+              pos++;
+            } else {
+              result2 = null;
+              if (reportFailures === 0) {
+                matchFailed("\"]\"");
+              }
+            }
+            if (result2 !== null) {
+              result0 = [result0, result1, result2];
+            } else {
+              result0 = null;
+              pos = pos1;
+            }
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, key) { return key })(pos0, result0[1]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("get index");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_GetAttr() {
+        var cacheKey = "GetAttr@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0, result1;
+        var pos0, pos1;
+        
+        reportFailures++;
+        pos0 = pos;
+        pos1 = pos;
+        if (input.charCodeAt(pos) === 46) {
+          result0 = ".";
+          pos++;
+        } else {
+          result0 = null;
+          if (reportFailures === 0) {
+            matchFailed("\".\"");
+          }
+        }
+        if (result0 !== null) {
+          result1 = parse_Name();
+          if (result1 !== null) {
+            result0 = [result0, result1];
+          } else {
+            result0 = null;
+            pos = pos1;
+          }
+        } else {
+          result0 = null;
+          pos = pos1;
+        }
+        if (result0 !== null) {
+          result0 = (function(offset, attr) { return attr })(pos0, result0[1]);
+        }
+        if (result0 === null) {
+          pos = pos0;
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("get attribute");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
       function parse_Get() {
         var cacheKey = "Get@" + pos;
         var cachedResult = cache[cacheKey];
@@ -2165,8 +2208,8 @@ module.exports = (function(){
           return cachedResult.result;
         }
         
-        var result0, result1, result2, result3;
-        var pos0, pos1, pos2;
+        var result0, result1, result2;
+        var pos0, pos1;
         
         reportFailures++;
         pos0 = pos;
@@ -2174,53 +2217,17 @@ module.exports = (function(){
         result0 = parse_Search();
         result0 = result0 !== null ? result0 : "";
         if (result0 !== null) {
-          pos2 = pos;
-          if (input.charCodeAt(pos) === 46) {
-            result2 = ".";
-            pos++;
-          } else {
-            result2 = null;
-            if (reportFailures === 0) {
-              matchFailed("\".\"");
-            }
-          }
-          if (result2 !== null) {
-            result3 = parse_Name();
-            if (result3 !== null) {
-              result2 = [result2, result3];
-            } else {
-              result2 = null;
-              pos = pos2;
-            }
-          } else {
-            result2 = null;
-            pos = pos2;
+          result2 = parse_GetAttr();
+          if (result2 === null) {
+            result2 = parse_GetIndex();
           }
           if (result2 !== null) {
             result1 = [];
             while (result2 !== null) {
               result1.push(result2);
-              pos2 = pos;
-              if (input.charCodeAt(pos) === 46) {
-                result2 = ".";
-                pos++;
-              } else {
-                result2 = null;
-                if (reportFailures === 0) {
-                  matchFailed("\".\"");
-                }
-              }
-              if (result2 !== null) {
-                result3 = parse_Name();
-                if (result3 !== null) {
-                  result2 = [result2, result3];
-                } else {
-                  result2 = null;
-                  pos = pos2;
-                }
-              } else {
-                result2 = null;
-                pos = pos2;
+              result2 = parse_GetAttr();
+              if (result2 === null) {
+                result2 = parse_GetIndex();
               }
             }
           } else {
@@ -3759,7 +3766,7 @@ module.exports = (function(){
           var getData = {
               lynxIR:{type:"get"},
               instanceOf:"get",
-              attribute:attr[1]
+              attribute:attr
           }
           if (rootObject !== null){
               getData.rootObject = rootObject

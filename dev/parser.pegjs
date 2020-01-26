@@ -71,7 +71,7 @@ function buildPath(rootObject, attr, str){
     var getData = {
         lynxIR:{type:"get"},
         instanceOf:"get",
-        attribute:attr[1]
+        attribute:attr
     }
     if (rootObject !== null){
         getData.rootObject = rootObject
@@ -183,19 +183,19 @@ Product "product"
 
 Not "not"
     ="!"value:Not {return createNOp([value], "not")}
-    / ComputedMemberAccess
+    / GroupedExpression  //ComputedMemberAccess
 
-ComputedMemberAccess "computed member access"
+/*ComputedMemberAccess "computed member access"
     = iterator: Value"[" key:Expression "]" {
         return createNOp([iterator, key], "getIndex")
     }
-    / Apply / GroupedExpression
+    / GroupedExpression*/
     
 GroupedExpression "grouped expression"
     = "("expr:Expression")"{
         return expr
     }
-    / Value
+    / Apply / Value
     
 Value "value"
 	=  Primitive / Bool / Number / String / Object / GlobalSearch / Get / Search
@@ -215,8 +215,14 @@ Search "local search"
 	return createLocalSearch(query)
     }
 
+GetIndex "get index"
+    = "[" key:Expression "]" { return key }
+
+GetAttr "get attribute"
+    = "."attr:Name { return attr }
+
 Get "get"
-    = root:Search? attributes:("."Name)+ {
+    = root:Search? attributes:(GetAttr / GetIndex)+ {
     return attributes.reduce(buildPath, root)
     }
      

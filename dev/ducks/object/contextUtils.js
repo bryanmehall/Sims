@@ -12,7 +12,7 @@ import { INVERSE_ATTRIBUTE } from './constants'
 
 const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttr, valueData) => { //rename to addContextElement
+export const createParentContext = (state, context, objectData, forwardAttr, valueData) => { //TODO: rename to addContextElement
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
@@ -54,6 +54,12 @@ export const isInverseAttr = (objectData, attr, context) => {
 	} else {
 		return getInverseContextPathIndex(context, attr) !== -1
 	}
+}
+
+export const addArrayElementToContext = (state, context, arrayObject, elementObject, index) => {
+    //TODO: add index to context
+    console.log(createParentContext(state, context, arrayObject, 'arrayElement', elementObject))
+    return createParentContext(state, context, arrayObject, 'arrayElement', elementObject)
 }
 
 export const getInverseContextPathIndex = (context, attr) => { //returns index of inverse or -1 if no inverse

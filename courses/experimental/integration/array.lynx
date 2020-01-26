@@ -1,9 +1,10 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        x:20
-        y:30
-        op1:[1, "test", 3]
-        op2:2
-        innerText:txt.op1[1]
+    op1:[
+        new text
+            name:"txt"
+            x:txt.parentArray.length*10
+            y:30
+            innerText:"test"
+    ]
+    childElement1: window.op1[0]

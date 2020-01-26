@@ -8,17 +8,18 @@ window = new group
     ]
     accordianRep: new group
         name:"accordianRepresentation"
-        pos: accordianRepresentation.parentConcept.pos
-        childElements:new apply
-            function: map
-            op1:accordianRepresentation.parentConcept.attributes
-            op2:new element
-                elementValue:new text
-                    name:"txt"
-                    x:accordianRepresentation.pos.x
-                    y:txt.parentElement.index*25+accordianRepresentation.pos.y
-                    innerText:txt.parentElement.index
+        pos: accordianRepresentation.parentElement.pos
+        isCollapsed: true
+        childElements:condition
+            if accrodianRepresentation.isCollapsed then [
+                    new text: 
+                ]
+            else [
 
+                ]
+accordianName = new text
+
+            
 map = new func
     name:"map"
     lynxIR:{map}

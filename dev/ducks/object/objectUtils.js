@@ -6,7 +6,8 @@ import {
     popSearchFromContext, 
     popInverseFromContext, 
     addContextPath,
-	getInverseParent
+	getInverseParent,
+    addArrayElementToContext
     } from './contextUtils'
 import {
     objectFromHash,
@@ -143,7 +144,13 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     if (traceGet) { console.log(`getting: ${attribute}`) }
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
-    if (isInverse){
+    if (typeof attribute !== 'string'){ //TODO: clean up this condition ---for indexes
+        const array = getValueAndContext(state, 'jsRep', rootValue, root.context) //this context includes js rep so use old context?
+        const index = getPath(state, ['equalTo', 'jsRep'], attribute, root.context)
+        const value = array.value[index.value]
+        const elemContext = addArrayElementToContext(state, root.context, rootValue, value, index)
+        return { value, context: elemContext }
+    } else if (isInverse){
         const newContext = popInverseFromContext(root.context, attribute)
 		const value = getInverseParent(state, root.context, attribute)
         return { context: newContext , value: value }
@@ -218,7 +225,7 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
         const condition = getValue(state, 'op1', objectData, context)
         const returnValue = condition ? getValue(state, 'op2', objectData, context) : getValue(state, 'op3', objectData, context)
         return { context, value: returnValue }
-    } else if (jsRepValue.type === 'mouseX') {
+    } else if (jsRepValue.type === 'mouseX') { 
         return { context, value: inputs['mouseX'] }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
         return { context, value: jsRepValue }

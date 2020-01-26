@@ -54,9 +54,6 @@ app = new object
             name:"currentKeys"
             length:0
             lynxIR:{input}
-        currentKeysPressed: [
-            appkeyboard.currentKeysDown[0]
-        ]
     graphicalRepresentation:\window
 canvasRep = new attribute
     name:"canvasRep"
@@ -104,13 +101,6 @@ childElement1 = new attribute
 childElement2 = new attribute
     name:"childElement2"
     inverseAttribute: \parentGroup
-
-element = new object
-    name:"element"
-    index:new number
-        name:"arrayIndex"
-        lynxIR:{arrayIndex}
-    lynxIR:{arrayElement}
 
 parentGroup = new attribute
     name:"parentGroup"
@@ -207,7 +197,7 @@ set = new object
 
 array = new object
     name:"array"
-    length:0
+    length:2
 
 length = new attribute
     name:"length"
