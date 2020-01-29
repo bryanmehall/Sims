@@ -1,10 +1,12 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        innerText:"test"
-        x:\factorial(4) - 4
-        y:30
+    childElements: [
+        new text
+            name:"txt"
+            innerText:"test"
+            x:\factorial(4) - 4
+            y:30
+    ]
 
 dbSearch = new object
 

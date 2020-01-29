@@ -1,14 +1,16 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        x:20
-        y:30
-        op1:"test"
-        innerText:new get
-            name:"test"
-            op1:3
-            lynxIR:{get}
-            attribute:\equalTo
-            rootObject:new object
-                equalTo: txt.op1
+    childElements: [
+        new text
+            name:"txt"
+            x:20
+            y:30
+            op1:"test"
+            innerText:new get
+                name:"test"
+                op1:3
+                lynxIR:{get}
+                attribute:\equalTo
+                rootObject:new object
+                    equalTo: txt.op1
+    ]

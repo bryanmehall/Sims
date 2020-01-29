@@ -14,7 +14,7 @@ import {
     isHash
     } from './hashUtils'
 import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
-import { limiter } from './utils'
+import { limiter, isUndefined } from './utils'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -63,7 +63,7 @@ export const getAttr = (objectData, attr) => (
 )
 
 export const hasAttribute = (objectData, prop) => (
-    objectData.hasOwnProperty(prop)
+    objectData.hasOwnProperty(prop) || prop === 'arrayElement' //exclude array element because getting array fakes that attr arrayElement exists
 )
 
 export const getNameFromAttr = (objectData) => {
@@ -93,8 +93,11 @@ export const getPrimitiveType = (objectData) => {
 
 }
 
-const getInheritedName = (state, value, context) => { 
-    const isNotInherited = hasAttribute(value, context[0][0].forwardAttr)//break into function
+const getInheritedName = (state, value, context) => { //TODO: get rid of name inheritance?
+    const forwardAttr = context[0][0].forwardAttr 
+    //attr from parent to child testing that child came from parent not supertype of parent
+    //break into function
+    const isNotInherited = hasAttribute(value, forwardAttr)
     if (isNotInherited){
         return getNameFromAttr(value)
     } else {
@@ -105,7 +108,7 @@ const getInheritedName = (state, value, context) => {
 
 const traceGet = false
 const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
-    const query = getAttr(searchObject, "lynxIR").query
+    const query = getAttr(searchObject, "lynxIR").query //TODO: remove lynxIR
     if (context === undefined){
         throw new Error('context undefined')
     } else if (context[0].length === 0){
@@ -144,13 +147,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     if (traceGet) { console.log(`getting: ${attribute}`) }
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
-    if (typeof attribute !== 'string'){ //TODO: clean up this condition ---for indexes
-        const array = getValueAndContext(state, 'jsRep', rootValue, root.context) //this context includes js rep so use old context?
-        const index = getPath(state, ['equalTo', 'jsRep'], attribute, root.context)
-        const value = array.value[index.value]
-        const elemContext = addArrayElementToContext(state, root.context, rootValue, value, index)
-        return { value, context: elemContext }
-    } else if (isInverse){
+    if (isInverse){
         const newContext = popInverseFromContext(root.context, attribute)
 		const value = getInverseParent(state, root.context, attribute)
         return { context: newContext , value: value }
@@ -172,26 +169,39 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
     //console.log(def, prop, objectData)
     
     let def = getAttr(objectData, prop)
-    let context = createParentContext(state, oldContext, objectData, prop, def)
+    let context = []//createParentContext(state, oldContext, objectData, prop, def)
     if (typeof def === "string" && isHash(def)){
         def = objectFromHash(state, def)
+        context = createParentContext(state, oldContext, objectData, prop, def)
+    } else if (typeof prop !== 'string'){ //TODO: clean up this condition
+        const array = getValueAndContext(state, 'jsRep', objectData, oldContext) //this context includes js rep so use old context?
+        const index = getPath(state, ['equalTo', 'jsRep'], prop, oldContext)
+        def = array.value[index.value]
+        context = addArrayElementToContext(state, oldContext, objectData, def, prop)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
         const isInstance = hasAttribute(objectData, 'instanceOf')
         if (isInstance) {
-            const inherited = getValueAndContext(state, 'instanceOf', objectData, context) //old context here because createParentContext pops off stack
+            const ctx = createParentContext(state, oldContext, objectData, prop, def)
+            const inherited = getValueAndContext(state, 'instanceOf', objectData, ctx) //old context here because createParentContext pops off stack
             var inheritedData = inherited.value
             context = inherited.context
         } else {
             inheritedData = objectFromName(state, 'object')
+            context = createParentContext(state, oldContext, objectData, prop, def)
         }
 		//add group to context here
         def = getAttr(inheritedData, prop)
     } else if (def === undefined) {
 		throw new Error(`def is undefined for ${prop} of ${name}`)
+    } else {
+        context = createParentContext(state, oldContext, objectData, prop, def)
     }
-    
     const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
-    if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
+    if (valueData === undefined){
+        // eslint-disable-next-line no-console
+        console.warn(objectData)
+        throw new Error(`LynxError: value is undefined for prop "${prop}"`)
+    } else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
 			return { context: [], value: valueData }

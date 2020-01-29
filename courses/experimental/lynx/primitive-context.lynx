@@ -3,7 +3,7 @@ window = new group
     textRepresentation: new text
         name:"txt"
         innerText:"test"
-        x:txt.parentGroup.x
+        x:txt.parentArray.parentElement.x
         y:30
-    childElement1: window.textRepresentation
+    childElements: [window.textRepresentation]
     x:20

@@ -1,21 +1,23 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        x:20
-        y:30
-        innerText:new get
-            lynxIR:{get}
-            attribute:\equalTo
-            instanceOf:\get
-            rootObject: new object
-                name:"apply1"
-                equalTo:apply1.function.result
-                function: new funct
-                    name:"factorial"
-                    op1:"failedtst"
-                    result:factorial.caller.op1
-                op1:"test"
+    childElements: [
+        new text
+            name:"txt"
+            x:20
+            y:30
+            innerText:new get
+                lynxIR:{get}
+                attribute:\equalTo
+                instanceOf:\get
+                rootObject: new object
+                    name:"apply1"
+                    equalTo:apply1.function.result
+                    function: new funct
+                        name:"factorial"
+                        op1:"failedtst"
+                        result:factorial.caller.op1
+                    op1:"test"
+    ]
 
 equalTo = new attribute
     name:"equalTo"

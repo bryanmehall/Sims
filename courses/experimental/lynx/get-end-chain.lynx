@@ -1,9 +1,11 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        op1:20
-        r:txt.op1
-        x:txt.r
-        y:30
-        innerText:"test"
+    childElements: [
+        new text
+            name:"txt"
+            op1:20
+            r:txt.op1
+            x:txt.r
+            y:30
+            innerText:"test"
+    ]

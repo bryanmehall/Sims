@@ -56,10 +56,16 @@ export const isInverseAttr = (objectData, attr, context) => {
 	}
 }
 
-export const addArrayElementToContext = (state, context, arrayObject, elementObject, index) => {
-    //TODO: add index to context
-    console.log(createParentContext(state, context, arrayObject, 'arrayElement', elementObject))
-    return createParentContext(state, context, arrayObject, 'arrayElement', elementObject)
+export const addArrayElementToContext = (state, context, arrayObject, elementObject, indexObject) => {
+    const indexElement = {
+        debug: `array.element has inverse index`,
+        forwardAttr: 'element',
+        attr: 'index',
+        value: indexObject,
+        sourceHash: elementObject 
+    }
+    const indexContext = [context[0], [indexElement], ...context.slice(1)]
+    return createParentContext(state, indexContext, arrayObject, 'arrayElement', elementObject)
 }
 
 export const getInverseContextPathIndex = (context, attr) => { //returns index of inverse or -1 if no inverse

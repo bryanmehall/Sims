@@ -5,7 +5,9 @@ window = new group
         textRepresentation:new text
             name:"txt"
             innerText:txt.parentConcept.name
-            x:txt.parentGroup.x
+            x:txt.parentArray.parentElement.x //BUG: parentGroup is not defined because it is no longer the childElement of group 
             y:30
-    childElement1: window.op1.textRepresentation
+    childElements: [
+        window.op1.textRepresentation
+    ]
     x:20

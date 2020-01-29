@@ -87,7 +87,7 @@ string = new object
 
 group = new object
     name:"group"
-    canvasRep:group.childElement1.canvasRep
+    canvasRep:group.childElements[0].canvasRep
     mouse: new object
         x:new number
             jsRep:{mouseX}
@@ -169,6 +169,7 @@ parse = new func
     lynxIR:{parse}
 childElements = new attribute
     name:"childElements"
+    inverseAttribute:\parentElement
 name = new attribute
     name:"name"
 parentValue = new attribute

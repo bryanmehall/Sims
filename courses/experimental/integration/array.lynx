@@ -1,10 +1,22 @@
 window = new group
     name:"window"
+    index:10
     op1:[
         new text
             name:"txt"
-            x:txt.parentArray.length*10
+            x:20
             y:30
             innerText:"test"
+        new text
+            name:"txt"
+            x:txt.parentArray.length*10
+            y:txt.index*30
+            innerText:"test"
+        new text
+            name:"txt"
+            x:txt.parentArray.length*10
+            y:txt.index*15
+            previousElement:txt.parentArray[window.index-1] //context is for array here not in text
+            innerText:"test"
     ]
-    childElement1: window.op1[0]
+    childElements: [window.op1[0]]
