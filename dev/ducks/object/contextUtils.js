@@ -6,9 +6,10 @@ import {
 } from './objectUtils'
 
 import { 
-    objectFromHash
+    objectFromHash, getHash
 } from './hashUtils'
 import { INVERSE_ATTRIBUTE } from './constants'
+import { deleteKeys } from './utils'
 
 const traceContext = false
 
@@ -29,7 +30,7 @@ export const createParentContext = (state, context, objectData, forwardAttr, val
         forwardAttr: forwardAttr,
         attr: inverseAttr,
         value: objectData,
-        sourceHash: valueData 
+        sourceHash: valueData //TODO: change sourceHash to source
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){
@@ -39,8 +40,8 @@ export const createParentContext = (state, context, objectData, forwardAttr, val
     return newContext
 }
 
-export const getInverseParent = (state, context, attr) => {
-	const index = getInverseContextPathIndex(context, attr)
+export const getInverseParent = (state, context, attr, sourceData) => {
+	const index = getInverseContextPathIndex(context, attr, sourceData)
 	return objectFromHash(state, context[index][0].value)
 }
 
@@ -52,7 +53,7 @@ export const isInverseAttr = (objectData, attr, context) => {
 	if (hasAttribute(objectData, attr)){
 		return false
 	} else {
-		return getInverseContextPathIndex(context, attr) !== -1
+		return getInverseContextPathIndex(context, attr, objectData) !== -1
 	}
 }
 
@@ -68,14 +69,26 @@ export const addArrayElementToContext = (state, context, arrayObject, elementObj
     return createParentContext(state, indexContext, arrayObject, 'arrayElement', elementObject)
 }
 
-export const getInverseContextPathIndex = (context, attr) => { //returns index of inverse or -1 if no inverse
+export const getInverseContextPathIndex = (context, attr, sourceData) => { //returns index of inverse or -1 if no inverse
 	//array in the form [-1, -1, 2...] where there should be one match and
 	const pathIndices = context.map((contextPath, index) => ((contextPath.length > 0 && contextPath[0].attr === attr) ? index : -1))
-	const inverseIndex = pathIndices.filter((index) => (index !== -1))
-	if (inverseIndex.length > 1) {
+    const inverseIndex = pathIndices.filter((index) => (index !== -1))
+    //TODO: clean up the folowing condition into the previous filter or map?
+	if (inverseIndex.length > 1) { //if there are multiple matches then filter to ones with matching source objects
+        const sourceHashes = inverseIndex.map((i) => { // get hash for each element with matching attr
+            const objData = context[i][0].sourceHash //BUG: should we delete this definition or will this cause subtle bugs?
+            return getHash(deleteKeys(objData, ['definition']))
+        })
         // eslint-disable-next-line no-console
-        console.warn(attr, context, pathIndices)
-		throw new Error('too many inverses'+ inverseIndex.length)
+        const currentObjectHash = getHash(deleteKeys(sourceData,  ['definition']))
+        //filter these hashes if they are equal to the sourceData and return their index in the original matches
+        const filteredMatches = sourceHashes.map((hash, i) => (hash === currentObjectHash ? i : -1)) 
+            .filter((index) => (index !== -1))
+        if (filteredMatches.length === 1) { 
+            return inverseIndex[filteredMatches[0]]
+        } else {
+            throw new Error(`exactly one source must match`)
+        }
 	} else if (inverseIndex.length === 0) {
 		return -1
 	} else {
@@ -90,8 +103,8 @@ export const popSearchFromContext = (context, query) => {
     return newContext
 }
 
-export const popInverseFromContext = (context, attribute) => {
-	const inverseIndex = getInverseContextPathIndex(context, attribute)
+export const popInverseFromContext = (context, attribute, sourceData) => {
+    const inverseIndex = getInverseContextPathIndex(context, attribute, sourceData)
     const newContext = [...context.slice(0,inverseIndex), context[inverseIndex].slice(1), ...context.slice(inverseIndex+1)]
     // eslint-disable-next-line no-console
     if (traceContext){ console.log('popping inverse', inverseIndex, attribute, context, newContext) }

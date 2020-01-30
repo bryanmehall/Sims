@@ -148,8 +148,8 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
     if (isInverse){
-        const newContext = popInverseFromContext(root.context, attribute)
-		const value = getInverseParent(state, root.context, attribute)
+        const newContext = popInverseFromContext(root.context, attribute, rootValue)
+		const value = getInverseParent(state, root.context, attribute, rootValue)
         return { context: newContext , value: value }
     } else {
         const result = getValueAndContext(state, attribute, rootValue, root.context)
