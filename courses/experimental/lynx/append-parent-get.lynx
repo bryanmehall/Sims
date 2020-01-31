@@ -1,7 +1,9 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"box"
-        innerText: "test"
-        x:window.mouse.x
-        y:150
+    childElements: [
+        new text
+            name:"box"
+            innerText: window.mouse.down ? "down" : "up"
+            x:20
+            y:30
+    ]

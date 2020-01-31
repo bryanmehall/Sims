@@ -91,6 +91,8 @@ group = new object
     mouse: new object
         x:new number
             jsRep:{mouseX}
+        y:new number
+            jsRep:{mouseY}
         down: new bool
             jsRep:{mouseDown}
 

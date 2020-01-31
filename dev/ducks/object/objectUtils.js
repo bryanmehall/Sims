@@ -235,8 +235,8 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
         const condition = getValue(state, 'op1', objectData, context)
         const returnValue = condition ? getValue(state, 'op2', objectData, context) : getValue(state, 'op3', objectData, context)
         return { context, value: returnValue }
-    } else if (jsRepValue.type === 'mouseX') { 
-        return { context, value: inputs['mouseX'] }
+    } else if (state.hasOwnProperty('inputs') && state.inputs.has(jsRepValue.type)) { 
+        return { context, value: state.inputs.get(jsRepValue.type) }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
         return { context, value: jsRepValue }
     } else {
@@ -266,11 +266,6 @@ const primitiveOps = { // TODO: move to different file
     greaterThan: (op1, op2) => (op1 > op2),
     concat: (op1, op2) => (op1 + op2),
     getIndex: (array, index) => (array[index])
-}
-
-const inputs= {
-    mouseX: 20,
-    mouseDown: false
 }
 
 const checkObjectData = (objectData) => {
