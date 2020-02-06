@@ -31,17 +31,17 @@ app = new object
     definition:parse(app.lynxText, "app")
     jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
     mouse: new object
-        down: new input
-            name:"mouseDown"
-            defaultState:false
-            lynxIR:{input}
+        down: new bool
+            instanceOf:\bool
+            jsRep:{mouseDown}
         pos: new coordinatePosition
-            x:new input
-                name:"mouseX"
-                lynxIR:{input}
-            y:new input
-                name:"mouseY"
-                lynxIR:{input}
+            x:new number
+                instanceOf:\number
+                jsRep:{mouseX}
+            y:new number
+                instanceOf:\number
+                jsRep:{mouseY}
+        op1: app.mouse.down.previousState
         clicked: condition(false)
             if app.mouse.down.previousState && !app.mouse.down && !app.mouse.clicked.previousState then true
             false
@@ -63,6 +63,8 @@ currentKeysPressed = new attribute
     name:"currentKeyPressed"
 previousState = new attribute
     name:"previousState"
+defaultState = new attribute
+    name:"defaultState"
 lynxText = new attribute
     name:"lynxText"
 keyboard = new attribute
@@ -88,13 +90,6 @@ string = new object
 group = new object
     name:"group"
     canvasRep:group.childElements[0].canvasRep
-    mouse: new object
-        x:new number
-            jsRep:{mouseX}
-        y:new number
-            jsRep:{mouseY}
-        down: new bool
-            jsRep:{mouseDown}
 
 childElement1 = new attribute
     name:"childElement1"

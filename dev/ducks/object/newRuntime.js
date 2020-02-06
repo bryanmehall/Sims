@@ -1,25 +1,43 @@
 import { lynxParser } from "../../lynxParser"
 import { flattenState } from "./assembler"
-import { objectFromName, getPath, getValue } from "./objectUtils"
+import { objectFromName, getPath, getValueAndContext } from "./objectUtils"
 
 export const initRuntime = (lynxText, canvas, updateDebug) => {
     let hashTable = flattenState(lynxParser(lynxText))
     const canvasContext = canvas.getContext('2d')
     let { inputs, outputs } = initIO(hashTable)
+    let state = { ...hashTable, inputs, outputs }
     const runEvent = (event) => { //what happens when the next event comes before this is done? blocking? 
-        inputs.set(event.valueName, event.value)
-        const result = runtimeLoop(hashTable, inputs, outputs, canvasContext, updateDebug)
+        const newInputs = Object.assign({}, state.inputs, { [event.valueName]: event.value })
+        const stateWithInputs = Object.assign({}, state, { inputs: newInputs })
+        state = runtimeLoop(stateWithInputs, canvasContext, updateDebug)
         
     }
     addEventListeners(canvas, runEvent)
-
-    runtimeLoop(hashTable, inputs, outputs, canvasContext, updateDebug)
+    state = runtimeLoop(state, canvasContext, updateDebug)
 }
 
-const runtimeLoop = (hashTable, inputs, outputs, canvasContext, updateDebug) => {
-    outputs.forEach((output) => { output.hook(inputs, output, hashTable, canvasContext) })
-    updateDebug(hashTable)
-    return { inputs, outputs, hashTable }
+const runtimeLoop = (state, canvasContext, updateDebug) => {
+    
+    const renderOutput = filterOutputs(state.outputs, "render")
+    const stateWithMergedInputs = mergeStateInputs(state)
+    const outputValues = Object.entries(renderOutput).map(([key, output]) => (
+        outputHooks[output.hook](key, output, stateWithMergedInputs, canvasContext)
+    ))
+    //TODO: combine these states and outputs
+    return outputValues[0]
+    //updateDebug(hashTable)
+}
+const filterOutputs = (outputs, type) => (
+    Object.fromEntries(Object.entries(outputs).filter((entry) => (entry[1].hook === type)))
+)
+
+const mergeStateInputs = (state) => {
+    const stateOutputs = filterOutputs(state.outputs, "state") //REFACTOR: so this is a matching function for negatives
+    const inputsWithState = { ...state.inputs, ...stateOutputs }
+    const renderOutputs = filterOutputs(state.outputs, "render")
+    return { ...{}, ...state, outputs: renderOutputs, inputs: inputsWithState }
+
 }
 
 const addEventListeners = (canvas, runEvent) => {
@@ -30,7 +48,7 @@ const addEventListeners = (canvas, runEvent) => {
     canvas.addEventListener('mouseup', () => {
         const event =  { name: 'mouseDown', valueName: 'mouseDown', value: false }
         runEvent(event)
-    })
+    })/*
     canvas.addEventListener('mousemove', (e) => {
         const event = {
             name: 'mouseMove',
@@ -42,36 +60,35 @@ const addEventListeners = (canvas, runEvent) => {
         }
         runEvent(event)
     }) //concurrent updates in object
+    */
 }
 
 
 
 const initIO = (hashTable) => {
-    const inputs = new Map([ //inputs are in the form (key, value)
-        ['mousePos', { x: 0, y: 0 }], //TODO: add support for undefined
-        ['mouseDown', false]
-
-    ])
+    const inputs = { //inputs are in the form (key, value)
+        mousePos: { x: 0, y: 0 }, //TODO: add support for undefined
+        mouseDown: false
+    }
+    const outputs = {}
     const appObject = objectFromName(hashTable, 'app')
     hashTable.inputs = inputs //state must have inputs for check
+    hashTable.outputs = outputs
     const canvasRepVC = getPath(hashTable, ['graphicalRepresentation', 'canvasRep', 'equalTo'], appObject, [[]])
-    const windowOutput = { ...canvasRepVC, hook: outputHooks.render } //how do you content address these (the context)?
-    const outputs = new Map([ //outputs are in the form (key, {context, value, hook?})
-        ['window', windowOutput] //TODO:replace this key with object instead of "window"
-    ])
+    const windowOutput = { ...canvasRepVC, hook: "render" } //how do you content address these (the definition)?
+     //outputs are in the form (key, {context, value, hook?})
+    Object.assign(outputs, { window: windowOutput }) //TODO:replace this key with hash instead of "window"
     return { inputs, outputs }
 }
 
-const outputHooks = {
-    render: (inputs, output, hashTable, canvasContext) => {
+const outputHooks = { //functions with side effects
+    render: (key, output, state, canvasContext) => {
         //make canvasRep an array of [{op:text, }, {op:setFill, }...] ?
-        //do diffs (and clearing) between previosFrame and nextFrmae in lynx
+        //do diffs (and clearing) between previousFrame and nextFrmae in lynx
         canvasContext.clearRect(0,0,300,300) //FIXME: canvas.width
-        hashTable.inputs = inputs
-        const canvasRep = getValue(hashTable, 'jsRep', output.value, output.context)
-        const renderFunction = new Function('ctx', canvasRep)
-        
+        const canvasRep = getValueAndContext(state, 'jsRep', output.value, output.context)
+        const renderFunction = new Function('ctx', canvasRep.value)
         renderFunction(canvasContext)
-    },
-    state: (output) => (output)
+        return canvasRep.state
+    }
 }

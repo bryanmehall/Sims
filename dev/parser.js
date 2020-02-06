@@ -58,6 +58,7 @@ module.exports = (function(){
         "Value": parse_Value,
         "Apply": parse_Apply,
         "GlobalSearch": parse_GlobalSearch,
+        "LocalSearch": parse_LocalSearch,
         "Search": parse_Search,
         "GetIndex": parse_GetIndex,
         "GetAttr": parse_GetAttr,
@@ -1825,12 +1826,9 @@ module.exports = (function(){
               if (result0 === null) {
                 result0 = parse_Object();
                 if (result0 === null) {
-                  result0 = parse_GlobalSearch();
+                  result0 = parse_Get();
                   if (result0 === null) {
-                    result0 = parse_Get();
-                    if (result0 === null) {
-                      result0 = parse_Search();
-                    }
+                    result0 = parse_Search();
                   }
                 }
               }
@@ -1864,9 +1862,6 @@ module.exports = (function(){
         pos0 = pos;
         pos1 = pos;
         result0 = parse_Search();
-        if (result0 === null) {
-          result0 = parse_GlobalSearch();
-        }
         if (result0 !== null) {
           if (input.charCodeAt(pos) === 40) {
             result1 = "(";
@@ -2046,8 +2041,8 @@ module.exports = (function(){
         return result0;
       }
       
-      function parse_Search() {
-        var cacheKey = "Search@" + pos;
+      function parse_LocalSearch() {
+        var cacheKey = "LocalSearch@" + pos;
         var cachedResult = cache[cacheKey];
         if (cachedResult) {
           pos = cachedResult.nextPos;
@@ -2071,6 +2066,33 @@ module.exports = (function(){
         reportFailures--;
         if (reportFailures === 0 && result0 === null) {
           matchFailed("local search");
+        }
+        
+        cache[cacheKey] = {
+          nextPos: pos,
+          result:  result0
+        };
+        return result0;
+      }
+      
+      function parse_Search() {
+        var cacheKey = "Search@" + pos;
+        var cachedResult = cache[cacheKey];
+        if (cachedResult) {
+          pos = cachedResult.nextPos;
+          return cachedResult.result;
+        }
+        
+        var result0;
+        
+        reportFailures++;
+        result0 = parse_LocalSearch();
+        if (result0 === null) {
+          result0 = parse_GlobalSearch();
+        }
+        reportFailures--;
+        if (reportFailures === 0 && result0 === null) {
+          matchFailed("search");
         }
         
         cache[cacheKey] = {

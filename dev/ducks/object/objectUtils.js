@@ -11,10 +11,12 @@ import {
     } from './contextUtils'
 import {
     objectFromHash,
-    isHash
+    isHash,
+    getHash
     } from './hashUtils'
 import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
 import { limiter, isUndefined } from './utils'
+import { getOutputFileNames } from 'typescript'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -120,7 +122,7 @@ const evaluateSearch = (state, searchObject, context) => { //evaluate search com
     if (traceGet) { console.log(`query: ${query} name:${name}`) }
     const newContext = popSearchFromContext(context, query)
     if (name === query){
-        return { context: newContext, value }
+        return { context: newContext, value, state }
     } else {
         return evaluateSearch(state, searchObject, newContext)
     }
@@ -141,7 +143,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     } else if (rootType === 'get'){
         root = evaluateReference(state, rootObject, context)
     } else {
-        root = { context, value: rootObject }
+        root = { context, value: rootObject, state }
     }
     // eslint-disable-next-line no-console
     if (traceGet) { console.log(`getting: ${attribute}`) }
@@ -149,13 +151,13 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
     if (isInverse){
         const newContext = popInverseFromContext(root.context, attribute, rootValue)
-		const value = getInverseParent(state, root.context, attribute, rootValue)
-        return { context: newContext , value: value }
+		const value = getInverseParent(root.state, root.context, attribute, rootValue)
+        return { context: newContext , value: value, state: root.state }
     } else {
-        const result = getValueAndContext(state, attribute, rootValue, root.context)
+        const result = getValueAndContext(root.state, attribute, rootValue, root.context)
         delete result.value.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = attribute === 'jsRep' ? result.value : { ...result.value, definition: getObject }
-        return { context: result.context, value: resultWithDefinition }//resultWithDefinition }
+        return { context: result.context, value: resultWithDefinition, state: result.state }
     }
 }
 
@@ -164,17 +166,16 @@ export const getValue = (state, prop, objectData, context) => (
 )
 
 export const getValueAndContext = (state, prop, objectData, oldContext) => {
-    
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
-    
     let def = getAttr(objectData, prop)
     let context = []//createParentContext(state, oldContext, objectData, prop, def)
-    if (typeof def === "string" && isHash(def)){
+    if (typeof def === "string" && isHash(def)){ //REFACTOR: move this if else block to a new function
         def = objectFromHash(state, def)
         context = createParentContext(state, oldContext, objectData, prop, def)
-    } else if (typeof prop !== 'string'){ //TODO: clean up this condition
+    } else if (typeof prop !== 'string'){ //REFACTOR: clean up this condition
         const array = getValueAndContext(state, 'jsRep', objectData, oldContext) //this context includes js rep so use old context?
+        //console.log(array)
         const index = getPath(state, ['equalTo', 'jsRep'], prop, oldContext)
         def = array.value[index.value]
         context = addArrayElementToContext(state, oldContext, objectData, def, prop)
@@ -197,10 +198,8 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
         context = createParentContext(state, oldContext, objectData, prop, def)
     }
     const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
-    if (valueData === undefined){
-        // eslint-disable-next-line no-console
-        console.warn(objectData)
-        throw new Error(`LynxError: value is undefined for prop "${prop}"`)
+    if (prop === "previousState") {
+        return getPreviousState(state, objectData, context)
     } else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
@@ -214,45 +213,83 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
                 elementValue: objectLib.constructString(attrName) //should this be an attribute not just a string of the name?
                  }))
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
-			return { context, value: attrSet }
+			return { context, value: attrSet, state }
 		}
     } else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
-	} else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //clean this condition up
-        const value = evaluateSearch(state, valueData, context).value
-        return { value, context } //return the old context so recursive functions have different args
+    } else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //REFACTOR: clean this condition up
+        const searchResult = evaluateSearch(state, valueData, context)
+        return { value: searchResult.value, context, state: searchResult.state }// searchResult.state } //return the old context so recursive functions have different args
 	} else if (prop === JS_REP){
-        return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData? 
-	} else {
-        return { context, value: valueData }
+        return evaluatePrimitive(state, valueData, objectData, oldContext) //should this be current context and valueData?
+	} else if (valueData === undefined){
+        // eslint-disable-next-line no-console
+        console.warn(objectData)
+        throw new Error(`LynxError: value is undefined for prop "${prop}"`)
+    } else {
+        return { context, value: valueData, state }
 	}
 }
 
 const evaluatePrimitive = (state, valueData, objectData, context) => { //allow this to return curried functions
-    const jsRepValue = valueData.instanceOf === GET_HASH ? evaluateReference(state, valueData, context).value : valueData //if jsRep is a reference node --refactor by moving get check before jsRep check??
+    const jsRepValue = valueData //REFACTOR
     const argsList = jsRepValue.args || []
     if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
         const condition = getValue(state, 'op1', objectData, context)
         const returnValue = condition ? getValue(state, 'op2', objectData, context) : getValue(state, 'op3', objectData, context)
-        return { context, value: returnValue }
-    } else if (state.hasOwnProperty('inputs') && state.inputs.has(jsRepValue.type)) { 
-        return { context, value: state.inputs.get(jsRepValue.type) }
+        return { context, value: returnValue, state }
+    } else if (state.hasOwnProperty('inputs') && state.inputs.hasOwnProperty(jsRepValue.type)) { 
+        return { context, value: state.inputs[jsRepValue.type], state }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
-        return { context, value: jsRepValue }
+        return { context, value: jsRepValue, state }
     } else {
-        const args = argsList.map((argName) => (
-            getValue(state, argName, objectData, context)
-        ))
-        return { context, value: primitiveOps[jsRepValue.type].apply(null, args) }
+        const argsAndState = argsList.reduce((argsAndState, argName) => {
+            const argSVC = getValueAndContext(state, argName, objectData, context)
+            const combinedState = combineOutputs(argsAndState.state, argSVC.state)
+            return { state: combinedState, args: [...argsAndState.args, argSVC.value] }
+        }, { state: state, args: [] })
+        const args = argsAndState.args
+
+        return { context, value: primitiveOps[jsRepValue.type].apply(null, args), state: argsAndState.state }
+    }
+}
+
+const combineOutputs = (oldState, newState) => ( //BUG: make this combine hash tables too
+    { ...{}, ...oldState, outputs: { ...{}, ...oldState.outputs, ...newState.outputs } }
+)
+const traceState = false
+const getPreviousState = (state, objectData, context) => {
+    //EXPLORE: how to make this only keep track of the previous state of JS rep
+    //EXPLORE: should this enter a (previous State context) so that any result that goes through this is the previous state?
+    //or should we just include the context which should include the input values at the time? 
+    // eslint-disable-next-line no-console
+    if (traceState) { console.log('getting previous state of: ', objectData) }
+    const key = getHash(getAttr(objectData, "definition"))
+    const nextValue = objectData //BUG: jsRep is lazily evaluated so this will be whatever the mouse is later not now
+    const newOutputs = Object.assign({}, state.outputs, { [key]: { value: nextValue, context: context, state, hook: "state" } })
+    
+    if (state.inputs.hasOwnProperty(key)){ //update output and get value from input
+        const input = state.inputs[key]
+        const value = input.value
+        const newState = Object.assign({}, input.state, { outputs: newOutputs }) //BUG? use new hashTable?
+        // eslint-disable-next-line no-console
+        if (traceState) { console.log('returning', input.state.inputs, value) }
+        return { context, value, state: newState } //BUG: this state includes the old outputs ---need to merge
+    } else { //add current value to outputs and return default value
+        // eslint-disable-next-line no-console
+        if (traceState) { console.log("prev. state is undefined adding", key, nextValue) }
+        const defaultValue = { jsRep: false, instanceOf: "$hash_bool_4076270995" }
+        const newState = Object.assign({}, state, { outputs: newOutputs })
+        return { context, value: defaultValue, state: newState }
     }
 }
 
 export const getPath = (state, propList, initialObject, initialContext) => (
-    propList.reduce(({ value, context }, attr) => (
+    propList.reduce(({ value, context, state }, attr) => (
         getValueAndContext(state, attr, value, context)
-    ), { value: initialObject, context: initialContext })
+    ), { value: initialObject, context: initialContext, state })
 )
-const primitiveOps = { // TODO: move to different file
+const primitiveOps = { // REFACTOR: move to different file
     addition: (op1, op2) => (op1 + op2),
     subtraction: (op1, op2) => (op1 - op2),
     multiplication: (op1, op2) => (op1 * op2),

@@ -198,10 +198,10 @@ GroupedExpression "grouped expression"
     / Apply / Value
     
 Value "value"
-	=  Primitive / Bool / Number / String / Object / GlobalSearch / Get / Search
+	=  Primitive / Bool / Number / String / Object / Get / Search
 
 Apply "function application"
-	= search:(Search / GlobalSearch) "("arg0:Expression args:("," _ Expression)*")"{
+	= search:(Search ) "("arg0:Expression args:("," _ Expression)*")"{
         const argsList = args.map((arg) => (arg[2]))
         return createNOp([arg0].concat(argsList), search)
     }
@@ -210,10 +210,13 @@ Apply "function application"
 GlobalSearch "global search"
     = "\\"name:Name {return name}
 
-Search "local search"
+LocalSearch "local search"
     = query:Name {
 	return createLocalSearch(query)
     }
+
+Search "search" 
+    = LocalSearch / GlobalSearch
 
 GetIndex "get index"
     = "[" key:Expression "]" { return key }

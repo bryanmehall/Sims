@@ -1,11 +1,10 @@
 window = new group
     name:"window"
+    op1: \checkbox //BUG:make get work directly instead of local search
     childElements: [
-        new get
-            lynxIR:{get}
-            rootObject:checkbox
-            attribute:graphicalRepresentation
+        window.op1.graphicalRepresentation
     ]
+
 checkbox = new object
     name:"checkbox"
     isChecked: condition(false)
@@ -15,7 +14,7 @@ checkbox = new object
         name:"box"
         mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30 && app.mouse.pos.y < 40 && app.mouse.pos.y > 15
         isClicked: box.mouseOver && app.mouse.clicked
-        innerText: checkbox.isChecked ? "1" : "0"
+        innerText: app.mouse.op1
         x:30
         y:30
 
