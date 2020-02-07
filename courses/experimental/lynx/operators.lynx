@@ -107,21 +107,16 @@ conditional = new object
         name:"condResult"
         equalTo:condResult
         jsRep:conditional.jsRep //applying the jsRep
-    lynxIR:{conditional}
 
 concat = new func
     name:"concat"
-    lynxIR:{concat}
 
 slice = new func
     name:"slice"
-    lynxIR:{slice}
 splice = new func
     name:"splice"
-    lynxIR:{splice}
 substring = new func
     name:"substring"
-    lynxIR:{substring}
 insert = new func
     name: "insert"
     op1:"insertString"
@@ -138,5 +133,4 @@ getIndex = new func
         name:"indexResult"
         equalTo:indexResult
         jsRep:getIndex.jsRep.jsRep //applying the jsRep
-    lynxIR:{getIndex}
 

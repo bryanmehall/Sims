@@ -6,7 +6,6 @@ window = new group
             x:20
             y:30
             innerText:new get
-                lynxIR:{get}
                 attribute:\equalTo
                 instanceOf:\get
                 rootObject: new object

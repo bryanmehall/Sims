@@ -2307,7 +2307,6 @@ module.exports = (function(){
                 return {
                     instanceOf:"number",
                     name:createString("number"),
-                    lynxIR:{type:"number", value: value},
                     jsRep:value,
                     equalTo: createLocalSearch("number"),
                     definition: createDef(value.toString())
@@ -2649,7 +2648,6 @@ module.exports = (function(){
           result0 = (function(offset, value) {
             var value = value==="true"
             return {
-                	lynxIR: {type:"bool", value:value},
                     jsRep:value,
                     name:createString("bool"),
                     equalTo: createLocalSearch("bool"),
@@ -3733,10 +3731,9 @@ module.exports = (function(){
       function createString(str){
       	return {
               jsRep:str,
-              name: {jsRep:"string", lynxIR:{value:"string"}},//todo: clean this up -- remove lynxIR and just use jsRep?
+              name: {jsRep:"string"},
               //creates infinite loop where instanceOf:createLocalSearch("string"),
               equalTo:createLocalSearch("string"),
-              lynxIR:{type:"string", value:str}
       	}
       }
       
@@ -3764,12 +3761,6 @@ module.exports = (function(){
           return applyObject
       }
       
-      function createFunction(name){
-      	return {
-              	name:createString(name),
-              	lynxIR:{type:"function"}
-          }
-      }
       function createArray(elementValues){
           return {
               instanceOf:"array",
@@ -3780,28 +3771,18 @@ module.exports = (function(){
       }
       function createLocalSearch(query){
           return {
-              lynxIR:{type:"search", "query":query}
+              initialObjectType: "localSearch",
+              query: {jsRep:query} //create string without creating infinite loop
           }
       }
       
       function buildPath(rootObject, attr, str){
           var getData = {
-              lynxIR:{type:"get"},
               instanceOf:"get",
               attribute:attr
           }
           if (rootObject !== null){
               getData.rootObject = rootObject
-          }
-          return getData
-      }
-      
-      function createReferenceNode(rootObject, attribute) {
-          var getData = {
-              lynxIR:{type:"get"},
-              instanceOf:"get",
-              rootObject: rootObject,
-              attribute:attribute
           }
           return getData
       }

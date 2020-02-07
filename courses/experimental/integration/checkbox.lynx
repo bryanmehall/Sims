@@ -8,13 +8,13 @@ window = new group
 checkbox = new object
     name:"checkbox"
     isChecked: condition(false)
-        if checkbox.graphicalRepresentation.isClicked then !checkbox.isChecked.previousState
+        if app.mouse.down then !checkbox.isChecked.previousState //checkbox.graphicalRepresentation.isClicked
         checkbox.isChecked.previousState
     graphicalRepresentation: new text
         name:"box"
         mouseOver: app.mouse.pos.x < 42 && app.mouse.pos.x > 30 && app.mouse.pos.y < 40 && app.mouse.pos.y > 15
         isClicked: box.mouseOver && app.mouse.clicked
-        innerText: app.mouse.op1
+        innerText: checkbox.isChecked
         x:30
         y:30
 

@@ -13,7 +13,7 @@ import { deleteKeys } from './utils'
 
 const traceContext = false
 
-export const createParentContext = (state, context, objectData, forwardAttr, valueData) => { //TODO: rename to addContextElement
+export const addContextElement = (state, context, objectData, forwardAttr, valueData) => {
     if (typeof context === 'undefined'){
         throw new Error("context undefined")
     }
@@ -30,7 +30,7 @@ export const createParentContext = (state, context, objectData, forwardAttr, val
         forwardAttr: forwardAttr,
         attr: inverseAttr,
         value: objectData,
-        sourceHash: valueData //TODO: change sourceHash to source
+        source: valueData
     }
     const newContext = [[contextElement, ...context[0]], ...(context.slice(1) || [])]
     if (traceContext){
@@ -63,10 +63,10 @@ export const addArrayElementToContext = (state, context, arrayObject, elementObj
         forwardAttr: 'element',
         attr: 'index',
         value: indexObject,
-        sourceHash: elementObject 
+        source: elementObject 
     }
     const indexContext = [context[0], [indexElement], ...context.slice(1)]
-    return createParentContext(state, indexContext, arrayObject, 'arrayElement', elementObject)
+    return addContextElement(state, indexContext, arrayObject, 'arrayElement', elementObject)
 }
 
 export const getInverseContextPathIndex = (context, attr, sourceData) => { //returns index of inverse or -1 if no inverse
@@ -75,14 +75,14 @@ export const getInverseContextPathIndex = (context, attr, sourceData) => { //ret
     const inverseIndex = pathIndices.filter((index) => (index !== -1))
     //TODO: clean up the folowing condition into the previous filter or map?
 	if (inverseIndex.length > 1) { //if there are multiple matches then filter to ones with matching source objects
-        const sourceHashes = inverseIndex.map((i) => { // get hash for each element with matching attr
-            const objData = context[i][0].sourceHash //BUG: should we delete this definition or will this cause subtle bugs?
+        const sourcees = inverseIndex.map((i) => { // get hash for each element with matching attr
+            const objData = context[i][0].source //BUG: should we delete this definition or will this cause subtle bugs?
             return getHash(deleteKeys(objData, ['definition']))
         })
         // eslint-disable-next-line no-console
         const currentObjectHash = getHash(deleteKeys(sourceData,  ['definition']))
         //filter these hashes if they are equal to the sourceData and return their index in the original matches
-        const filteredMatches = sourceHashes.map((hash, i) => (hash === currentObjectHash ? i : -1)) 
+        const filteredMatches = sourcees.map((hash, i) => (hash === currentObjectHash ? i : -1)) 
             .filter((index) => (index !== -1))
         if (filteredMatches.length === 1) { 
             return inverseIndex[filteredMatches[0]]

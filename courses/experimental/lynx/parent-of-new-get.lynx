@@ -9,7 +9,6 @@ window = new group
             innerText:new get
                 name:"test"
                 op1:3
-                lynxIR:{get}
                 attribute:\equalTo
                 rootObject:new object
                     equalTo: txt.op1

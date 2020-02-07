@@ -119,7 +119,7 @@ class TreeVis extends React.Component {
 const contextToLinks = (context) => (
     context.map((contextPath) => (
         contextPath.map((contextElem) => ({
-            source: contextElem.sourceHash,
+            source: contextElem.source,
             target: contextElem.value,
             forwardAttr: contextElem.attr,
             type: "context"

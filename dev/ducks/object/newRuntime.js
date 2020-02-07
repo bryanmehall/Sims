@@ -89,6 +89,7 @@ const outputHooks = { //functions with side effects
         const canvasRep = getValueAndContext(state, 'jsRep', output.value, output.context)
         const renderFunction = new Function('ctx', canvasRep.value)
         renderFunction(canvasContext)
+        console.log(canvasRep.value)
         return canvasRep.state
     }
 }

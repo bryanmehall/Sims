@@ -4,7 +4,6 @@ window = new group
         new text
             name:"txt"
             x:new get
-                lynxIR:{get}
                 rootObject: new object
                     op1:20
                 attribute: \op1

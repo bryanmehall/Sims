@@ -1,6 +1,6 @@
 import { objectLib } from './objectLib'
 import { 
-    createParentContext, 
+    addContextElement, 
     getParent, 
     isInverseAttr, 
     popSearchFromContext, 
@@ -14,9 +14,8 @@ import {
     isHash,
     getHash
     } from './hashUtils'
-import { INTERMEDIATE_REP, GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
-import { limiter, isUndefined } from './utils'
-import { getOutputFileNames } from 'typescript'
+import { primitiveOps } from './primitiveOps'
+import { GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
 
 const filterNames = (state, name) => {
     const values = Object.entries(state)
@@ -76,7 +75,7 @@ export const getNameFromAttr = (objectData) => {
     if (typeof nameObject === 'undefined'){
         return 'unnamed'
     } else {
-        return getAttr(nameObject, INTERMEDIATE_REP).value
+        return getAttr(nameObject, 'jsRep')
     }
 
 }
@@ -85,17 +84,16 @@ export const getInverseAttr = (state, attr) => (
     getAttr(objectFromName(state, attr), INVERSE_ATTRIBUTE)
 )
 
-export const getPrimitiveType = (objectData) => {
-    const jsPrim = getAttr(objectData, INTERMEDIATE_REP)
-    if (jsPrim === undefined){
-        return undefined
-    } else {
-        return jsPrim.type
-    }
-
+export const getPrimitiveType = () => {
+    throw new Error('lynx refactor: remove condition')
 }
 
-const getInheritedName = (state, value, context) => { //TODO: get rid of name inheritance?
+const isGet = (object) => (getAttr(object, 'instanceOf') === GET_HASH || getAttr(object, 'instanceOf') === 'get')
+
+const isLocalSearch = (object) => (getAttr(object, 'initialObjectType') === "localSearch")
+const getSearchQuery = (object) => (object.query.jsRep)
+
+const getInheritedName = (state, value, context) => { //FIXME: get rid of name inheritance?
     const forwardAttr = context[0][0].forwardAttr 
     //attr from parent to child testing that child came from parent not supertype of parent
     //break into function
@@ -110,7 +108,7 @@ const getInheritedName = (state, value, context) => { //TODO: get rid of name in
 
 const traceGet = false
 const evaluateSearch = (state, searchObject, context) => { //evaluate search component of reference
-    const query = getAttr(searchObject, "lynxIR").query //TODO: remove lynxIR
+    const query = getSearchQuery(searchObject)
     if (context === undefined){
         throw new Error('context undefined')
     } else if (context[0].length === 0){
@@ -133,14 +131,13 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         throw new Error("context undefined")
     }
     const rootObject = getAttr(getObject, 'rootObject')
-	const rootType = getPrimitiveType(rootObject)
     const attribute = getAttr(getObject, 'attribute')
   //root is a structure containing the value and the context
-    if (rootType === 'search'){
+    if (isLocalSearch(rootObject)){
         const newContext = addContextPath(context)
         const searchObject = getAttr(getObject, "rootObject")
         var root = evaluateSearch(state, searchObject, newContext)
-    } else if (rootType === 'get'){
+    } else if (isGet(rootObject)){
         root = evaluateReference(state, rootObject, context)
     } else {
         root = { context, value: rootObject, state }
@@ -169,10 +166,10 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
     checkObjectData(objectData)
     //console.log(def, prop, objectData)
     let def = getAttr(objectData, prop)
-    let context = []//createParentContext(state, oldContext, objectData, prop, def)
+    let context = []//addContextElement(state, oldContext, objectData, prop, def)
     if (typeof def === "string" && isHash(def)){ //REFACTOR: move this if else block to a new function
         def = objectFromHash(state, def)
-        context = createParentContext(state, oldContext, objectData, prop, def)
+        context = addContextElement(state, oldContext, objectData, prop, def)
     } else if (typeof prop !== 'string'){ //REFACTOR: clean up this condition
         const array = getValueAndContext(state, 'jsRep', objectData, oldContext) //this context includes js rep so use old context?
         //console.log(array)
@@ -182,20 +179,20 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
         const isInstance = hasAttribute(objectData, 'instanceOf')
         if (isInstance) {
-            const ctx = createParentContext(state, oldContext, objectData, prop, def)
-            const inherited = getValueAndContext(state, 'instanceOf', objectData, ctx) //old context here because createParentContext pops off stack
+            const ctx = addContextElement(state, oldContext, objectData, prop, def)
+            const inherited = getValueAndContext(state, 'instanceOf', objectData, ctx) //old context here because addContextElement pops off stack
             var inheritedData = inherited.value
             context = inherited.context
         } else {
             inheritedData = objectFromName(state, 'object')
-            context = createParentContext(state, oldContext, objectData, prop, def)
+            context = addContextElement(state, oldContext, objectData, prop, def)
         }
 		//add group to context here
         def = getAttr(inheritedData, prop)
     } else if (def === undefined) {
 		throw new Error(`def is undefined for ${prop} of ${name}`)
     } else {
-        context = createParentContext(state, oldContext, objectData, prop, def)
+        context = addContextElement(state, oldContext, objectData, prop, def)
     }
     const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
     if (prop === "previousState") {
@@ -215,9 +212,9 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
 			const attrSet = objectLib.constructArray(`${getAttr(objectData, 'hash')}Attrs`, attrObjects)//switch to set
 			return { context, value: attrSet, state }
 		}
-    } else if (valueData.instanceOf === GET_HASH || valueData.instanceOf === 'get'){ //directly evaluate get instead of leaving reference as argument
+    } else if (isGet(valueData)){ //directly evaluate get instead of leaving reference as argument
         return evaluateReference(state, valueData, context) 
-    } else if (valueData.hasOwnProperty("lynxIR") && valueData.lynxIR.type === 'search'){ //REFACTOR: clean this condition up
+    } else if (isLocalSearch(valueData)){
         const searchResult = evaluateSearch(state, valueData, context)
         return { value: searchResult.value, context, state: searchResult.state }// searchResult.state } //return the old context so recursive functions have different args
 	} else if (prop === JS_REP){
@@ -231,8 +228,7 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
 	}
 }
 
-const evaluatePrimitive = (state, valueData, objectData, context) => { //allow this to return curried functions
-    const jsRepValue = valueData //REFACTOR
+const evaluatePrimitive = (state, jsRepValue, objectData, context) => { //allow this to return curried functions
     const argsList = jsRepValue.args || []
     if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
         const condition = getValue(state, 'op1', objectData, context)
@@ -249,7 +245,6 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
             return { state: combinedState, args: [...argsAndState.args, argSVC.value] }
         }, { state: state, args: [] })
         const args = argsAndState.args
-
         return { context, value: primitiveOps[jsRepValue.type].apply(null, args), state: argsAndState.state }
     }
 }
@@ -257,15 +252,13 @@ const evaluatePrimitive = (state, valueData, objectData, context) => { //allow t
 const combineOutputs = (oldState, newState) => ( //BUG: make this combine hash tables too
     { ...{}, ...oldState, outputs: { ...{}, ...oldState.outputs, ...newState.outputs } }
 )
-const traceState = false
-const getPreviousState = (state, objectData, context) => {
+
+const traceState = true
+const getPreviousState = (state, nextValue, context) => { //Should this be in the modifiers section of getValue? 
     //EXPLORE: how to make this only keep track of the previous state of JS rep
-    //EXPLORE: should this enter a (previous State context) so that any result that goes through this is the previous state?
-    //or should we just include the context which should include the input values at the time? 
     // eslint-disable-next-line no-console
-    if (traceState) { console.log('getting previous state of: ', objectData) }
-    const key = getHash(getAttr(objectData, "definition"))
-    const nextValue = objectData //BUG: jsRep is lazily evaluated so this will be whatever the mouse is later not now
+    if (traceState) { console.log('getting previous state of: ', nextValue) }
+    const key = getHash(getAttr(nextValue, "definition"))
     const newOutputs = Object.assign({}, state.outputs, { [key]: { value: nextValue, context: context, state, hook: "state" } })
     
     if (state.inputs.hasOwnProperty(key)){ //update output and get value from input
@@ -289,21 +282,7 @@ export const getPath = (state, propList, initialObject, initialContext) => (
         getValueAndContext(state, attr, value, context)
     ), { value: initialObject, context: initialContext, state })
 )
-const primitiveOps = { // REFACTOR: move to different file
-    addition: (op1, op2) => (op1 + op2),
-    subtraction: (op1, op2) => (op1 - op2),
-    multiplication: (op1, op2) => (op1 * op2),
-    division: (op1, op2) => (op1 / op2),
-    and: (op1, op2) => (op1 && op2),
-    or: (op1, op2) => (op1 || op2),
-    not: (op1) => (!op1),
-    conditional: (op1, op2, op3) => (op1 ? op2 : op3),
-    equal: (op1, op2) => (op1 === op2),
-    lessThan: (op1, op2) => (op1 < op2),
-    greaterThan: (op1, op2) => (op1 > op2),
-    concat: (op1, op2) => (op1 + op2),
-    getIndex: (array, index) => (array[index])
-}
+
 
 const checkObjectData = (objectData) => {
     if (objectData === undefined) {

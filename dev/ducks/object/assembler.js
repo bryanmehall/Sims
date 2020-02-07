@@ -37,11 +37,7 @@ const assembleOutput = (state, ast, outputs) => { //get rid of dependence on sta
     return newOutputsWithState
 }
 
-const combineFunctionTables = (outputs) => ( //for an object of outputs, combine their function tables into one
-    Object.values(outputs).reduce((functionTable, output) => (
-        Object.assign(functionTable, output.functionTable)
-    ), {})
-)
+
 const attrConstants = ['get']
 //take state indexed by name and return a hash table
 //for every nested tree, flatten the tree and index by hash
@@ -59,7 +55,7 @@ export const flattenState = (state) => {
     }, {})
     return hashTable
 }
-const exemptProps = [INTERMEDIATE_REP, JS_REP, 'jsPrimitive', "initialObjectType", "attribute", 'lynxIR']
+const exemptProps = [INTERMEDIATE_REP, JS_REP, 'jsPrimitive', "initialObjectType", "attribute"]
 
 const replaceNamesWithHashes = (state, object) => (
     Object.fromEntries(Object.entries(object)
@@ -80,31 +76,12 @@ const replaceNamesWithHashes = (state, object) => (
 export const getHashesFromTree = (objectData, state) => ( //for each module
     Object.entries(objectData)
         .reduce((hashTable, entry) => {
-            const prop = entry[0]
             let value = entry[1]
             const hash = getHash(value)
             if (typeof value === 'string') {
                 return hashTable
-            } else if (prop === INTERMEDIATE_REP) {
-                if (value.type === "array"){ //add hashes for elements of array --need to add map
-                    return value.value.reduce((hashTable, element) => {
-                        const elementHash = getHash(element)
-                        const elementWithHash = { ...element, hash: elementHash }
-                        const elementTable = getHashesFromTree(elementWithHash, state)
-                        return Object.assign(hashTable, elementTable, { [elementHash]: elementWithHash })
-                    }, {})
-                } else {
-                    return Object.assign(hashTable, { [hash]: value })
-                }
             } else {
                 return Object.assign(hashTable, getHashesFromTree(value, state), { [hash]: value })
             }
         }, {})
 )
-
-export const assemble = (hashTable, lynxIR) => {
-    const outputs = assembleOutput(hashTable, lynxIR, {})
-    const functionTable = combineFunctionTables(outputs)
-    const mainOutput = lynxIR.hash
-    return { functionTable, outputs, mainOutput }
-}

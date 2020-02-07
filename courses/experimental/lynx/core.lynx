@@ -10,24 +10,18 @@ functionalRepresentation = new object
     name:"functionalRepresentation"
 compile = new object
     name:"compile"
-    lynxIR:{compile}
 definition = new attribute
     name: "definition"
 jsModule = new attribute
     name:"jsModule"
 assemble = new object
     name:"assemble"
-    lynxIR:{assemble}
 call = new object
     name:"call"
-    lynxIR:{call}
-
 app = new object
-    lynxIR:{app}
     name:"app"
     lynxText: new object
         name:"lynxTextInput"
-        lynxIR:{input}
     definition:parse(app.lynxText, "app")
     jsModule:assemble(compile(app.definition)) //for canvas: assemble(compile(app.definition, canvasPrimitive))
     mouse: new object
@@ -53,7 +47,6 @@ app = new object
         currentKeysDown: new array
             name:"currentKeys"
             length:0
-            lynxIR:{input}
     graphicalRepresentation:\window
 canvasRep = new attribute
     name:"canvasRep"
@@ -154,16 +147,12 @@ accordianRep = new attribute
 
 attributes = new attribute
     name:"attributes"
-
-lynxIR = new attribute
-    name:"lynxIR"
 jsRep = new attribute
     name:"jsRep"
 jsPrimitive = new attribute
     name:"jsPrimitive"
 parse = new func
     name:"parse"
-    lynxIR:{parse}
 childElements = new attribute
     name:"childElements"
     inverseAttribute:\parentElement
@@ -191,8 +180,6 @@ mouse = new attribute
     name:"mouse"
 set = new object
     name:"set"
-    lynxIR:{set}
-
 array = new object
     name:"array"
     length:2
@@ -201,7 +188,6 @@ length = new attribute
     name:"length"
 arrayLength = new func
     name:"arrayLength"
-    lynxIR:{arrayLength}
 index = new attribute
     name:"index"
 setEquiv = new attribute
@@ -246,7 +232,6 @@ height = new attribute
     name:"height"
 
 line = new object
-    lynxIR:{line}
     name:"line"
     r:0
     g:0
@@ -280,6 +265,8 @@ down = new attribute
     name:"down"
 clicked = new attribute
     name:"clicked"
+localSearch = new object
+    name:"localSearch"
 query = new attribute
     name:"query"
 search = new object
@@ -287,8 +274,6 @@ search = new object
 
 func = new object
     name:"func"
-    lynxIR:{function}
-
 apply = new object
     name:"apply"
     equalTo:apply.function.result.equalTo //get numerical equiv of result of function --replace with optimization
