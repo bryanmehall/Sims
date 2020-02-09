@@ -15,15 +15,21 @@ import {
     getHash
     } from './hashUtils'
 import { primitiveOps } from './primitiveOps'
-import { GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP } from './constants'
+import { GET_HASH, NAME, INVERSE_ATTRIBUTE, JS_REP, traceState } from './constants'
+import { isUndefined, logOutputs } from './utils'
 
+let filterNamesMemo = {}
 const filterNames = (state, name) => {
+    if (filterNamesMemo.hasOwnProperty(name)){
+        return filterNamesMemo[name]
+    }
     const values = Object.entries(state)
     const matches = values.filter((entry) => {
         const obj = entry[1]
         const objName = getNameFromAttr(obj)
         return objName === name
     })
+    filterNamesMemo[name] = matches
     return matches //matches in the form [hash, value]
 }
 
@@ -64,7 +70,7 @@ export const getAttr = (objectData, attr) => (
 )
 
 export const hasAttribute = (objectData, prop) => (
-    objectData.hasOwnProperty(prop) || prop === 'arrayElement' //exclude array element because getting array fakes that attr arrayElement exists
+    objectData.hasOwnProperty(prop) || prop === 'arrayElement' || prop === 'previousState' //exclude array element because getting array fakes that attr arrayElement exists
 )
 
 export const getNameFromAttr = (objectData) => {
@@ -88,13 +94,13 @@ export const getPrimitiveType = () => {
     throw new Error('lynx refactor: remove condition')
 }
 
-const isGet = (object) => (getAttr(object, 'instanceOf') === GET_HASH || getAttr(object, 'instanceOf') === 'get')
+const isGet = (object) => (object !== undefined && (getAttr(object, 'instanceOf') === GET_HASH || getAttr(object, 'instanceOf') === 'get'))
 
 const isLocalSearch = (object) => (getAttr(object, 'initialObjectType') === "localSearch")
 const getSearchQuery = (object) => (object.query.jsRep)
 
 const getInheritedName = (state, value, context) => { //FIXME: get rid of name inheritance?
-    const forwardAttr = context[0][0].forwardAttr 
+    const forwardAttr = context[0][0].forwardAttr //if a value is getting caught here check that it has a forward attr in hasAttribute
     //attr from parent to child testing that child came from parent not supertype of parent
     //break into function
     const isNotInherited = hasAttribute(value, forwardAttr)
@@ -117,7 +123,7 @@ const evaluateSearch = (state, searchObject, context) => { //evaluate search com
     const value = getParent(state, context)
     const name = getInheritedName(state, value, context)
     // eslint-disable-next-line no-console
-    if (traceGet) { console.log(`query: ${query} name:${name}`) }
+    if (traceGet) { console.log(`query: ${query} name:${name}`, value) }
     const newContext = popSearchFromContext(context, query)
     if (name === query){
         return { context: newContext, value, state }
@@ -152,7 +158,6 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         return { context: newContext , value: value, state: root.state }
     } else {
         const result = getValueAndContext(root.state, attribute, rootValue, root.context)
-        delete result.value.hash //remove hash because we are going to add definition to it
         const resultWithDefinition = attribute === 'jsRep' ? result.value : { ...result.value, definition: getObject }
         return { context: result.context, value: resultWithDefinition, state: result.state }
     }
@@ -196,7 +201,8 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
     }
     const valueData = typeof def === 'string' && prop !== JS_REP ? objectFromName(state, def) : def //condition for jsRep that are strings
     if (prop === "previousState") {
-        return getPreviousState(state, objectData, context)
+        const prevState = getPreviousState(state, objectData, context)
+        return prevState
     } else if (prop === 'attributes'){ //shim for objects without explicitly declared attributes
         //console.log('getting attributes', objectData)
 		if (hasAttribute(objectData, 'attributes')){
@@ -231,47 +237,53 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
 const evaluatePrimitive = (state, jsRepValue, objectData, context) => { //allow this to return curried functions
     const argsList = jsRepValue.args || []
     if (jsRepValue.type === "conditional"){ //conditions need to be lazily evaluated for recursive defs
-        const condition = getValue(state, 'op1', objectData, context)
-        const returnValue = condition ? getValue(state, 'op2', objectData, context) : getValue(state, 'op3', objectData, context)
-        return { context, value: returnValue, state }
+        const conditionSVC = getValueAndContext(state, 'op1', objectData, context)
+        const returnValueSVC = conditionSVC.value ? getValueAndContext(state, 'op2', objectData, context) : getValueAndContext(state, 'op3', objectData, context)
+        const newState = combineOutputs(conditionSVC.state, returnValueSVC.state)
+        return { context, value: returnValueSVC.value, state: newState }
     } else if (state.hasOwnProperty('inputs') && state.inputs.hasOwnProperty(jsRepValue.type)) { 
         return { context, value: state.inputs[jsRepValue.type], state }
     } else if (argsList.length === 0){ //test for primitive needs to be cleaner
         return { context, value: jsRepValue, state }
     } else {
-        const argsAndState = argsList.reduce((argsAndState, argName) => {
+        const argsAndState = argsList.reduce((argsAndState, argName) => { //combine states for each argument
             const argSVC = getValueAndContext(state, argName, objectData, context)
             const combinedState = combineOutputs(argsAndState.state, argSVC.state)
             return { state: combinedState, args: [...argsAndState.args, argSVC.value] }
         }, { state: state, args: [] })
+        
         const args = argsAndState.args
         return { context, value: primitiveOps[jsRepValue.type].apply(null, args), state: argsAndState.state }
     }
 }
 
 const combineOutputs = (oldState, newState) => ( //BUG: make this combine hash tables too
-    { ...{}, ...oldState, outputs: { ...{}, ...oldState.outputs, ...newState.outputs } }
+    Object.assign({}, oldState, { outputs: Object.assign({}, oldState.outputs, newState.outputs) })
 )
 
-const traceState = true
+
 const getPreviousState = (state, nextValue, context) => { //Should this be in the modifiers section of getValue? 
     //EXPLORE: how to make this only keep track of the previous state of JS rep
-    // eslint-disable-next-line no-console
-    if (traceState) { console.log('getting previous state of: ', nextValue) }
     const key = getHash(getAttr(nextValue, "definition"))
-    const newOutputs = Object.assign({}, state.outputs, { [key]: { value: nextValue, context: context, state, hook: "state" } })
+    // eslint-disable-next-line no-console
     
+    //if (traceState(key)) { console.log('getting previous state', state.inputs) }
+    //console.log('assigning inputs', state.inputs)
+    const newOutputs = Object.assign({}, state.outputs, { [key]: { value: nextValue, context: context, state, hook: "state" } })
     if (state.inputs.hasOwnProperty(key)){ //update output and get value from input
         const input = state.inputs[key]
         const value = input.value
         const newState = Object.assign({}, input.state, { outputs: newOutputs }) //BUG? use new hashTable?
         // eslint-disable-next-line no-console
-        if (traceState) { console.log('returning', input.state.inputs, value) }
-        return { context, value, state: newState } //BUG: this state includes the old outputs ---need to merge
+        if (traceState(key)) { logOutputs(newOutputs) } //BUG: this is overwriting the previous output so it is resetting to default every time?
+        return { context: input.context, value, state: newState } //BUG: this state includes the old outputs ---need to merge
     } else { //add current value to outputs and return default value
         // eslint-disable-next-line no-console
-        if (traceState) { console.log("prev. state is undefined adding", key, nextValue) }
-        const defaultValue = { jsRep: false, instanceOf: "$hash_bool_4076270995" }
+        //if (traceState(key)) { console.log("prev. state is undefined adding", key, nextValue) }
+        const defaultValue = nextValue.defaultState
+        if (defaultValue === undefined) {
+            throw new Error(`LynxError: must provide a default state for ${JSON.stringify(nextValue)}`)
+        }
         const newState = Object.assign({}, state, { outputs: newOutputs })
         return { context, value: defaultValue, state: newState }
     }

@@ -1,6 +1,8 @@
 import { lynxParser } from "../../lynxParser"
 import { flattenState } from "./assembler"
-import { objectFromName, getPath, getValueAndContext } from "./objectUtils"
+import { objectFromName, getPath, getValueAndContext, getValue } from "./objectUtils"
+import { filterOutputs } from './utils'
+import { traceState } from "./constants"
 
 export const initRuntime = (lynxText, canvas, updateDebug) => {
     let hashTable = flattenState(lynxParser(lynxText))
@@ -10,7 +12,7 @@ export const initRuntime = (lynxText, canvas, updateDebug) => {
     const runEvent = (event) => { //what happens when the next event comes before this is done? blocking? 
         const newInputs = Object.assign({}, state.inputs, { [event.valueName]: event.value })
         const stateWithInputs = Object.assign({}, state, { inputs: newInputs })
-        state = runtimeLoop(stateWithInputs, canvasContext, updateDebug)
+        state = runtimeLoop(stateWithInputs, canvasContext, updateDebug) //BUG: this creaets a race condition?
         
     }
     addEventListeners(canvas, runEvent)
@@ -18,7 +20,6 @@ export const initRuntime = (lynxText, canvas, updateDebug) => {
 }
 
 const runtimeLoop = (state, canvasContext, updateDebug) => {
-    
     const renderOutput = filterOutputs(state.outputs, "render")
     const stateWithMergedInputs = mergeStateInputs(state)
     const outputValues = Object.entries(renderOutput).map(([key, output]) => (
@@ -28,12 +29,11 @@ const runtimeLoop = (state, canvasContext, updateDebug) => {
     return outputValues[0]
     //updateDebug(hashTable)
 }
-const filterOutputs = (outputs, type) => (
-    Object.fromEntries(Object.entries(outputs).filter((entry) => (entry[1].hook === type)))
-)
+
 
 const mergeStateInputs = (state) => {
     const stateOutputs = filterOutputs(state.outputs, "state") //REFACTOR: so this is a matching function for negatives
+    //if (traceState){ logOutputs(stateOutputs) }
     const inputsWithState = { ...state.inputs, ...stateOutputs }
     const renderOutputs = filterOutputs(state.outputs, "render")
     return { ...{}, ...state, outputs: renderOutputs, inputs: inputsWithState }
@@ -89,7 +89,7 @@ const outputHooks = { //functions with side effects
         const canvasRep = getValueAndContext(state, 'jsRep', output.value, output.context)
         const renderFunction = new Function('ctx', canvasRep.value)
         renderFunction(canvasContext)
-        console.log(canvasRep.value)
+        console.warn(canvasRep.value)
         return canvasRep.state
     }
 }

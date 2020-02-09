@@ -1,13 +1,10 @@
 window = new group
     name:"window"
-    childElement1: new text
-        name:"txt"
-        op1:true
-        x:30
-        y:\double(50)
-        innerText:"test"
-
-double = new funct
-    name:"double"
-    op1: double.caller.op1
-    result: 20 == 30 ? 30:100
+    childElements: [
+        new text
+            name:"txt"
+            op1:true
+            x:20
+            y: true && app.mouse.down.previousState ? 20 : 50
+            innerText:"test"
+    ]

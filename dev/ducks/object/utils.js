@@ -1,5 +1,5 @@
 import { LOCAL_SEARCH, GLOBAL_SEARCH, INVERSE, STATE_ARG, UNDEFINED, INPUT, INTERMEDIATE_REP } from './constants'
-import { getAttr } from './objectUtils'
+import { getAttr, getPath } from './objectUtils'
 
 const fromEntries = (array) => (
     array.reduce((obj, entry) => ({ ...obj, [entry[0]]: entry[1] }), {})
@@ -143,3 +143,22 @@ export const limiter = (timeLimit, countLimit) => {
 export const resetLimiter = () => {
     counter = 0
 }
+let tracingState = false
+export const logOutputs = (outputs) => {
+    if (tracingState){
+        tracingState = false
+    } else {
+        tracingState = true
+        const stateOutputs = filterOutputs(outputs, 'state')
+        console.log(stateOutputs)
+        Object.entries(stateOutputs).forEach((entry) => {
+            const { state, value, context } = entry[1]
+            //console.log('inputs: ', state.inputs.mouseDown, 'definition: ', value)
+            console.log("key:", entry[0], 'result: ', getPath(state, ['equalTo', 'jsRep'], value, context))
+        })
+    }
+}
+
+export const filterOutputs = (outputs, type) => (
+    Object.fromEntries(Object.entries(outputs).filter((entry) => (entry[1].hook === type)))
+)

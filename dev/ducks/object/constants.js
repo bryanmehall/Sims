@@ -21,3 +21,7 @@ export const NAME = 'name'
 export const UNDEFINED = 'undef'
 
 export const THIS = '$this'
+
+// debug
+
+export const traceState = (key) => (key === '$hash_unnamed_2540542922')
