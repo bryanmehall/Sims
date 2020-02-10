@@ -11,12 +11,12 @@ window = new group
             name:"txt"
             x:txt.parentArray.length*10
             y:txt.index*60
-            innerText:"it works"
+            innerText:"test"
         new text
             name:"txt"
             x:txt.parentArray.length*10
             y:txt.index*15
-            previousElement:txt.parentArray[txt.index-1] //context is for array here not in text
+            previousElement:txt.parentArray[txt.index-1]
             innerText:txt.previousElement.innerText
     ]
-    childElements: [window.op1[0]]
+    childElements: [window.op1[2]]

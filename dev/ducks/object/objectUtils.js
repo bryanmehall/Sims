@@ -137,7 +137,8 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
         throw new Error("context undefined")
     }
     const rootObject = getAttr(getObject, 'rootObject')
-    const attribute = getAttr(getObject, 'attribute')
+    const attrDef = getAttr(getObject, 'attribute')
+    const attribute = typeof attrDef === 'string' ? attrDef : getPath(state, ['equalTo'], attrDef, context)
   //root is a structure containing the value and the context
     if (isLocalSearch(rootObject)){
         const newContext = addContextPath(context)
@@ -152,7 +153,7 @@ const evaluateReference = (state, getObject, context) => { //evaluate whole refe
     if (traceGet) { console.log(`getting: ${attribute}`) }
     const rootValue = root.value
     const isInverse = isInverseAttr(rootValue, attribute, root.context)
-    if (isInverse){
+    if (isInverse){ //REFACTOR: move inverses to getValue --try to simplify the dataflow as much as possible
         const newContext = popInverseFromContext(root.context, attribute, rootValue)
 		const value = getInverseParent(root.state, root.context, attribute, rootValue)
         return { context: newContext , value: value, state: root.state }
@@ -167,9 +168,9 @@ export const getValue = (state, prop, objectData, context) => (
 	getValueAndContext(state, prop, objectData, context).value
 )
 
-export const getValueAndContext = (state, prop, objectData, oldContext) => {
+export const getValueAndContext = (state, prop, objectData, oldContext) => { //EXPLORE: should prop here have SVC for calculated attributes?
     checkObjectData(objectData)
-    //console.log(def, prop, objectData)
+    //console.log(prop, objectData)
     let def = getAttr(objectData, prop)
     let context = []//addContextElement(state, oldContext, objectData, prop, def)
     if (typeof def === "string" && isHash(def)){ //REFACTOR: move this if else block to a new function
@@ -177,10 +178,9 @@ export const getValueAndContext = (state, prop, objectData, oldContext) => {
         context = addContextElement(state, oldContext, objectData, prop, def)
     } else if (typeof prop !== 'string'){ //REFACTOR: clean up this condition
         const array = getValueAndContext(state, 'jsRep', objectData, oldContext) //this context includes js rep so use old context?
-        //console.log(array)
-        const index = getPath(state, ['equalTo', 'jsRep'], prop, oldContext)
-        def = array.value[index.value]
-        context = addArrayElementToContext(state, oldContext, objectData, def, prop)
+        const index = getPath(prop.state, ['jsRep'], prop.value, prop.context).value //REFACTOR: move equalTo to here from getReference?
+        def = array.value[index]
+        context = addArrayElementToContext(state, oldContext, objectData, def, prop.value)
     } else if (def === undefined && prop !== 'attributes' && prop !== "inverseAttribute"){ //refactor //shim for inherited values //remove with new inheritance pattern?
         const isInstance = hasAttribute(objectData, 'instanceOf')
         if (isInstance) {

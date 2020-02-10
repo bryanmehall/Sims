@@ -2267,7 +2267,7 @@ module.exports = (function(){
         }
         if (result0 !== null) {
           result0 = (function(offset, root, attributes) {
-            return attributes.reduce(buildPath, root)
+            return buildReference(root, attributes)
             })(pos0, result0[0], result0[1]);
         }
         if (result0 === null) {
@@ -3776,7 +3776,7 @@ module.exports = (function(){
           }
       }
       
-      function buildPath(rootObject, attr, str){
+      function buildPath(rootObject, attr){
           var getData = {
               instanceOf:"get",
               attribute:attr
@@ -3785,6 +3785,9 @@ module.exports = (function(){
               getData.rootObject = rootObject
           }
           return getData
+      }
+      function buildReference(root, attributes) {
+          return attributes.reduce(buildPath, root)
       }
       
       

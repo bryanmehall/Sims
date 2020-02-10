@@ -61,7 +61,7 @@ function createLocalSearch(query){
     }
 }
 
-function buildPath(rootObject, attr, str){
+function buildPath(rootObject, attr){
     var getData = {
         instanceOf:"get",
         attribute:attr
@@ -70,6 +70,9 @@ function buildPath(rootObject, attr, str){
         getData.rootObject = rootObject
     }
     return getData
+}
+function buildReference(root, attributes) {
+    return attributes.reduce(buildPath, root)
 }
 
 }
@@ -209,7 +212,7 @@ GetAttr "get attribute"
 
 Get "get"
     = root:Search? attributes:(GetAttr / GetIndex)+ {
-    return attributes.reduce(buildPath, root)
+    return buildReference(root, attributes)
     }
      
 //#########################  primitives  ################################
